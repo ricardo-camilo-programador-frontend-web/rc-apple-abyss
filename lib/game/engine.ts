@@ -29,7 +29,13 @@ export class GameEngine {
       try {
         const parsed = JSON.parse(saved);
         // Merge with initial state to handle new properties in updates
-        return { ...INITIAL_STATE, ...parsed, settings: { ...INITIAL_STATE.settings, ...parsed.settings } };
+        return { 
+          ...INITIAL_STATE, 
+          ...parsed, 
+          worms: { ...INITIAL_STATE.worms, ...(parsed.worms || {}) },
+          skills: { ...INITIAL_STATE.skills, ...(parsed.skills || {}) },
+          settings: { ...INITIAL_STATE.settings, ...(parsed.settings || {}) } 
+        };
       } catch (e) {
         console.error('Failed to parse save', e);
       }

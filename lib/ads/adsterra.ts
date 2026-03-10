@@ -31,24 +31,20 @@ export enum AdFormat {
  * Loads the Adsterra script asynchronously.
  * Ensures it only runs on the client-side and doesn't block rendering.
  */
-export const loadAdsterraScript = (format: AdFormat, containerId?: string) => {
+export const loadAdsterra = (zoneScript: string, containerId?: string) => {
   if (!ENABLE_ADS || typeof window === 'undefined') return;
 
-  const publisherId = process.env.NEXT_PUBLIC_ADSTERRA_PUBLISHER_ID || DEFAULT_PUBLISHER_ID;
-
   try {
-    // Check if script is already loaded for this format to avoid duplication
-    const scriptId = `adsterra-script-${format}`;
+    // Check if script is already loaded to avoid duplication
+    // We hash the URL to create a unique ID
+    const scriptId = `adsterra-script-${btoa(zoneScript).replace(/[^a-zA-Z0-9]/g, '')}`;
     if (document.getElementById(scriptId)) return;
 
     const script = document.createElement('script');
     script.id = scriptId;
     script.type = 'text/javascript';
     script.async = true;
-    
-    // Generic placeholder URL for Adsterra scripts.
-    // In a real-world scenario, Adsterra provides specific URLs for each zone/format.
-    script.src = `https://pl${publisherId}.adsterra.com/invoke.js?format=${format}`;
+    script.src = zoneScript;
     
     if (containerId) {
       const container = document.getElementById(containerId);
@@ -56,7 +52,7 @@ export const loadAdsterraScript = (format: AdFormat, containerId?: string) => {
         container.appendChild(script);
       }
     } else {
-      document.head.appendChild(script);
+      document.body.appendChild(script);
     }
   } catch (error) {
     console.error('Failed to load Adsterra script:', error);

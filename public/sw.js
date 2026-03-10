@@ -1,19 +1,24 @@
-const CACHE_NAME = 'apple-clicker-v1';
+const CACHE_NAME = 'apple-clicker-v2';
 const ASSETS = [
   '/',
-  '/manifest.json',
-  '/globals.css'
+  '/index.html'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+      // Use catch to prevent SW installation failure if a resource is missing
+      return cache.addAll(ASSETS).catch(err => console.warn('SW cache.addAll error:', err));
     })
   );
 });
 
 self.addEventListener('fetch', (event) => {
+  // Do not cache external requests (AdSense, Adsterra, etc)
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request);

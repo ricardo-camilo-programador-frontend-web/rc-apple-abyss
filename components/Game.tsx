@@ -7,6 +7,7 @@ import { WORM_UPGRADES } from '@/lib/game/constants';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
 import AdsterraAd from '@/components/AdsterraAd';
+import AdSenseAd from '@/components/AdSenseAd';
 import { AdFormat } from '@/lib/ads/adsterra';
 import { 
   Coins, 
@@ -248,13 +249,8 @@ export default function Game() {
         {/* Center: Game Plate */}
         <section className="flex-1 flex flex-col items-center justify-center p-8 relative">
           {/* Ad Slot Top */}
-          <div className="absolute top-4 w-full max-w-md h-20 bg-stone-200/50 rounded flex items-center justify-center text-[10px] text-stone-400 uppercase tracking-widest">
-            <ins className="adsbygoogle"
-                 style={{ display: 'block' }}
-                 data-ad-client="ca-pub-6735039970151788"
-                 data-ad-slot="horizontal-top"
-                 data-ad-format="auto"
-                 data-full-width-responsive="true"></ins>
+          <div className="absolute top-4 w-full max-w-md h-20 bg-stone-200/50 rounded flex items-center justify-center text-[10px] text-stone-400 uppercase tracking-widest overflow-hidden">
+            <AdSenseAd slot="horizontal-top" className="w-full h-full" />
           </div>
 
           {/* Apple & Plate */}
@@ -402,13 +398,8 @@ export default function Game() {
           </div>
 
           {/* Ad Slot Bottom */}
-          <div className="absolute bottom-4 w-full max-w-md h-20 bg-stone-200/50 rounded flex items-center justify-center text-[10px] text-stone-400 uppercase tracking-widest">
-            <ins className="adsbygoogle"
-                 style={{ display: 'block' }}
-                 data-ad-client="ca-pub-6735039970151788"
-                 data-ad-slot="horizontal-bottom"
-                 data-ad-format="auto"
-                 data-full-width-responsive="true"></ins>
+          <div className="absolute bottom-4 w-full max-w-md h-20 bg-stone-200/50 rounded flex items-center justify-center text-[10px] text-stone-400 uppercase tracking-widest overflow-hidden">
+            <AdSenseAd slot="horizontal-bottom" className="w-full h-full" />
           </div>
         </section>
 

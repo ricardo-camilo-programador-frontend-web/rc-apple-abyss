@@ -18,6 +18,12 @@ export const INITIAL_STATE = {
     fat_worm: 0,
     queen_worm: 0,
     acid_worm: 0,
+    mutant_worm: 0,
+    mecha_worm: 0,
+    galactic_worm: 0,
+    quantum_worm: 0,
+    dimensional_worm: 0,
+    infinite_worm: 0,
   },
   skills: {
     golden_harvest: {
@@ -39,6 +45,12 @@ export const WORM_UPGRADES: WormUpgrade[] = [
   { id: 'fat_worm', nameKey: 'upgrade_fat_worm', baseCost: 1100, baseDPS: 20, costGrowth: 1.22, dpsGrowth: 1.22 },
   { id: 'queen_worm', nameKey: 'upgrade_queen_worm', baseCost: 12000, baseDPS: 100, costGrowth: 1.25, dpsGrowth: 1.25 },
   { id: 'acid_worm', nameKey: 'upgrade_acid_worm', baseCost: 130000, baseDPS: 500, costGrowth: 1.30, dpsGrowth: 1.30 },
+  { id: 'mutant_worm', nameKey: 'upgrade_mutant_worm', baseCost: 1500000, baseDPS: 3000, costGrowth: 1.35, dpsGrowth: 1.35 },
+  { id: 'mecha_worm', nameKey: 'upgrade_mecha_worm', baseCost: 20000000, baseDPS: 20000, costGrowth: 1.40, dpsGrowth: 1.40 },
+  { id: 'galactic_worm', nameKey: 'upgrade_galactic_worm', baseCost: 300000000, baseDPS: 150000, costGrowth: 1.45, dpsGrowth: 1.45 },
+  { id: 'quantum_worm', nameKey: 'upgrade_quantum_worm', baseCost: 5000000000, baseDPS: 2000000, costGrowth: 1.50, dpsGrowth: 1.50 },
+  { id: 'dimensional_worm', nameKey: 'upgrade_dimensional_worm', baseCost: 100000000000, baseDPS: 30000000, costGrowth: 1.55, dpsGrowth: 1.55 },
+  { id: 'infinite_worm', nameKey: 'upgrade_infinite_worm', baseCost: 5000000000000, baseDPS: 500000000, costGrowth: 1.60, dpsGrowth: 1.60 },
 ];
 
 export const CLICK_UPGRADE = {
@@ -92,6 +104,30 @@ export const LOCALIZATION: LocalizationData = {
   upgrade_acid_worm: {
     en: 'Acid Worm', zh: '酸性虫子', hi: 'एसिड कीड़ा', es: 'Gusano Ácido', fr: 'Ver Acide', ar: 'دودة حمضية', bn: 'অ্যাসিড পোকা', pt: 'Minhoca Ácida', ru: 'Кислотный червь', ur: 'تیزاب کیڑا',
     id: 'Cacing Asam', de: 'Säurewurm', ja: '酸の虫', sw: 'Minyoo ya Asidi', mr: 'ऍसिड कीडा', te: 'యాసిడ్ పురుగు', tr: 'Asit Solucanı', ta: 'அமில புழு', vi: 'Sâu axit', ko: '산성 벌레'
+  },
+  upgrade_mutant_worm: {
+    en: 'Mutant Worm', zh: '变异虫子', hi: 'म्यूटेंट कीड़ा', es: 'Gusano Mutante', fr: 'Ver Mutant', ar: 'دودة متحولة', bn: 'মিউট্যান্ট পোকা', pt: 'Minhoca Mutante', ru: 'Мутантный червь', ur: 'میوٹینٹ کیڑا',
+    id: 'Cacing Mutan', de: 'Mutantenwurm', ja: 'ミュータントワーム', sw: 'Minyoo wa Mutanti', mr: 'म्युटंट कीडा', te: 'మ్యూటెంట్ పురుగు', tr: 'Mutant Solucan', ta: 'விகாரமான புழு', vi: 'Sâu đột biến', ko: '돌연변이 벌레'
+  },
+  upgrade_mecha_worm: {
+    en: 'Mecha Worm', zh: '机甲虫子', hi: 'मेचा कीड़ा', es: 'Gusano Mecha', fr: 'Ver Méca', ar: 'دودة ميكا', bn: 'মেকা পোকা', pt: 'Minhoca Mecha', ru: 'Меха-червь', ur: 'میکا کیڑا',
+    id: 'Cacing Mecha', de: 'Mecha-Wurm', ja: 'メカワーム', sw: 'Minyoo wa Mecha', mr: 'मेचा कीडा', te: 'మెకా పురుగు', tr: 'Meka Solucan', ta: 'மெக்கா புழு', vi: 'Sâu mecha', ko: '메카 벌레'
+  },
+  upgrade_galactic_worm: {
+    en: 'Galactic Worm', zh: '银河虫子', hi: 'गैलेक्टिक कीड़ा', es: 'Gusano Galáctico', fr: 'Ver Galactique', ar: 'دودة مجرية', bn: 'গ্যালাকটিক পোকা', pt: 'Minhoca Galáctica', ru: 'Галактический червь', ur: 'کہکشاں کیڑا',
+    id: 'Cacing Galaksi', de: 'Galaktischer Wurm', ja: 'ギャラクティックワーム', sw: 'Minyoo wa Kigalaksi', mr: 'गॅलॅक्टिक कीडा', te: 'గెలాక్సీ పురుగు', tr: 'Galaktik Solucan', ta: 'கேலக்ஸி புழு', vi: 'Sâu thiên hà', ko: '은하계 벌레'
+  },
+  upgrade_quantum_worm: {
+    en: 'Quantum Worm', zh: '量子虫子', hi: 'क्वांटम कीड़ा', es: 'Gusano Cuántico', fr: 'Ver Quantique', ar: 'دودة كمية', bn: 'কোয়ান্টাম পোকা', pt: 'Minhoca Quântica', ru: 'Квантовый червь', ur: 'کوانٹم کیڑا',
+    id: 'Cacing Kuantum', de: 'Quantenwurm', ja: 'クアンタムワーム', sw: 'Minyoo wa Kuantamu', mr: 'क्वांटम कीडा', te: 'క్వాంటం పురుగు', tr: 'Kuantum Solucan', ta: 'குவாண்டம் புழு', vi: 'Sâu lượng tử', ko: '양자 벌레'
+  },
+  upgrade_dimensional_worm: {
+    en: 'Dimensional Worm', zh: '维度虫子', hi: 'आयामी कीड़ा', es: 'Gusano Dimensional', fr: 'Ver Dimensionnel', ar: 'دودة الأبعاد', bn: 'মাত্রিক পোকা', pt: 'Minhoca Dimensional', ru: 'Пространственный червь', ur: 'جہتی کیڑا',
+    id: 'Cacing Dimensi', de: 'Dimensionswurm', ja: 'ディメンショナルワーム', sw: 'Minyoo wa Vipimo', mr: 'मितीय कीडा', te: 'డైమెన్షనల్ పురుగు', tr: 'Boyutsal Solucan', ta: 'பரிமாண புழு', vi: 'Sâu không gian', ko: '차원 벌레'
+  },
+  upgrade_infinite_worm: {
+    en: 'Infinite Worm', zh: '无限虫子', hi: 'अनंत कीड़ा', es: 'Gusano Infinito', fr: 'Ver Infini', ar: 'دودة لا نهائية', bn: 'অসীম পোকা', pt: 'Minhoca Infinita', ru: 'Бесконечный червь', ur: 'لامتناہی کیڑا',
+    id: 'Cacing Tak Terbatas', de: 'Unendlicher Wurm', ja: 'インフィニットワーム', sw: 'Minyoo Asiye na Mwisho', mr: 'अनंत कीडा', te: 'అనంతమైన పురుగు', tr: 'Sonsuz Solucan', ta: 'முடிவிலா புழு', vi: 'Sâu vô cực', ko: '무한 벌레'
   },
   upgrade_click_power: {
     en: 'Click Power', zh: '点击力量', hi: 'क्लिक शक्ति', es: 'Poder de Clic', fr: 'Puissance de Clic', ar: 'قوة النقرة', bn: 'ক্লিক শক্তি', pt: 'Poder de Clique', ru: 'Сила клика', ur: 'کلک پاور',

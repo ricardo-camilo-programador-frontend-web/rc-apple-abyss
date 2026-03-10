@@ -15,12 +15,11 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en">
       <head>
-        <Script 
+        <script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6735039970151788"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
+        ></script>
         <Script 
           src="https://cdn.counter.dev/script.js" 
           data-id="f30df6f3-776d-4154-959d-0210ac8a8325" 

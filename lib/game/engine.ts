@@ -1,5 +1,5 @@
 import { GameState, Language, WormUpgrade } from './types';
-import { INITIAL_STATE, WORM_UPGRADES } from './constants';
+import { INITIAL_STATE, WORM_UPGRADES, CLICK_UPGRADE } from './constants';
 import { AudioSystem } from './audio';
 import { LocalizationSystem } from './localization';
 import { SkillSystem } from './skills';
@@ -58,8 +58,14 @@ export class GameEngine {
 
   private calculateOfflineProgress() {
     const now = Date.now();
-    const offlineTimeMs = now - this.state.lastSaveTimestamp;
+    let offlineTimeMs = now - this.state.lastSaveTimestamp;
     if (offlineTimeMs < 10000) return; // Less than 10 seconds, ignore
+
+    // Cap offline progress to 12 hours
+    const MAX_OFFLINE_MS = 12 * 60 * 60 * 1000;
+    if (offlineTimeMs > MAX_OFFLINE_MS) {
+      offlineTimeMs = MAX_OFFLINE_MS;
+    }
 
     const dps = this.getTotalDPS();
     if (dps <= 0) return;
@@ -129,7 +135,7 @@ export class GameEngine {
   }
 
   public getClickDamage(): number {
-    const base = 1 * Math.pow(1.12, this.state.clickLevel);
+    const base = 1 * Math.pow(CLICK_UPGRADE.damageGrowth, this.state.clickLevel);
     const soulBonus = 1 + (this.state.gardenersSouls * 0.1); // 10% per soul
     const skillMultiplier = this.skills.getGoldMultiplierClick();
     return base * soulBonus * skillMultiplier;
@@ -259,5 +265,61 @@ export class GameEngine {
 
   public getSkills(): SkillSystem {
     return this.skills;
+  }
+
+  public exportSave(): string {
+    const dataStr = JSON.stringify(this.state);
+    
+    // Simple checksum for basic anti-cheat
+    let checksum = 0;
+    for (let i = 0; i < dataStr.length; i++) {
+      checksum = ((checksum << 5) - checksum) + dataStr.charCodeAt(i);
+      checksum |= 0;
+    }
+    
+    const saveObj = { data: this.state, hash: checksum };
+    return btoa(JSON.stringify(saveObj));
+  }
+
+  public importSave(saveStr: string): boolean {
+    try {
+      const decoded = atob(saveStr);
+      const saveObj = JSON.parse(decoded);
+      
+      if (!saveObj.data || saveObj.hash === undefined) return false;
+      
+      const dataStr = JSON.stringify(saveObj.data);
+      let checksum = 0;
+      for (let i = 0; i < dataStr.length; i++) {
+        checksum = ((checksum << 5) - checksum) + dataStr.charCodeAt(i);
+        checksum |= 0;
+      }
+      
+      if (checksum !== saveObj.hash) return false;
+      
+      // Sanity checks
+      const data = saveObj.data;
+      if (typeof data.gold !== 'number' || data.gold < 0 || data.gold > 1e100) return false;
+      if (typeof data.stage !== 'number' || data.stage < 1 || data.stage > 1000000) return false;
+      if (typeof data.totalClicks !== 'number' || data.totalClicks < 0) return false;
+      
+      this.state = { 
+        ...INITIAL_STATE, 
+        ...data, 
+        worms: { ...INITIAL_STATE.worms, ...(data.worms || {}) },
+        skills: { ...INITIAL_STATE.skills, ...(data.skills || {}) },
+        settings: { ...INITIAL_STATE.settings, ...(data.settings || {}) } 
+      };
+      
+      this.saveGame();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  public resetGame() {
+    this.state = { ...INITIAL_STATE, settings: this.state.settings };
+    this.saveGame();
   }
 }

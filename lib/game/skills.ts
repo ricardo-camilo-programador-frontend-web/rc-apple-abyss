@@ -42,10 +42,10 @@ export class SkillSystem {
   }
 
   public getGoldMultiplierClick(): number {
-    return this.isSkillActive('golden_harvest') ? 4 : 1;
+    return this.isSkillActive('golden_harvest') ? 5 : 1;
   }
 
   public getGoldMultiplierIdle(): number {
-    return this.isSkillActive('golden_harvest') ? 2 : 1;
+    return this.isSkillActive('golden_harvest') ? 2.5 : 1;
   }
 }

@@ -26,7 +26,10 @@ import {
   MousePointer2,
   Sword,
   Users,
-  History
+  History,
+  Download,
+  Upload,
+  RefreshCw
 } from 'lucide-react';
 
 export default function Game() {
@@ -36,6 +39,8 @@ export default function Game() {
   const [showSettings, setShowSettings] = useState(false);
   const [offlineResult, setOfflineResult] = useState<{ apples: number, gold: number } | null>(() => (state as any).lastOfflineResult || null);
   const [clickEffects, setClickEffects] = useState<{ id: number, x: number, y: number, value: number }[]>([]);
+  const [importString, setImportString] = useState('');
+  const [importError, setImportError] = useState('');
   const clickIdCounter = useRef(0);
   const lastClickUpgradeTime = useRef(0);
   const [particleOffsets] = useState(() => 
@@ -131,6 +136,42 @@ export default function Game() {
     setState({ ...engine.getState() });
   };
 
+  const handleExportSave = () => {
+    const saveStr = engine.exportSave();
+    navigator.clipboard.writeText(saveStr).then(() => {
+      alert('Save copied to clipboard!');
+    }).catch(() => {
+      // Fallback if clipboard fails
+      prompt('Copy your save string:', saveStr);
+    });
+  };
+
+  const handleImportSave = () => {
+    if (!importString.trim()) {
+      setImportError('Please enter a save string.');
+      return;
+    }
+    
+    const success = engine.importSave(importString.trim());
+    if (success) {
+      setState({ ...engine.getState() });
+      setImportString('');
+      setImportError('');
+      alert('Save imported successfully!');
+      setShowSettings(false);
+    } else {
+      setImportError('Invalid save string or corrupted data.');
+    }
+  };
+
+  const handleResetGame = () => {
+    if (confirm('Are you sure you want to completely reset your game? This cannot be undone!')) {
+      engine.resetGame();
+      setState({ ...engine.getState() });
+      setShowSettings(false);
+    }
+  };
+
   // Calculate apple visual state
   const hpPercent = (state.appleHP / state.maxAppleHP) * 100;
   const biteCount = Math.floor((100 - hpPercent) / 20); // 5 stages of bites
@@ -167,9 +208,15 @@ export default function Game() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col md:flex-row relative">
-        {/* Left Panel: Upgrades */}
-        <aside className="w-full md:w-72 bg-white border-r border-stone-200 overflow-y-auto p-4 flex flex-col gap-3">
+      <div className="flex-1 flex flex-row overflow-hidden">
+        {/* Left Ad - Desktop Only */}
+        <div className="hidden xl:flex w-[160px] bg-stone-200/50 items-center justify-center border-r border-stone-200">
+          <AdSenseAd slot="vertical-left" format="auto" className="w-full h-full" />
+        </div>
+
+        <main className="flex-1 flex flex-col md:flex-row relative overflow-y-auto">
+          {/* Left Panel: Upgrades */}
+          <aside className="w-full md:w-72 bg-white border-r border-stone-200 overflow-y-auto p-4 flex flex-col gap-3">
           <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">{t('upgrades')}</h2>
           
           {/* Click Power Upgrade */}
@@ -247,12 +294,7 @@ export default function Game() {
         </aside>
 
         {/* Center: Game Plate */}
-        <section className="flex-1 flex flex-col items-center justify-center p-8 relative">
-          {/* Ad Slot Top */}
-          <div className="absolute top-4 w-full max-w-md h-20 bg-stone-200/50 rounded flex items-center justify-center text-[10px] text-stone-400 uppercase tracking-widest overflow-hidden">
-            <AdSenseAd slot="horizontal-top" className="w-full h-full" />
-          </div>
-
+        <section className="flex-1 flex flex-col items-center justify-center p-8 relative min-h-[500px]">
           {/* Apple & Plate */}
           <div className="relative group cursor-pointer" onClick={handleClick}>
             {/* Plate */}
@@ -396,15 +438,10 @@ export default function Game() {
               </button>
             </div>
           </div>
-
-          {/* Ad Slot Bottom */}
-          <div className="absolute bottom-4 w-full max-w-md h-20 bg-stone-200/50 rounded flex items-center justify-center text-[10px] text-stone-400 uppercase tracking-widest overflow-hidden">
-            <AdSenseAd slot="horizontal-bottom" className="w-full h-full" />
-          </div>
         </section>
 
         {/* Right Panel: Ascension & Stats */}
-        <aside className="w-full md:w-72 bg-white border-l border-stone-200 p-4 flex flex-col gap-6">
+        <aside className="w-full md:w-72 bg-white border-l border-stone-200 p-4 flex flex-col gap-6 overflow-y-auto">
           <div>
             <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4">{t('ascension')}</h2>
             <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 flex flex-col gap-3">
@@ -534,8 +571,14 @@ export default function Game() {
         </aside>
       </main>
 
-      {/* Bottom Bar */}
-      <footer className="bg-white border-t border-stone-200 p-3 flex justify-between items-center text-[10px] text-stone-400 z-10">
+      {/* Right Ad - Desktop Only */}
+      <div className="hidden xl:flex w-[160px] bg-stone-200/50 items-center justify-center border-l border-stone-200">
+        <AdSenseAd slot="vertical-right" format="auto" className="w-full h-full" />
+      </div>
+    </div>
+
+    {/* Bottom Bar */}
+    <footer className="bg-white border-t border-stone-200 p-3 flex justify-between items-center text-[10px] text-stone-400 z-10">
         <div className="flex items-center gap-4">
           <span>© 2026 Apple of the Infinite Abyss</span>
           <a 
@@ -562,6 +605,11 @@ export default function Game() {
           </div>
         </div>
       </footer>
+
+      {/* Footer Ad - Mobile/Desktop */}
+      <div className="w-full h-[90px] bg-stone-200/50 flex items-center justify-center border-t border-stone-200">
+        <AdSenseAd slot="horizontal-footer" format="auto" className="w-full h-full max-w-4xl" />
+      </div>
 
       {/* Settings Modal */}
       <AnimatePresence>
@@ -642,6 +690,51 @@ export default function Game() {
                         {lang.toUpperCase()}
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                {/* Save Management */}
+                <div className="space-y-3 pt-4 border-t border-stone-100">
+                  <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
+                    <Download className="w-3 h-3" />
+                    Save Management
+                  </label>
+                  <div className="flex flex-col gap-2">
+                    <button 
+                      onClick={handleExportSave}
+                      className="flex items-center justify-center gap-2 p-3 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl transition-colors font-medium text-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export Save
+                    </button>
+                    
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        value={importString}
+                        onChange={(e) => setImportString(e.target.value)}
+                        placeholder="Paste save string here..."
+                        className="flex-1 p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-red-300"
+                      />
+                      <button 
+                        onClick={handleImportSave}
+                        className="flex items-center justify-center p-3 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl transition-colors"
+                        title="Import Save"
+                      >
+                        <Upload className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {importError && (
+                      <p className="text-xs text-red-500 font-medium">{importError}</p>
+                    )}
+                    
+                    <button 
+                      onClick={handleResetGame}
+                      className="flex items-center justify-center gap-2 p-3 mt-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors font-medium text-sm border border-red-100"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Hard Reset Game
+                    </button>
                   </div>
                 </div>
               </div>

@@ -40,17 +40,17 @@ export const INITIAL_STATE = {
 };
 
 export const WORM_UPGRADES: WormUpgrade[] = [
-  { id: 'small_worm', nameKey: 'upgrade_small_worm', baseCost: 15, baseDPS: 1, costGrowth: 1.15, dpsGrowth: 1.15 },
-  { id: 'hungry_worm', nameKey: 'upgrade_hungry_worm', baseCost: 100, baseDPS: 5, costGrowth: 1.18, dpsGrowth: 1.18 },
-  { id: 'fat_worm', nameKey: 'upgrade_fat_worm', baseCost: 1100, baseDPS: 20, costGrowth: 1.22, dpsGrowth: 1.22 },
-  { id: 'queen_worm', nameKey: 'upgrade_queen_worm', baseCost: 12000, baseDPS: 100, costGrowth: 1.25, dpsGrowth: 1.25 },
-  { id: 'acid_worm', nameKey: 'upgrade_acid_worm', baseCost: 130000, baseDPS: 500, costGrowth: 1.30, dpsGrowth: 1.30 },
-  { id: 'mutant_worm', nameKey: 'upgrade_mutant_worm', baseCost: 1500000, baseDPS: 3000, costGrowth: 1.35, dpsGrowth: 1.35 },
-  { id: 'mecha_worm', nameKey: 'upgrade_mecha_worm', baseCost: 20000000, baseDPS: 20000, costGrowth: 1.40, dpsGrowth: 1.40 },
-  { id: 'galactic_worm', nameKey: 'upgrade_galactic_worm', baseCost: 300000000, baseDPS: 150000, costGrowth: 1.45, dpsGrowth: 1.45 },
-  { id: 'quantum_worm', nameKey: 'upgrade_quantum_worm', baseCost: 5000000000, baseDPS: 2000000, costGrowth: 1.50, dpsGrowth: 1.50 },
-  { id: 'dimensional_worm', nameKey: 'upgrade_dimensional_worm', baseCost: 100000000000, baseDPS: 30000000, costGrowth: 1.55, dpsGrowth: 1.55 },
-  { id: 'infinite_worm', nameKey: 'upgrade_infinite_worm', baseCost: 5000000000000, baseDPS: 500000000, costGrowth: 1.60, dpsGrowth: 1.60 },
+  { id: 'small_worm', nameKey: 'upgrade_small_worm', baseCost: 15, baseDPS: 1, costGrowth: 1.15, dpsGrowth: 1.18 },
+  { id: 'hungry_worm', nameKey: 'upgrade_hungry_worm', baseCost: 100, baseDPS: 5, costGrowth: 1.18, dpsGrowth: 1.22 },
+  { id: 'fat_worm', nameKey: 'upgrade_fat_worm', baseCost: 1100, baseDPS: 20, costGrowth: 1.22, dpsGrowth: 1.26 },
+  { id: 'queen_worm', nameKey: 'upgrade_queen_worm', baseCost: 12000, baseDPS: 100, costGrowth: 1.25, dpsGrowth: 1.30 },
+  { id: 'acid_worm', nameKey: 'upgrade_acid_worm', baseCost: 130000, baseDPS: 500, costGrowth: 1.30, dpsGrowth: 1.35 },
+  { id: 'mutant_worm', nameKey: 'upgrade_mutant_worm', baseCost: 1500000, baseDPS: 3000, costGrowth: 1.35, dpsGrowth: 1.40 },
+  { id: 'mecha_worm', nameKey: 'upgrade_mecha_worm', baseCost: 20000000, baseDPS: 20000, costGrowth: 1.40, dpsGrowth: 1.45 },
+  { id: 'galactic_worm', nameKey: 'upgrade_galactic_worm', baseCost: 300000000, baseDPS: 150000, costGrowth: 1.45, dpsGrowth: 1.50 },
+  { id: 'quantum_worm', nameKey: 'upgrade_quantum_worm', baseCost: 5000000000, baseDPS: 2000000, costGrowth: 1.50, dpsGrowth: 1.55 },
+  { id: 'dimensional_worm', nameKey: 'upgrade_dimensional_worm', baseCost: 100000000000, baseDPS: 30000000, costGrowth: 1.55, dpsGrowth: 1.60 },
+  { id: 'infinite_worm', nameKey: 'upgrade_infinite_worm', baseCost: 5000000000000, baseDPS: 500000000, costGrowth: 1.60, dpsGrowth: 1.65 },
 ];
 
 export const CLICK_UPGRADE = {
@@ -59,7 +59,7 @@ export const CLICK_UPGRADE = {
   baseCost: 20,
   baseDamage: 1,
   costGrowth: 1.15,
-  damageGrowth: 1.12
+  damageGrowth: 1.15
 };
 
 export const LOCALIZATION: LocalizationData = {

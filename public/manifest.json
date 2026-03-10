@@ -1,0 +1,21 @@
+{
+  "name": "Apple of the Infinite Abyss",
+  "short_name": "Infinite Apple",
+  "description": "A minimalist incremental idle game where you eat apples.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ff4d4d",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/apple/192/192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://picsum.photos/seed/apple/512/512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

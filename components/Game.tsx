@@ -294,7 +294,7 @@ export default function Game() {
         </aside>
 
         {/* Center: Game Plate */}
-        <section className="flex-1 flex flex-col items-center justify-center p-8 relative min-h-[500px]">
+        <section className="flex-1 flex flex-col items-start justify-center p-8 relative min-h-[500px]">
           {/* Apple & Plate */}
           <div className="relative group cursor-pointer" onClick={handleClick}>
             {/* Plate */}

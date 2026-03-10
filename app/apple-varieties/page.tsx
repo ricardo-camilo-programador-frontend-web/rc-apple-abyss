@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { GameEngine } from '@/lib/game/engine';
 import { Language } from '@/lib/game/types';
+import AdsterraAd from '@/components/AdsterraAd';
+import { AdFormat } from '@/lib/ads/adsterra';
 
 const APPLE_VARIETIES = [
   'ambrosia', 'baldwin', 'braeburn', 'cameo', 'cortland', 'coxs_orange_pippin',
@@ -47,6 +49,10 @@ export default function AppleVarietiesPage() {
       <title>{`${t('apple_guide_title')} | Apple of the Infinite Abyss`}</title>
       <meta name="description" content={t('apple_guide_meta_description')} />
 
+      {/* Adsterra Global Formats */}
+      <AdsterraAd format={AdFormat.POPUNDER} />
+      <AdsterraAd format={AdFormat.SOCIAL_BAR} />
+
       {/* Header / Navigation */}
       <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -78,6 +84,9 @@ export default function AppleVarietiesPage() {
             {t('apple_guide_intro')}
           </p>
         </motion.section>
+
+        {/* Top Ad */}
+        <AdsterraAd format={AdFormat.DISPLAY_BANNER} className="w-full max-w-3xl mx-auto" />
 
         {/* Infographic Section */}
         <motion.section 
@@ -114,6 +123,9 @@ export default function AppleVarietiesPage() {
           </div>
         </motion.section>
 
+        {/* Middle Ad */}
+        <AdsterraAd format={AdFormat.NATIVE_BANNER} className="w-full max-w-4xl mx-auto" />
+
         {/* Varieties Grid */}
         <section className="space-y-8">
           <div className="flex items-center gap-4">
@@ -147,6 +159,9 @@ export default function AppleVarietiesPage() {
             ))}
           </div>
         </section>
+
+        {/* Bottom Ad */}
+        <AdsterraAd format={AdFormat.DISPLAY_BANNER} className="w-full max-w-3xl mx-auto" />
       </main>
 
       {/* Footer */}

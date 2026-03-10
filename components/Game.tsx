@@ -6,6 +6,8 @@ import { GameState, Language } from '@/lib/game/types';
 import { WORM_UPGRADES } from '@/lib/game/constants';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
+import AdsterraAd from '@/components/AdsterraAd';
+import { AdFormat } from '@/lib/ads/adsterra';
 import { 
   Coins, 
   Trophy, 
@@ -134,6 +136,10 @@ export default function Game() {
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-100 overflow-hidden select-none">
+      {/* Adsterra Global Formats */}
+      <AdsterraAd format={AdFormat.POPUNDER} />
+      <AdsterraAd format={AdFormat.SOCIAL_BAR} />
+
       {/* Top Bar */}
       <header className="bg-white border-b border-stone-200 p-4 flex justify-between items-center shadow-sm z-10">
         <div className="flex items-center gap-6">

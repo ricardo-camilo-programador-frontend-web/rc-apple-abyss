@@ -18,16 +18,30 @@ import {
   ChevronRight,
   ChevronLeft,
   Info,
-  BookOpen
+  BookOpen,
+  Zap,
+  MousePointer2,
+  Sword,
+  Users,
+  History
 } from 'lucide-react';
 
 export default function Game() {
   const [engine] = useState(() => new GameEngine());
   const [state, setState] = useState(() => engine.getState());
+  const [isMounted, setIsMounted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [offlineResult, setOfflineResult] = useState<{ apples: number, gold: number } | null>(() => (state as any).lastOfflineResult || null);
   const [clickEffects, setClickEffects] = useState<{ id: number, x: number, y: number, value: number }[]>([]);
   const clickIdCounter = useRef(0);
+  const lastClickUpgradeTime = useRef(0);
+  const [particleOffsets] = useState(() => 
+    Array.from({ length: 10 }).map(() => ({
+      x: (Math.random() - 0.5) * 300,
+      y: (Math.random() - 0.5) * 300,
+      delay: Math.random() * 1.5
+    }))
+  );
 
   useEffect(() => {
     let frameId: number;
@@ -41,7 +55,28 @@ export default function Game() {
     return () => cancelAnimationFrame(frameId);
   }, [engine]);
 
-  if (!state || !engine) return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'c') {
+        const now = Date.now();
+        if (now - lastClickUpgradeTime.current < 150) return;
+        lastClickUpgradeTime.current = now;
+        
+        if (engine.buyClickUpgrade()) {
+          setState({ ...engine.getState() });
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [engine]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!isMounted || !state || !engine) return <div className="flex items-center justify-center h-screen">Loading...</div>;
 
   const t = (key: string, params?: any) => engine.getLocalization().t(key, params);
 
@@ -66,6 +101,11 @@ export default function Game() {
     engine.buyUpgrade(id);
   };
 
+  const handleBuyClickUpgrade = () => {
+    engine.buyClickUpgrade();
+    setState({ ...engine.getState() });
+  };
+
   const handleAscend = () => {
     if (confirm(t('ascend_confirm') || 'Are you sure you want to ascend? You will lose all current progress but gain permanent bonuses.')) {
       engine.ascend();
@@ -80,6 +120,11 @@ export default function Game() {
 
   const changeLanguage = (lang: Language) => {
     engine.setLanguage(lang);
+    setState({ ...engine.getState() });
+  };
+
+  const handleActivateSkill = () => {
+    engine.activateSkill('golden_harvest');
     setState({ ...engine.getState() });
   };
 
@@ -119,15 +164,56 @@ export default function Game() {
         {/* Left Panel: Upgrades */}
         <aside className="w-full md:w-72 bg-white border-r border-stone-200 overflow-y-auto p-4 flex flex-col gap-3">
           <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">{t('upgrades')}</h2>
+          
+          {/* Click Power Upgrade */}
+          <motion.button
+            key={`click-power-${state.clickLevel}`}
+            onClick={handleBuyClickUpgrade}
+            disabled={state.gold < engine.getClickUpgradeCost()}
+            initial={false}
+            animate={{ scale: [1, 1.02, 1] }}
+            className={`group relative flex flex-col p-3 rounded-xl border-2 transition-all text-left mb-2 ${
+              state.gold >= engine.getClickUpgradeCost()
+                ? 'border-yellow-200 hover:border-yellow-400 bg-yellow-50/30 active:scale-95' 
+                : 'border-stone-100 bg-stone-50 opacity-60 cursor-not-allowed'
+            }`}
+          >
+            <div className="flex justify-between items-start mb-1">
+              <span className="font-bold text-sm flex items-center gap-2">
+                <MousePointer2 className="w-4 h-4 text-yellow-600" />
+                {t('upgrade_click_power')}
+              </span>
+              <span className="text-xs font-mono bg-white px-1.5 py-0.5 rounded border border-yellow-100">Lv.{state.clickLevel}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-1 text-yellow-600 font-mono text-sm font-bold">
+                <Coins className="w-3 h-3" />
+                {Math.floor(engine.getClickUpgradeCost()).toLocaleString()}
+              </div>
+              <div className="flex flex-col items-end">
+                <div className="text-[10px] text-stone-500">Dmg: {engine.getClickDamage().toFixed(1)}</div>
+                <div className="text-[8px] text-stone-400">Next: {(engine.getClickDamage() * 1.12).toFixed(1)}</div>
+              </div>
+            </div>
+            <div className="absolute bottom-1 right-1 text-[8px] text-stone-300 font-bold uppercase">[C]</div>
+          </motion.button>
+
+          <div className="h-px bg-stone-100 my-1" />
+
           {WORM_UPGRADES.map(upgrade => {
             const cost = engine.getUpgradeCost(upgrade.id);
             const canAfford = state.gold >= cost;
             const count = state.worms[upgrade.id] || 0;
+            const currentDPS = engine.getWormDPS(upgrade.id);
+            const nextDPS = count === 0 ? upgrade.baseDPS : currentDPS * upgrade.dpsGrowth;
+
             return (
-              <button
-                key={upgrade.id}
+              <motion.button
+                key={`${upgrade.id}-${count}`}
                 onClick={() => handleBuyUpgrade(upgrade.id)}
                 disabled={!canAfford}
+                initial={false}
+                animate={{ scale: [1, 1.02, 1] }}
                 className={`group relative flex flex-col p-3 rounded-xl border-2 transition-all text-left ${
                   canAfford 
                     ? 'border-stone-200 hover:border-red-400 bg-white active:scale-95' 
@@ -143,9 +229,12 @@ export default function Game() {
                     <Coins className="w-3 h-3" />
                     {Math.floor(cost).toLocaleString()}
                   </div>
-                  <div className="text-[10px] text-stone-500">+{upgrade.baseDPS} DPS</div>
+                  <div className="flex flex-col items-end">
+                    <div className="text-[10px] text-stone-500">DPS: {currentDPS.toFixed(1)}</div>
+                    <div className="text-[8px] text-stone-400">Next: {nextDPS.toFixed(1)}</div>
+                  </div>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </aside>
@@ -165,7 +254,7 @@ export default function Game() {
           {/* Apple & Plate */}
           <div className="relative group cursor-pointer" onClick={handleClick}>
             {/* Plate */}
-            <div className="w-64 h-64 md:w-80 md:h-80 bg-white rounded-full shadow-inner border-8 border-stone-200 flex items-center justify-center">
+            <div className={`w-64 h-64 md:w-80 md:h-80 bg-white rounded-full shadow-inner border-8 border-stone-200 flex items-center justify-center apple-shadow transition-all duration-300 ${state.skills.golden_harvest.isActive ? 'skill-glow scale-105 border-yellow-400' : ''}`}>
               {/* Apple Sprite (CSS based for performance/simplicity) */}
               <motion.div 
                 animate={{ 
@@ -180,7 +269,7 @@ export default function Game() {
                 className="relative w-40 h-40 md:w-48 md:h-48"
               >
                 {/* Apple Body */}
-                <div className="absolute inset-0 bg-red-500 rounded-[40%] shadow-lg">
+                <div className={`absolute inset-0 rounded-[40%] shadow-lg transition-colors duration-300 ${state.skills.golden_harvest.isActive ? 'bg-yellow-500' : 'bg-red-500'}`}>
                   {/* Stem */}
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-2 h-6 bg-amber-800 rounded-full" />
                   {/* Leaf */}
@@ -203,6 +292,28 @@ export default function Game() {
                 </div>
               </motion.div>
             </div>
+
+            {/* Skill Particles */}
+            <AnimatePresence>
+              {state.skills.golden_harvest.isActive && particleOffsets.map((offset, i) => (
+                <motion.div
+                  key={`particle-${i}`}
+                  initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                  animate={{ 
+                    opacity: [0, 1, 0], 
+                    scale: [0, 1.5, 0],
+                    x: offset.x,
+                    y: offset.y
+                  }}
+                  transition={{ 
+                    duration: 1.5, 
+                    repeat: Infinity, 
+                    delay: offset.delay
+                  }}
+                  className="absolute top-1/2 left-1/2 w-3 h-3 bg-yellow-400 rounded-full z-30 shadow-lg"
+                />
+              ))}
+            </AnimatePresence>
 
             {/* Worms Visuals */}
             {Object.entries(state.worms).map(([id, count]) => {
@@ -231,18 +342,56 @@ export default function Game() {
           </div>
 
           {/* HP Bar */}
-          <div className="mt-12 w-full max-w-xs">
-            <div className="flex justify-between text-xs font-bold mb-1 uppercase tracking-tighter text-stone-500">
-              <span>HP</span>
-              <span>{Math.ceil(state.appleHP).toLocaleString()} / {state.maxAppleHP.toLocaleString()}</span>
+          <div className="mt-12 w-full max-w-xs flex flex-col gap-6">
+            <div>
+              <div className="flex justify-between text-xs font-bold mb-1 uppercase tracking-tighter text-stone-500">
+                <span>HP</span>
+                <span>{Math.ceil(state.appleHP).toLocaleString()} / {state.maxAppleHP.toLocaleString()}</span>
+              </div>
+              <div className="h-4 bg-stone-200 rounded-full overflow-hidden shadow-inner border border-stone-300">
+                <motion.div 
+                  className="h-full bg-gradient-to-r from-red-500 to-red-400"
+                  initial={false}
+                  animate={{ width: `${hpPercent}%` }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.2 }}
+                />
+              </div>
             </div>
-            <div className="h-4 bg-stone-200 rounded-full overflow-hidden shadow-inner border border-stone-300">
-              <motion.div 
-                className="h-full bg-gradient-to-r from-red-500 to-red-400"
-                initial={false}
-                animate={{ width: `${hpPercent}%` }}
-                transition={{ type: "spring", bounce: 0, duration: 0.2 }}
-              />
+
+            {/* Skill Button */}
+            <div className="flex justify-center">
+              <button
+                onClick={handleActivateSkill}
+                disabled={state.skills.golden_harvest.cooldownRemaining > 0 || state.skills.golden_harvest.isActive}
+                className={`group relative flex items-center gap-3 px-6 py-3 rounded-2xl font-bold transition-all overflow-hidden ${
+                  state.skills.golden_harvest.isActive
+                    ? 'bg-yellow-500 text-white skill-glow'
+                    : state.skills.golden_harvest.cooldownRemaining > 0
+                    ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                    : 'bg-white border-2 border-yellow-400 text-yellow-600 hover:bg-yellow-50 active:scale-95 shadow-lg shadow-yellow-100'
+                }`}
+              >
+                <Zap className={`w-5 h-5 ${state.skills.golden_harvest.isActive ? 'animate-bounce' : ''}`} />
+                <div className="flex flex-col items-start leading-none">
+                  <span className="text-sm">{t('skill_golden_harvest')}</span>
+                  <span className="text-[10px] opacity-70">
+                    {state.skills.golden_harvest.isActive 
+                      ? `${t('skill_active')}: ${Math.ceil(state.skills.golden_harvest.remainingDuration)}s`
+                      : state.skills.golden_harvest.cooldownRemaining > 0
+                      ? `${t('skill_cooldown')}: ${Math.ceil(state.skills.golden_harvest.cooldownRemaining)}s`
+                      : 'Ready!'}
+                  </span>
+                </div>
+                
+                {/* Cooldown Overlay */}
+                {state.skills.golden_harvest.cooldownRemaining > 0 && !state.skills.golden_harvest.isActive && (
+                  <motion.div 
+                    className="absolute inset-0 bg-black/5"
+                    initial={false}
+                    animate={{ height: `${(state.skills.golden_harvest.cooldownRemaining / 120) * 100}%` }}
+                  />
+                )}
+              </button>
             </div>
           </div>
 
@@ -290,18 +439,98 @@ export default function Game() {
 
           <div className="flex-1">
             <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4">{t('stats')}</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-stone-50 rounded-xl border border-stone-100">
-                <span className="text-xs text-stone-500">{t('stats_click_damage')}</span>
-                <span className="font-mono font-bold">{engine.getClickDamage().toFixed(1)}</span>
+            <div className="grid grid-cols-1 gap-3">
+              {/* Gold Card */}
+              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-yellow-200 transition-all group">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-50 rounded-xl group-hover:scale-110 transition-transform">
+                    <Coins className="w-4 h-4 text-yellow-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('gold')}</span>
+                    <span className="font-mono font-bold text-sm">{Math.floor(state.gold).toLocaleString()}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between items-center p-3 bg-stone-50 rounded-xl border border-stone-100">
-                <span className="text-xs text-stone-500">{t('stats_idle_dps')}</span>
-                <span className="font-mono font-bold">{engine.getTotalDPS().toFixed(1)}</span>
+
+              {/* Stage Card */}
+              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all group">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-50 rounded-xl group-hover:scale-110 transition-transform">
+                    <Trophy className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('stage')}</span>
+                    <span className="font-mono font-bold text-sm">{state.stage}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between items-center p-3 bg-stone-50 rounded-xl border border-stone-100">
-                <span className="text-xs text-stone-500">{t('total_eaten')}</span>
-                <span className="font-mono font-bold">{state.totalApplesEaten.toLocaleString()}</span>
+
+              {/* Click Damage Card */}
+              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-red-200 transition-all group">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-50 rounded-xl group-hover:scale-110 transition-transform">
+                    <MousePointer2 className="w-4 h-4 text-red-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('stats_click_damage')}</span>
+                    <span className="font-mono font-bold text-sm">{engine.getClickDamage().toFixed(1)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Idle DPS Card */}
+              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-50 rounded-xl group-hover:scale-110 transition-transform">
+                    <Sword className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('stats_idle_dps')}</span>
+                    <span className="font-mono font-bold text-sm">{engine.getTotalDPS().toFixed(1)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Worm Power Card */}
+              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-green-200 transition-all group">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-50 rounded-xl group-hover:scale-110 transition-transform">
+                    <Users className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Worm Power</span>
+                    <span className="font-mono font-bold text-sm">
+                      {Object.values(state.worms).reduce((a, b) => a + b, 0)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Gardeners Souls Card */}
+              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-purple-200 transition-all group">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-50 rounded-xl group-hover:scale-110 transition-transform">
+                    <Sparkles className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('souls')}</span>
+                    <span className="font-mono font-bold text-sm">{state.gardenersSouls}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* History Card */}
+              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-stone-200 transition-all group">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-stone-50 rounded-xl group-hover:scale-110 transition-transform">
+                    <History className="w-4 h-4 text-stone-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('total_eaten')}</span>
+                    <span className="font-mono font-bold text-sm">{state.totalApplesEaten.toLocaleString()}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

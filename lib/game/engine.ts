@@ -2,11 +2,13 @@ import { GameState, Language, WormUpgrade } from './types';
 import { INITIAL_STATE, WORM_UPGRADES } from './constants';
 import { AudioSystem } from './audio';
 import { LocalizationSystem } from './localization';
+import { SkillSystem } from './skills';
 
 export class GameEngine {
   private state: GameState;
   private audio: AudioSystem;
   private localization: LocalizationSystem;
+  private skills: SkillSystem;
   private lastTick: number = Date.now();
   private saveInterval: any;
 
@@ -14,6 +16,7 @@ export class GameEngine {
     this.state = this.loadGame();
     this.audio = new AudioSystem(this.state.settings.muted, this.state.settings.volume);
     this.localization = new LocalizationSystem(this.state.settings.language);
+    this.skills = new SkillSystem(this.state);
     
     this.calculateOfflineProgress();
     this.startAutoSave();
@@ -83,6 +86,8 @@ export class GameEngine {
     const deltaTime = (now - this.lastTick) / 1000;
     this.lastTick = now;
 
+    this.skills.update(deltaTime);
+
     const dps = this.getTotalDPS();
     if (dps > 0) {
       this.applyDamage(dps * deltaTime, false);
@@ -118,18 +123,28 @@ export class GameEngine {
   }
 
   public getClickDamage(): number {
+    const base = 1 * Math.pow(1.12, this.state.clickLevel);
     const soulBonus = 1 + (this.state.gardenersSouls * 0.1); // 10% per soul
-    return this.state.clickDamage * soulBonus;
+    const skillMultiplier = this.skills.getGoldMultiplierClick();
+    return base * soulBonus * skillMultiplier;
+  }
+
+  public getWormDPS(id: string): number {
+    const upgrade = WORM_UPGRADES.find(u => u.id === id);
+    if (!upgrade) return 0;
+    const count = this.state.worms[id] || 0;
+    if (count === 0) return 0;
+    return upgrade.baseDPS * Math.pow(upgrade.dpsGrowth, count - 1);
   }
 
   public getTotalDPS(): number {
     let dps = 0;
     WORM_UPGRADES.forEach(upgrade => {
-      const count = this.state.worms[upgrade.id] || 0;
-      dps += count * upgrade.baseDPS;
+      dps += this.getWormDPS(upgrade.id);
     });
     const soulBonus = 1 + (this.state.gardenersSouls * 0.1);
-    return dps * soulBonus;
+    const skillMultiplier = this.skills.getGoldMultiplierIdle();
+    return dps * soulBonus * skillMultiplier;
   }
 
   public getGoldMultiplier(): number {
@@ -153,8 +168,23 @@ export class GameEngine {
     const upgrade = WORM_UPGRADES.find(u => u.id === upgradeId);
     if (!upgrade) return 0;
     const count = this.state.worms[upgradeId] || 0;
-    // Cost increases by 15% per level
-    return Math.floor(upgrade.baseCost * Math.pow(1.15, count));
+    return Math.floor(upgrade.baseCost * Math.pow(upgrade.costGrowth, count));
+  }
+
+  public getClickUpgradeCost(): number {
+    return Math.floor(20 * Math.pow(1.15, this.state.clickLevel));
+  }
+
+  public buyClickUpgrade() {
+    const cost = this.getClickUpgradeCost();
+    if (this.state.gold >= cost) {
+      this.state.gold -= cost;
+      this.state.clickLevel++;
+      this.audio.playUpgrade();
+      this.saveGame();
+      return true;
+    }
+    return false;
   }
 
   public canAscend(): boolean {
@@ -177,6 +207,7 @@ export class GameEngine {
     this.state.stage = 1;
     this.state.appleHP = 50;
     this.state.maxAppleHP = 50;
+    this.state.clickLevel = 0;
     this.state.worms = { ...INITIAL_STATE.worms };
     
     this.audio.playAscension();
@@ -201,6 +232,13 @@ export class GameEngine {
     this.saveGame();
   }
 
+  public activateSkill(skillId: string) {
+    if (skillId === 'golden_harvest') {
+      this.skills.activateSkill(skillId, 20, 120);
+      this.audio.playUpgrade(); // Use upgrade sound for skill activation for now
+    }
+  }
+
   public getState(): GameState {
     return this.state;
   }
@@ -211,5 +249,9 @@ export class GameEngine {
 
   public getLocalization(): LocalizationSystem {
     return this.localization;
+  }
+
+  public getSkills(): SkillSystem {
+    return this.skills;
   }
 }

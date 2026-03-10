@@ -6,6 +6,7 @@ export const INITIAL_STATE = {
   appleHP: 50,
   maxAppleHP: 50,
   clickDamage: 1,
+  clickLevel: 0,
   totalClicks: 0,
   totalApplesEaten: 0,
   gardenersSouls: 0,
@@ -18,6 +19,13 @@ export const INITIAL_STATE = {
     queen_worm: 0,
     acid_worm: 0,
   },
+  skills: {
+    golden_harvest: {
+      isActive: false,
+      remainingDuration: 0,
+      cooldownRemaining: 0,
+    },
+  },
   settings: {
     language: 'en' as Language,
     muted: false,
@@ -26,12 +34,21 @@ export const INITIAL_STATE = {
 };
 
 export const WORM_UPGRADES: WormUpgrade[] = [
-  { id: 'small_worm', nameKey: 'upgrade_small_worm', baseCost: 15, baseDPS: 1, count: 0 },
-  { id: 'hungry_worm', nameKey: 'upgrade_hungry_worm', baseCost: 100, baseDPS: 5, count: 0 },
-  { id: 'fat_worm', nameKey: 'upgrade_fat_worm', baseCost: 1100, baseDPS: 25, count: 0 },
-  { id: 'queen_worm', nameKey: 'upgrade_queen_worm', baseCost: 12000, baseDPS: 150, count: 0 },
-  { id: 'acid_worm', nameKey: 'upgrade_acid_worm', baseCost: 130000, baseDPS: 1000, count: 0 },
+  { id: 'small_worm', nameKey: 'upgrade_small_worm', baseCost: 15, baseDPS: 1, costGrowth: 1.15, dpsGrowth: 1.15 },
+  { id: 'hungry_worm', nameKey: 'upgrade_hungry_worm', baseCost: 100, baseDPS: 5, costGrowth: 1.18, dpsGrowth: 1.18 },
+  { id: 'fat_worm', nameKey: 'upgrade_fat_worm', baseCost: 1100, baseDPS: 20, costGrowth: 1.22, dpsGrowth: 1.22 },
+  { id: 'queen_worm', nameKey: 'upgrade_queen_worm', baseCost: 12000, baseDPS: 100, costGrowth: 1.25, dpsGrowth: 1.25 },
+  { id: 'acid_worm', nameKey: 'upgrade_acid_worm', baseCost: 130000, baseDPS: 500, costGrowth: 1.30, dpsGrowth: 1.30 },
 ];
+
+export const CLICK_UPGRADE = {
+  id: 'click_power',
+  nameKey: 'upgrade_click_power',
+  baseCost: 20,
+  baseDamage: 1,
+  costGrowth: 1.15,
+  damageGrowth: 1.12
+};
 
 export const LOCALIZATION: LocalizationData = {
   game_title: {
@@ -76,13 +93,29 @@ export const LOCALIZATION: LocalizationData = {
     en: 'Acid Worm', zh: '酸性虫子', hi: 'एसिड कीड़ा', es: 'Gusano Ácido', fr: 'Ver Acide', ar: 'دودة حمضية', bn: 'অ্যাসিড পোকা', pt: 'Minhoca Ácida', ru: 'Кислотный червь', ur: 'تیزاب کیڑا',
     id: 'Cacing Asam', de: 'Säurewurm', ja: '酸の虫', sw: 'Minyoo ya Asidi', mr: 'ऍसिड कीडा', te: 'యాసిడ్ పురుగు', tr: 'Asit Solucanı', ta: 'அமில புழு', vi: 'Sâu axit', ko: '산성 벌레'
   },
+  upgrade_click_power: {
+    en: 'Click Power', zh: '点击力量', hi: 'क्लिक शक्ति', es: 'Poder de Clic', fr: 'Puissance de Clic', ar: 'قوة النقرة', bn: 'ক্লিক শক্তি', pt: 'Poder de Clique', ru: 'Сила клика', ur: 'کلک پاور',
+    id: 'Kekuatan Klik', de: 'Klick-Power', ja: 'クリックパワー', sw: 'Nguvu ya Kubofya', mr: 'क्लिक पॉवर', te: 'క్లిక్ పవర్', tr: 'Tıklama Gücü', ta: 'கிளிக் பவர்', vi: 'Sức mạnh click', ko: '클릭 파워'
+  },
   stats_click_damage: {
     en: 'Click Damage', zh: '点击伤害', hi: 'क्लिक क्षति', es: 'Daño por Clic', fr: 'Dégâts de Clic', ar: 'ضرر النقرة', bn: 'ক্লিক ক্ষতি', pt: 'Dano por Clique', ru: 'Урон от клика', ur: 'کلک نقصان',
     id: 'Kerusakan Klik', de: 'Klick-Schaden', ja: 'クリックダメージ', sw: 'Uharibifu wa Kubofya', mr: 'क्लिक डॅमेज', te: 'క్లిక్ డ్యామేజ్', tr: 'Tıklama Hasarı', ta: 'கிளிக் சேதம்', vi: 'Sát thương click', ko: '클릭 데미지'
   },
   stats_idle_dps: {
-    en: 'Idle DPS', zh: '挂机伤害', hi: 'आइडल डीपीएस', es: 'DPS Inactivo', fr: 'DPS Passif', ar: 'ضرر في الثانية', bn: 'আইডল ডিপিএস', pt: 'DPS Inativo', ru: 'Урон в секунду', ur: 'آئیڈل ڈی پی ایس',
+    en: 'Idle DPS', zh: '挂机伤害', hi: 'आइडल डीपीएस', es: 'DPS Inactivo', fr: 'DPS Passif', ar: 'ضرر في الثانية', bn: '아이들 ডিপিএস', pt: 'DPS Inativo', ru: 'Урон в секунду', ur: 'آئیڈل ڈی پی ایس',
     id: 'DPS Diam', de: 'Idle-DPS', ja: '放置DPS', sw: 'DPS ya Kutofanya Kitu', mr: 'आयडल डीपीएस', te: 'ఐడల్ డీపీఎస్', tr: 'Boşta HAS', ta: 'ஐடல் டிபிஎஸ்', vi: 'DPS nhàn rỗi', ko: '방치 DPS'
+  },
+  skill_golden_harvest: {
+    en: 'Golden Harvest', zh: '黄金收获', hi: 'सुनहरी फसल', es: 'Cosecha Dorada', fr: 'Récolte Dorée', ar: 'الحصاد الذهبي', bn: 'সোনালী ফসল', pt: 'Colheita Dourada', ru: 'Золотой урожай', ur: 'سنہری فصل',
+    id: 'Panen Emas', de: 'Goldene Ernte', ja: '黄金の収穫', sw: 'Mavuno ya Dhahabu', mr: 'सोनेरी कापणी', te: 'బంగారు పంట', tr: 'Altın Hasat', ta: 'தங்க அறுவடை', vi: 'Thu hoạch vàng', ko: '황금 수확'
+  },
+  skill_active: {
+    en: 'Active', zh: '激活', hi: 'सक्रिय', es: 'Activo', fr: 'Actif', ar: 'نشط', bn: 'সক্রিয়', pt: 'Ativo', ru: 'Активно', ur: 'فعال',
+    id: 'Aktif', de: 'Aktiv', ja: 'アクティブ', sw: 'Inafanya kazi', mr: 'सक्रिय', te: 'క్రియాశీల', tr: 'Aktif', ta: 'செயலில்', vi: 'Đang hoạt động', ko: '활성'
+  },
+  skill_cooldown: {
+    en: 'Cooldown', zh: '冷却', hi: 'कूलडाउन', es: 'Enfriamiento', fr: 'Recharge', ar: 'فترة الانتظار', bn: 'কুলডাউন', pt: 'Recarga', ru: 'Перезарядка', ur: 'کول ڈاؤن',
+    id: 'Pendinginan', de: 'Abklingzeit', ja: 'クールダウン', sw: 'Muda wa kusubiri', mr: 'कूलडाउन', te: 'కూల్‌డౌన్', tr: 'Bekleme Süresi', ta: 'குளிர்ச்சி', vi: 'Thời gian hồi', ko: '재사용 대기시간'
   },
   upgrades: {
     en: 'Upgrades', zh: '升级', hi: 'अपग्रेड', es: 'Mejoras', fr: 'Améliorations', ar: 'ترقيات', bn: 'আপগ্রেড', pt: 'Melhorias', ru: 'Улучшения', ur: 'اپ گریڈ',

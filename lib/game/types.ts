@@ -7,7 +7,14 @@ export interface WormUpgrade {
   nameKey: string;
   baseCost: number;
   baseDPS: number;
-  count: number;
+  costGrowth: number;
+  dpsGrowth: number;
+}
+
+export interface SkillState {
+  isActive: boolean;
+  remainingDuration: number;
+  cooldownRemaining: number;
 }
 
 export interface GameState {
@@ -16,6 +23,7 @@ export interface GameState {
   appleHP: number;
   maxAppleHP: number;
   clickDamage: number;
+  clickLevel: number;
   totalClicks: number;
   totalApplesEaten: number;
   gardenersSouls: number;
@@ -23,6 +31,9 @@ export interface GameState {
   lastSaveTimestamp: number;
   worms: {
     [key: string]: number;
+  };
+  skills: {
+    [key: string]: SkillState;
   };
   settings: {
     language: Language;

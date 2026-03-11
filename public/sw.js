@@ -1,7 +1,10 @@
 const CACHE_NAME = 'apple-clicker-v2';
 const ASSETS = [
   '/',
-  '/index.html'
+  '/assets/apples/red-delicious-apple-1.png',
+  '/assets/apples/red-delicious-apple-2.png',
+  '/assets/apples/red-delicious-apple-3.png',
+  '/assets/apples/red-delicious-apple-4.png'
 ];
 
 self.addEventListener('install', (event) => {

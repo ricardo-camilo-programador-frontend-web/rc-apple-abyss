@@ -179,13 +179,21 @@ export default function AppleVarietiesPage() {
               Play Game
             </Link>
             <a 
+              href="https://ricardo-camilo-dev-frontend-web.netlify.app/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-stone-500 hover:text-red-600 transition-colors font-medium"
+            >
+              Portfolio
+            </a>
+            <a 
               href="https://github.com/ricardo-camilo-programador-frontend-web" 
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-stone-500 hover:text-stone-900 transition-colors"
             >
               <Github className="w-5 h-5" />
-              <span>ricardo-camilo</span>
+              <span>GitHub</span>
             </a>
           </div>
         </div>

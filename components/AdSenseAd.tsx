@@ -23,9 +23,12 @@ export default function AdSenseAd({ slot, className = '', format = 'auto', respo
 
       // Check dimensions to ensure the ad has space
       const rect = containerRef.current.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) {
+      const insElement = containerRef.current.querySelector('ins');
+      const insRect = insElement ? insElement.getBoundingClientRect() : { width: 0, height: 0 };
+
+      if (rect.width === 0 || insRect.width === 0) {
         // Retry after a delay if dimensions are not yet available
-        setTimeout(loadAd, 1000);
+        setTimeout(loadAd, 500);
         return;
       }
 

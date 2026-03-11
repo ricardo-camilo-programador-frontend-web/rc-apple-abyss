@@ -612,30 +612,59 @@ export default function Game() {
       </div>
     </div>
 
+    {/* Mobile Bottom Navigation */}
+    <nav className="md:hidden bg-white border-t border-stone-200 flex justify-around p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
+      <button onClick={() => setShowUpgradesModal(true)} className="flex flex-col items-center gap-1 text-stone-500 hover:text-stone-900">
+        <TrendingUp className="w-6 h-6" />
+        <span className="text-[10px] font-bold uppercase">{t('upgrades')}</span>
+      </button>
+      <button onClick={() => setShowAscensionModal(true)} className="flex flex-col items-center gap-1 text-purple-500 hover:text-purple-700">
+        <Sparkles className="w-6 h-6" />
+        <span className="text-[10px] font-bold uppercase">{t('ascension')}</span>
+      </button>
+      <button onClick={() => setShowStatsPanelModal(true)} className="flex flex-col items-center gap-1 text-blue-500 hover:text-blue-700">
+        <BarChart2 className="w-6 h-6" />
+        <span className="text-[10px] font-bold uppercase">{t('stats')}</span>
+      </button>
+    </nav>
+
     {/* Bottom Bar */}
-    <footer className="bg-white border-t border-stone-200 p-3 flex justify-between items-center text-[10px] text-stone-400 z-10">
-        <div className="flex items-center gap-4">
-          <span>© 2026 Apple of the Infinite Abyss</span>
+    <footer className="bg-white border-t border-stone-200 p-4 md:p-3 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs text-stone-400 z-10 gap-4 md:gap-2">
+        <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
+          <span className="w-full md:w-auto text-center mb-1 md:mb-0">© 2026 Apple of the Infinite Abyss</span>
           <a 
             href="https://github.com/ricardo-camilo-programador-frontend-web" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="flex items-center gap-1 hover:text-stone-600 transition-colors"
+            className="flex items-center gap-1 hover:text-stone-600 transition-colors font-medium"
           >
-            <Github className="w-3 h-3" />
-            ricardo-camilo
+            <Github className="w-3 h-3 md:w-4 md:h-4" />
+            GitHub
           </a>
+          <span className="hidden md:inline text-stone-300">•</span>
+          <a 
+            href="https://ricardo-camilo-dev-frontend-web.netlify.app/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 hover:text-stone-600 transition-colors font-medium"
+          >
+            Portfolio
+          </a>
+          <span className="hidden md:inline text-stone-300">•</span>
+          <Link href="/privacy" className="hover:text-stone-600 transition-colors font-medium">Privacy Policy</Link>
+          <span className="hidden md:inline text-stone-300">•</span>
+          <Link href="/terms" className="hover:text-stone-600 transition-colors font-medium">Terms of Service</Link>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
           <Link 
             href="/apple-varieties" 
-            className="flex items-center gap-1 hover:text-stone-600 transition-colors"
+            className="flex items-center gap-1 hover:text-stone-600 transition-colors font-medium"
           >
-            <BookOpen className="w-3 h-3" />
+            <BookOpen className="w-3 h-3 md:w-4 md:h-4" />
             <span>{t('apple_guide_footer_link')}</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <Info className="w-3 h-3" />
+          <div className="flex items-center gap-1 font-medium">
+            <Info className="w-3 h-3 md:w-4 md:h-4" />
             <span>v1.0.0</span>
           </div>
         </div>
@@ -858,36 +887,6 @@ export default function Game() {
           </motion.div>
         ))}
       </AnimatePresence>
-
-      {/* Bottom Bar (Desktop) & Bottom Navigation (Mobile) */}
-      <footer className="bg-white border-t border-stone-200 z-10">
-        <div className="hidden md:flex p-3 justify-between items-center text-[10px] text-stone-400">
-          <div className="flex items-center gap-4">
-            <span>© 2026 Apple of the Infinite Abyss</span>
-            <Link href="/privacy" className="hover:text-stone-600 transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-stone-600 transition-colors">Terms of Service</Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>v1.0.0</span>
-          </div>
-        </div>
-
-        {/* Mobile Bottom Navigation */}
-        <nav className="md:hidden flex justify-around p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-          <button onClick={() => setShowUpgradesModal(true)} className="flex flex-col items-center gap-1 text-stone-500 hover:text-stone-900">
-            <TrendingUp className="w-6 h-6" />
-            <span className="text-[10px] font-bold uppercase">{t('upgrades')}</span>
-          </button>
-          <button onClick={() => setShowAscensionModal(true)} className="flex flex-col items-center gap-1 text-purple-500 hover:text-purple-700">
-            <Sparkles className="w-6 h-6" />
-            <span className="text-[10px] font-bold uppercase">{t('ascension')}</span>
-          </button>
-          <button onClick={() => setShowStatsPanelModal(true)} className="flex flex-col items-center gap-1 text-blue-500 hover:text-blue-700">
-            <BarChart2 className="w-6 h-6" />
-            <span className="text-[10px] font-bold uppercase">{t('stats')}</span>
-          </button>
-        </nav>
-      </footer>
 
       {/* Mobile Modals */}
       <Modal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} title={t('upgrades')}>

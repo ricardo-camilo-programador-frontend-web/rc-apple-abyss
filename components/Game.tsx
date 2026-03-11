@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { GameEngine } from '@/lib/game/engine';
 import { GameState, Language } from '@/lib/game/types';
 import { WORM_UPGRADES } from '@/lib/game/constants';
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
 import AdsterraAd from '@/components/AdsterraAd';
@@ -473,13 +472,12 @@ export default function Game() {
                         : ''
                     }`}
                   >
-                    <Image
+                    <img
                       src={appleSprite}
                       alt="Apple"
-                      fill
-                      sizes="(max-width: 768px) 240px, 288px"
-                      className="object-contain drop-shadow-2xl"
-                      priority
+                      className="absolute inset-0 w-full h-full object-contain drop-shadow-2xl"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </motion.div>
                 </AnimatePresence>

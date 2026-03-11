@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { 
@@ -96,12 +95,12 @@ export default function AppleVarietiesPage() {
           className="bg-white p-4 md:p-8 rounded-3xl shadow-xl border border-stone-200 overflow-hidden"
         >
           <div className="relative aspect-[1080/1350] w-full max-w-3xl mx-auto">
-            <Image 
+            <img 
               src="https://preview.redd.it/i-made-an-infographic-explaining-how-different-apple-v0-o2ypbjd9fru41.png?width=1080&crop=smart&auto=webp&s=97dfb851de6921382eaf504afd800897d8974a4a"
               alt="Apple Varieties Etymology Infographic"
-              fill
-              className="object-contain rounded-xl"
-              priority
+              className="absolute inset-0 w-full h-full object-contain rounded-xl"
+              loading="lazy"
+              decoding="async"
               referrerPolicy="no-referrer"
             />
           </div>

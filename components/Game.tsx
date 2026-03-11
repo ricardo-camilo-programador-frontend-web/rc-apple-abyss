@@ -679,7 +679,10 @@ export default function Game() {
       <div className="w-full h-[90px] bg-stone-200/50 flex items-center justify-center border-t border-stone-200">
         <AdSenseAd slot="horizontal-footer" format="auto" className="w-full h-full max-w-4xl" />
       </div>
-
+      
+      {/* Adsterra Banner - Below Footer */}
+      <AdsterraAd format={AdFormat.NATIVE_BANNER} className="w-full max-w-4xl mx-auto" />
+      
       {/* Help Modal */}
       <Modal isOpen={!!showHelp} onClose={() => setShowHelp(null)} title={showHelp?.title || ''}>
         <p className="text-stone-600 text-sm leading-relaxed">{showHelp?.content}</p>

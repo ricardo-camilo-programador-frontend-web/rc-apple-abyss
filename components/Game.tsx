@@ -37,10 +37,10 @@ import {
 
 const getAppleSprite = (currentHp: number, maxHp: number): string => {
   const percent = (currentHp / maxHp) * 100;
-  if (percent > 75) return '/assets/apples/red-delicious-apple-1.png';
-  if (percent > 50) return '/assets/apples/red-delicious-apple-2.png';
-  if (percent > 25) return '/assets/apples/red-delicious-apple-3.png';
-  return '/assets/apples/red-delicious-apple-4.png';
+  if (percent > 75) return '/assets/apples/red-delicious-apple-1.webp';
+  if (percent > 50) return '/assets/apples/red-delicious-apple-2.webp';
+  if (percent > 25) return '/assets/apples/red-delicious-apple-3.webp';
+  return '/assets/apples/red-delicious-apple-4.webp';
 };
 
 export default function Game() {

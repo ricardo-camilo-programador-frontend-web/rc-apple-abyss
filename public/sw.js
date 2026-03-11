@@ -6,10 +6,10 @@ const CORE_ASSETS = [
 ];
 
 const IMAGE_ASSETS = [
-  '/assets/apples/red-delicious-apple-1.png',
-  '/assets/apples/red-delicious-apple-2.png',
-  '/assets/apples/red-delicious-apple-3.png',
-  '/assets/apples/red-delicious-apple-4.png'
+  '/assets/apples/red-delicious-apple-1.webp',
+  '/assets/apples/red-delicious-apple-2.webp',
+  '/assets/apples/red-delicious-apple-3.webp',
+  '/assets/apples/red-delicious-apple-4.webp'
 ];
 
 self.addEventListener('install', (event) => {

@@ -8,6 +8,7 @@ interface AdsterraAdProps {
   className?: string;
   zoneId?: string; // Specific zone ID provided by Adsterra dashboard
   zoneScript?: string; // The full script URL from Adsterra dashboard
+  containerId?: string; // Specific container ID from Adsterra (for native banners)
 }
 
 export default function AdsterraAd({ format, className = '', zoneId, zoneScript }: AdsterraAdProps) {
@@ -26,18 +27,54 @@ export default function AdsterraAd({ format, className = '', zoneId, zoneScript 
         const zoneConfig = ADSTERRA_ZONE_IDS[format];
         const scriptUrl = zoneScript || zoneConfig?.scriptUrl || `//pl${process.env.NEXT_PUBLIC_ADSTERRA_PUBLISHER_ID || '5657606'}.highrevenuegate.com/invoke.js`;
         const actualZoneId = zoneId || zoneConfig?.zoneId || `native-${format}`;
+        const specificContainerId = containerId || zoneConfig?.containerId || actualZoneId;
+
+        // Set HPF options if available (High Performance Format)
+        if (zoneConfig?.hpfOptions && typeof (window as any).atOptions !== 'undefined') {
+          (window as any).atOptions = zoneConfig.hpfOptions;
+        }
+
+        // Direct link (Smartlink) - just create a link and trigger it
+        if (zoneConfig?.isDirectLink || format === AdFormat.SMARTLINK) {
+          const triggerSmartlink = () => {
+            const link = document.createElement('a') as HTMLAnchorElement;
+            link.href = scriptUrl;
+            link.target = '_blank';
+            link.rel = 'nofollow';
+            link.className = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => {
+              if (link.parentNode) {
+                document.body.removeChild(link);
+              }
+            }, 100);
+          };
+
+          if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            triggerSmartlink();
+          } else {
+            const handleLoad = () => {
+              triggerSmartlink();
+            };
+            window.addEventListener('DOMContentLoaded', handleLoad);
+            return () => window.removeEventListener('DOMContentLoaded', handleLoad);
+          }
+
+          const timer = setTimeout(() => setIsLoaded(true), 0);
+          return () => clearTimeout(timer);
+        }
 
         // Formats that don't need a specific container (injected into head/body)
         if (
-          format === AdFormat.POPUNDER || 
-          format === AdFormat.SOCIAL_BAR || 
-          format === AdFormat.INTERSTITIAL ||
-          format === AdFormat.SMARTLINK
+          format === AdFormat.POPUNDER ||
+          format === AdFormat.SOCIAL_BAR ||
+          format === AdFormat.INTERSTITIAL
         ) {
           loadAdsterra(scriptUrl);
         } else {
           // Banner formats that need to be injected into a specific container
-          loadAdsterra(scriptUrl, containerId);
+          loadAdsterra(scriptUrl, specificContainerId);
         }
 
         const timer = setTimeout(() => setIsLoaded(true), 0);
@@ -51,8 +88,8 @@ export default function AdsterraAd({ format, className = '', zoneId, zoneScript 
 
     // Use IntersectionObserver for lazy loading banner ads
     if (
-      format !== AdFormat.POPUNDER && 
-      format !== AdFormat.SOCIAL_BAR && 
+      format !== AdFormat.POPUNDER &&
+      format !== AdFormat.SOCIAL_BAR &&
       format !== AdFormat.INTERSTITIAL &&
       format !== AdFormat.SMARTLINK &&
       containerRef.current
@@ -70,7 +107,7 @@ export default function AdsterraAd({ format, className = '', zoneId, zoneScript 
         },
         { rootMargin: '200px' } // Load slightly before it comes into view
       );
-      
+
       observer.observe(containerRef.current);
       return () => observer.disconnect();
     } else {

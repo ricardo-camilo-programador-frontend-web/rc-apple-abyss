@@ -29,37 +29,53 @@ export enum AdFormat {
   INTERSTITIAL = 'interstitial'
 }
 
-export const ADSTERRA_ZONE_IDS: Record<AdFormat, { zoneId: string; scriptUrl: string }> = {
+export const ADSTERRA_ZONE_IDS: Record<AdFormat, { zoneId: string; scriptUrl: string; containerId?: string; hpfOptions?: { key: string; format: string; height: number; width: number; params: any }; isDirectLink?: boolean }> = {
   [AdFormat.POPUNDER]: {
     zoneId: 'Popunder_1',
-    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+    scriptUrl: '//pl28888622.effectivegatecpm.com/21/f5/0f/21f50f78781f624e643ea67ddad2c20e.js'
   },
   [AdFormat.SOCIAL_BAR]: {
     zoneId: 'SocialBar_1',
-    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+    scriptUrl: '//pl28896729.effectivegatecpm.com/b8/40/28/b84028a1e8cdd9aacf7f1bbf750d14ec.js'
   },
   [AdFormat.NATIVE_BANNER]: {
     zoneId: 'NativeBanner_1',
-    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+    scriptUrl: '//pl28896724.effectivegatecpm.com/bba0732b2443f2bde0056584260a85db/invoke.js',
+    containerId: 'container-bba0732b2443f2bde0056584260a85db'
   },
   [AdFormat.DISPLAY_BANNER_468x60]: {
     zoneId: '468x60_1',
-    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+    scriptUrl: '//www.highperformanceformat.com/e6f86c3f8f1bf5b544a0a68e968978ad/invoke.js',
+    hpfOptions: {
+      key: 'e6f86c3f8f1bf5b544a0a68e968978ad',
+      format: 'iframe',
+      height: 60,
+      width: 468,
+      params: {}
+    }
   },
   [AdFormat.DISPLAY_BANNER_160x300]: {
     zoneId: '160x300_1',
-    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+    scriptUrl: '//www.highperformanceformat.com/0a6274cc8a5e07d6492ff2804701356b/invoke.js',
+    hpfOptions: {
+      key: '0a6274cc8a5e07d6492ff2804701356b',
+      format: 'iframe',
+      height: 300,
+      width: 160,
+      params: {}
+    }
   },
   [AdFormat.SMARTLINK]: {
     zoneId: 'Smartlink_1',
-    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+    scriptUrl: 'https://www.effectivegatecpm.com/q9jhzr00dr?key=f1e2ae74db63e4987a929a82612cff9a',
+    isDirectLink: true
   },
   [AdFormat.DISPLAY_BANNER]: {
     zoneId: 'NativeBanner_1',
-    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+    scriptUrl: '//pl28896724.effectivegatecpm.com/bba0732b2443f2bde0056584260a85db/invoke.js'
   },
   [AdFormat.INTERSTITIAL]: {
-    zoneId: 'NativeBanner_1',
+    zoneId: 'Interstitial_1',
     scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
   }
 };

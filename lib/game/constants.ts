@@ -1,4 +1,20 @@
-import { Language, LocalizationData, WormUpgrade } from './types';
+import { Language, LocalizationData, WormUpgrade, LuckyWormsConfig, StatisticsData, HelpContent, HelpTopicId } from './types';
+
+ 
+export const LUCKY_WORMS_CONFIG: LuckyWormsConfig = {
+  goldBonusPerWorm: 0.05,
+  damageBonusPerWorm: 0.10,
+};
+
+export const INITIAL_STATISTICS: StatisticsData = {
+  totalClicks: 0,
+  totalApplesEaten: 0,
+  totalGoldEarned: 0,
+  highestStage: 1,
+  totalAscensions: 0,
+  luckyWormsCollected: 0,
+  goldenHarvestActivations: 0,
+}
 
 export const INITIAL_STATE = {
   gold: 0,
@@ -32,12 +48,59 @@ export const INITIAL_STATE = {
       cooldownRemaining: 0,
     },
   },
+  statistics: { ...INITIAL_STATISTICS },
   settings: {
     language: 'en' as Language,
     muted: false,
     volume: 0.5,
   },
-};
+}
+
+export const KAWAII_COLORS = {
+  primary: '#FFB6C1',
+  secondary: '#98D8C8',
+  accent: '#F7DC6F',
+  background: '#FFF5F5',
+  card: '#FFFFFF',
+  text: '#5D4E60',
+  gold: '#FFD700',
+  purple: '#DDA0DD',
+  success: '#90EE90',
+  danger: '#FF6B6B',
+}
+
+export const HELP_CONTENT: Record<HelpTopicId, HelpContent> = {
+  lucky_worms: {
+    titleKey: 'help_lucky_worms_title',
+    descriptionKey: 'help_lucky_worms_desc',
+    formula: 'Gold = Base × (1 + Lucky Worms × 0.05)'
+  },
+  golden_harvest: {
+    titleKey: 'help_golden_harvest_title',
+    descriptionKey: 'help_golden_harvest_desc',
+    formula: 'x5 Click Gold, x2.5 Idle Gold for 20s'
+  },
+  ascension: {
+    titleKey: 'help_ascension_title',
+    descriptionKey: 'help_ascension_desc',
+    formula: 'Lucky Worms = √-highestStage'
+  },
+  click_damage: {
+    titleKey: 'help_click_damage_title',
+    descriptionKey: 'help_click_damage_desc',
+    formula: 'Damage = 1 × 1.35^level × Bonuses'
+  },
+  idle_damage: {
+    titleKey: 'help_idle_damage_title',
+    descriptionKey: 'help_idle_damage_desc',
+    formula: 'DPS = Σ (wormDPS × Bonuses)'
+  },
+  worm_upgrades: {
+    titleKey: 'help_worm_upgrades_title',
+    descriptionKey: 'help_worm_upgrades_desc',
+    formula: 'Cost = baseCost × costGrowth^count'
+  }
+}
 
 export const WORM_UPGRADES: WormUpgrade[] = [
   { id: 'small_worm', nameKey: 'upgrade_small_worm', baseCost: 15, baseDPS: 1, costGrowth: 1.15, dpsGrowth: 1.18 },
@@ -59,7 +122,7 @@ export const CLICK_UPGRADE = {
   baseCost: 20,
   baseDamage: 1,
   costGrowth: 1.15,
-  damageGrowth: 1.15
+  damageGrowth: 1.35
 };
 
 export const LOCALIZATION: LocalizationData = {

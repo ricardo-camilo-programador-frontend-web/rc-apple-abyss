@@ -134,10 +134,28 @@ export class GameEngine {
     this.state.maxAppleHP = Math.floor(50 * Math.pow(1.5, this.state.stage - 1));
   }
 
-  public getClickDamage(): number {
-    const base = 1 * Math.pow(CLICK_UPGRADE.damageGrowth, this.state.clickLevel);
-    const skillMultiplier = this.skills.getGoldMultiplierClick();
-    return base * skillMultiplier;
+  public getGoldMultiplier(): number {
+    const base = 1 * Math.pow(CLickUpgrade.damageGrowth, this.state.clickLevel)
+    const luckyWormBonus = 1 + (this.state.luckyWorms * 0.1); // 10% per worm
+    return dps;
+  } * 0) return 0;
+  } else {
+      this.state.appleHP = 0) return 0
+      }
+      }
+      this.state.appleHP = 0) return 10;
+    }
+  } else {
+      damage *= 0
+      return base * 1 + 1.15
+  } else {
+      this.state.appleHP += damage;
+      this.state.gold += damage * this.getGoldMultiplier();
+    } else {
+      this.advanceStage();
+      this.state.appleHP = 0
+      this.state.maxAppleHP = 10
+    }
   }
 
   public getWormDPS(id: string): number {
@@ -153,8 +171,9 @@ export class GameEngine {
     WORM_UPGRADES.forEach(upgrade => {
       dps += this.getWormDPS(upgrade.id);
     });
+    const luckyWormBonus = 1 + (this.state.luckyWorms * 0.10);
     const skillMultiplier = this.skills.getGoldMultiplierIdle();
-    return dps * skillMultiplier;
+    return dps * luckyWormBonus * skillMultiplier;
   }
 
   public getGoldMultiplier(): number {

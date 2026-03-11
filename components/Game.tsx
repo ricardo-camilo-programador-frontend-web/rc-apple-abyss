@@ -60,6 +60,7 @@ export default function Game() {
   const [importError, setImportError] = useState('');
   const clickIdCounter = useRef(0);
   const lastClickUpgradeTime = useRef(0);
+  const [isShaking, setIsShaking] = useState(false);
   const [particleOffsets] = useState(() => 
     Array.from({ length: 10 }).map(() => ({
       x: (Math.random() - 0.5) * 300,
@@ -108,6 +109,10 @@ export default function Game() {
   const handleClick = (e: React.MouseEvent) => {
     engine.clickApple();
     const damage = engine.getClickDamage();
+    
+    // Trigger shake animation
+    setIsShaking(true);
+    setTimeout(() => setIsShaking(false), 150);
     
     // Add click effect
     const newEffect = {
@@ -450,16 +455,14 @@ export default function Game() {
               {/* Apple Sprite (CSS based for performance/simplicity) */}
               <motion.div 
                 animate={{ 
-                  scale: [1, 1.02, 1],
-                  rotate: [0, 1, -1, 0],
-                  y: [0, -8, 0]
+                  scale: [1, 1.01, 1],
                 }}
                 transition={{ 
-                  duration: 2, 
+                  duration: 0.15,
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
-                className="relative w-60 h-60 md:w-72 md:h-72 flex items-center justify-center"
+                className={`relative w-60 h-60 md:w-72 md:h-72 flex items-center justify-center ${isShaking ? 'shake-active' : ''}`}
               >
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -508,40 +511,6 @@ export default function Game() {
               ))}
             </AnimatePresence>
 
-            {/* Worms Visuals */}
-            {Object.entries(state.worms).map(([id, count], index) => {
-              if (count === 0) return null;
-              return Array.from({ length: Math.min(count, 5) }).map((_, i) => {
-                // Deterministic pseudo-random positions based on id and index
-                const topPos = 15 + ((index * 17 + i * 23) % 70);
-                const leftPos = 15 + ((index * 31 + i * 19) % 70);
-                
-                return (
-                  <motion.div
-                    key={`${id}-${i}`}
-                    animate={{
-                      y: [0, -6, 0],
-                      scaleY: [1, 0.85, 1.05, 1],
-                      rotate: [0, -3, 3, 0]
-                    }}
-                    transition={{
-                      duration: 1.2 + (i * 0.15),
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: i * 0.2
-                    }}
-                    className="absolute w-6 h-3 bg-emerald-400 rounded-full border-2 border-emerald-600 z-20 flex items-center justify-end px-1 shadow-sm"
-                    style={{
-                      top: `${topPos}%`,
-                      left: `${leftPos}%`,
-                    }}
-                  >
-                    {/* Cute little eye */}
-                    <div className="w-1 h-1 bg-emerald-900 rounded-full" />
-                  </motion.div>
-                );
-              });
-            })}
           </div>
 
           {/* HP Bar */}

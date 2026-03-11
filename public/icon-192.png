@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="appleGradient" cx="35%" cy="35%">
+      <stop offset="0%" style="stop-color:#ff6b6b"/>
+      <stop offset="100%" style="stop-color:#c0392b"/>
+    </radialGradient>
+  </defs>
+  
+  <rect width="512" height="512" rx="128" fill="white"/>
+  
+  <g transform="translate(256 256)">
+    <!-- Apple Body -->
+    <path d="M 0 -160
+             C -80 -160, -160 -80, -160 0
+             C -160 80, -80 160, 0 160
+             C 80 160, 160 80, 160 0
+             C 160 -80, 80 -160, 0 -160" 
+          fill="url(#appleGradient)" transform="scale(1.5)"/>
+    
+    <!-- Apple Indentation -->
+    <path d="M -20 -40 C 20 -40, 40 -20, 0 -80 C -40 -20, -20 -40" 
+          fill="#a02020" opacity="0.3" transform="scale(1.5)"/>
+    
+    <!-- Apple Leaf -->
+    <path d="M 0 -160 C 20 -180, 40 -180, 40 -160 C 40 -140, 20 -160, 0 -160" 
+          fill="#4ade80" transform="scale(1.5)"/>
+    
+    <!-- Stem -->
+    <rect x="-10" y="-185" width="20" height="30" rx="10" 
+             fill="#8b4513" transform="scale(1.5)"/>
+    
+    <!-- Highlight -->
+    <ellipse cx="-40" cy="-20" rx="60" ry="90" 
+               fill="white" opacity="0.15" transform="rotate(-20) scale(1.5)"/>
+  </g>
+</svg>

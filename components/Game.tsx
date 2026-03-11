@@ -457,7 +457,7 @@ export default function Game() {
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
-                className="relative w-40 h-40 md:w-48 md:h-48 flex items-center justify-center"
+                className="relative w-60 h-60 md:w-72 md:h-72 flex items-center justify-center"
               >
                 <AnimatePresence mode="wait">
                   <motion.img

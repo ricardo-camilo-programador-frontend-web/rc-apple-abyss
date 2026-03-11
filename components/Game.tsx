@@ -35,6 +35,14 @@ import {
   BarChart2
 } from 'lucide-react';
 
+const getAppleSprite = (currentHp: number, maxHp: number): string => {
+  const percent = (currentHp / maxHp) * 100;
+  if (percent > 75) return '/assets/apples/red-delicious-apple-1.png';
+  if (percent > 50) return '/assets/apples/red-delicious-apple-2.png';
+  if (percent > 25) return '/assets/apples/red-delicious-apple-3.png';
+  return '/assets/apples/red-delicious-apple-4.png';
+};
+
 export default function Game() {
   const [engine] = useState(() => new GameEngine());
   const [state, setState] = useState(() => engine.getState());
@@ -385,7 +393,7 @@ export default function Game() {
 
   // Calculate apple visual state
   const hpPercent = (state.appleHP / state.maxAppleHP) * 100;
-  const biteCount = Math.floor((100 - hpPercent) / 20); // 5 stages of bites
+  const appleSprite = getAppleSprite(state.appleHP, state.maxAppleHP);
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-100 overflow-hidden select-none">
@@ -449,39 +457,25 @@ export default function Game() {
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
-                className="relative w-40 h-40 md:w-48 md:h-48"
+                className="relative w-40 h-40 md:w-48 md:h-48 flex items-center justify-center"
               >
-                {/* Apple Body */}
-                <div className={`absolute inset-0 rounded-[40%] shadow-lg transition-colors duration-300 ${state.skills.golden_harvest.isActive ? 'bg-yellow-500' : 'bg-red-500'}`}>
-                  {/* Stem */}
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-2 h-6 bg-amber-800 rounded-full" />
-                  {/* Leaf */}
-                  <div className="absolute -top-6 left-1/2 w-8 h-4 bg-green-500 rounded-full origin-left rotate-[-30deg]" />
-                  
-                  {/* Cute Face */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 opacity-80">
-                    <div className="flex gap-6 mb-1">
-                      <div className="w-2 h-3 bg-stone-800 rounded-full" />
-                      <div className="w-2 h-3 bg-stone-800 rounded-full" />
-                    </div>
-                    <div className="w-4 h-2 border-b-2 border-stone-800 rounded-full" />
-                  </div>
-                  
-                  {/* Bite Marks */}
-                  {Array.from({ length: biteCount }).map((_, i) => (
-                    <div 
-                      key={i}
-                      className="absolute bg-stone-100 rounded-full"
-                      style={{
-                        width: '30%',
-                        height: '30%',
-                        top: `${20 + (i * 15)}%`,
-                        right: i % 2 === 0 ? '-10%' : 'auto',
-                        left: i % 2 !== 0 ? '-10%' : 'auto',
-                      }}
-                    />
-                  ))}
-                </div>
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={appleSprite}
+                    src={appleSprite}
+                    alt="Apple"
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 1.1, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className={`w-full h-full object-contain drop-shadow-2xl transition-all duration-300 ${
+                      state.skills.golden_harvest.isActive 
+                        ? 'brightness-110 saturate-150 sepia-[0.3] hue-rotate-[40deg] drop-shadow-[0_0_15px_rgba(234,179,8,0.6)]' 
+                        : ''
+                    }`}
+                    referrerPolicy="no-referrer"
+                  />
+                </AnimatePresence>
               </motion.div>
             </div>
 

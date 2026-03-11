@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
 import AdsterraAd from '@/components/AdsterraAd';
 import AdSenseAd from '@/components/AdSenseAd';
+import Modal from '@/components/Modal';
 import { AdFormat } from '@/lib/ads/adsterra';
 import { 
   Coins, 
@@ -37,6 +38,9 @@ export default function Game() {
   const [state, setState] = useState(() => engine.getState());
   const [isMounted, setIsMounted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSkills, setShowSkills] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [showHelp, setShowHelp] = useState<{ title: string, content: string } | null>(null);
   const [offlineResult, setOfflineResult] = useState<{ apples: number, gold: number } | null>(() => (state as any).lastOfflineResult || null);
   const [clickEffects, setClickEffects] = useState<{ id: number, x: number, y: number, value: number }[]>([]);
   const [importString, setImportString] = useState('');
@@ -184,7 +188,7 @@ export default function Game() {
 
       {/* Top Bar */}
       <header className="bg-white border-b border-stone-200 p-4 flex justify-between items-center shadow-sm z-10">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Coins className="text-yellow-500 w-5 h-5" />
             <span className="font-mono font-bold text-lg">{Math.floor(state.gold).toLocaleString()}</span>
@@ -195,16 +199,15 @@ export default function Game() {
           </div>
           <div className="flex items-center gap-2">
             <Sparkles className="text-purple-500 w-5 h-5" />
-            <span className="font-bold">{t('souls')}: {state.gardenersSouls}</span>
+            <span className="font-bold cursor-help" onClick={() => setShowHelp({ title: 'Lucky Worms', content: 'Lucky Worms increase your gold income! Formula: 1 + (Lucky Worms * 0.05)' })}>
+              🐛 {state.luckyWorms} (+{Math.floor(state.luckyWorms * 5)}%)
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button 
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 hover:bg-stone-100 rounded-full transition-colors"
-          >
-            <Settings className="w-5 h-5 text-stone-600" />
-          </button>
+          <button onClick={() => setShowStats(true)} className="p-2 hover:bg-stone-100 rounded-full transition-colors"><History className="w-5 h-5 text-stone-600" /></button>
+          <button onClick={() => setShowSkills(true)} className="p-2 hover:bg-stone-100 rounded-full transition-colors"><Zap className="w-5 h-5 text-stone-600" /></button>
+          <button onClick={() => setShowSettings(true)} className="p-2 hover:bg-stone-100 rounded-full transition-colors"><Settings className="w-5 h-5 text-stone-600" /></button>
         </div>
       </header>
 
@@ -610,6 +613,40 @@ export default function Game() {
       <div className="w-full h-[90px] bg-stone-200/50 flex items-center justify-center border-t border-stone-200">
         <AdSenseAd slot="horizontal-footer" format="auto" className="w-full h-full max-w-4xl" />
       </div>
+
+      {/* Help Modal */}
+      <Modal isOpen={!!showHelp} onClose={() => setShowHelp(null)} title={showHelp?.title || ''}>
+        <p className="text-stone-600 text-sm leading-relaxed">{showHelp?.content}</p>
+      </Modal>
+
+      {/* Skills Modal */}
+      <Modal isOpen={showSkills} onClose={() => setShowSkills(false)} title={t('skills')}>
+        <div className="space-y-4">
+          <button 
+            onClick={() => { engine.activateSkill('golden_harvest'); setShowSkills(false); }}
+            className="w-full p-4 bg-yellow-100 border-2 border-yellow-300 rounded-2xl flex items-center justify-between hover:bg-yellow-200 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-6 h-6 text-yellow-600" />
+              <div className="text-left">
+                <div className="font-bold text-yellow-900">Golden Harvest</div>
+                <div className="text-xs text-yellow-700">x5 Click, x2.5 Idle</div>
+              </div>
+            </div>
+            <div className="text-xs font-bold bg-yellow-200 px-2 py-1 rounded-full">Active</div>
+          </button>
+        </div>
+      </Modal>
+
+      {/* Stats Modal */}
+      <Modal isOpen={showStats} onClose={() => setShowStats(false)} title={t('statistics')}>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between"><span>Total Clicks:</span> <span className="font-mono font-bold">{state.totalClicks}</span></div>
+          <div className="flex justify-between"><span>Apples Eaten:</span> <span className="font-mono font-bold">{state.totalApplesEaten}</span></div>
+          <div className="flex justify-between"><span>Lucky Worms:</span> <span className="font-mono font-bold">{state.luckyWorms}</span></div>
+          <div className="flex justify-between"><span>Gold Bonus:</span> <span className="font-mono font-bold">+{Math.floor(state.luckyWorms * 5)}%</span></div>
+        </div>
+      </Modal>
 
       {/* Settings Modal */}
       <AnimatePresence>

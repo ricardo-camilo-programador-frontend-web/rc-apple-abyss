@@ -26,7 +26,7 @@ export interface GameState {
   clickLevel: number;
   totalClicks: number;
   totalApplesEaten: number;
-  gardenersSouls: number;
+  luckyWorms: number;
   highestStage: number;
   lastSaveTimestamp: number;
   worms: {

@@ -19,6 +19,16 @@ export default function AdSenseAd({ slot, className = '', format = 'auto', respo
     if (typeof window === 'undefined' || isLoaded.current) return;
 
     const loadAd = () => {
+      if (!containerRef.current) return;
+
+      // Check dimensions to ensure the ad has space
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        // Retry after a delay if dimensions are not yet available
+        setTimeout(loadAd, 1000);
+        return;
+      }
+
       try {
         // @ts-ignore
         (window.adsbygoogle = window.adsbygoogle || []).push({});

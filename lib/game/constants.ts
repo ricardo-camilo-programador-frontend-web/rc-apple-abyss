@@ -9,7 +9,7 @@ export const INITIAL_STATE = {
   clickLevel: 0,
   totalClicks: 0,
   totalApplesEaten: 0,
-  gardenersSouls: 0,
+  luckyWorms: 0,
   highestStage: 1,
   lastSaveTimestamp: Date.now(),
   worms: {

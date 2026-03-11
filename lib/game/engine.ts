@@ -136,9 +136,8 @@ export class GameEngine {
 
   public getClickDamage(): number {
     const base = 1 * Math.pow(CLICK_UPGRADE.damageGrowth, this.state.clickLevel);
-    const soulBonus = 1 + (this.state.luckyWorms * 0.1); // 10% per soul
     const skillMultiplier = this.skills.getGoldMultiplierClick();
-    return base * soulBonus * skillMultiplier;
+    return base * skillMultiplier;
   }
 
   public getWormDPS(id: string): number {
@@ -154,13 +153,12 @@ export class GameEngine {
     WORM_UPGRADES.forEach(upgrade => {
       dps += this.getWormDPS(upgrade.id);
     });
-    const soulBonus = 1 + (this.state.luckyWorms * 0.1);
     const skillMultiplier = this.skills.getGoldMultiplierIdle();
-    return dps * soulBonus * skillMultiplier;
+    return dps * skillMultiplier;
   }
 
   public getGoldMultiplier(): number {
-    return 1 + (this.state.luckyWorms * 0.05); // 5% per soul
+    return 1 + (this.state.luckyWorms * 0.05);
   }
 
   public buyUpgrade(upgradeId: string) {
@@ -203,7 +201,7 @@ export class GameEngine {
     return this.state.stage >= 50;
   }
 
-  public getPendingSouls(): number {
+  public getPendingLuckyWorms(): number {
     if (this.state.stage < 50) return 0;
     return Math.floor(Math.sqrt(this.state.highestStage));
   }
@@ -211,8 +209,8 @@ export class GameEngine {
   public ascend() {
     if (!this.canAscend()) return;
 
-    const souls = this.getPendingSouls();
-    this.state.luckyWorms += souls;
+    const worms = this.getPendingLuckyWorms();
+    this.state.luckyWorms += worms;
     
     // Reset progress
     this.state.gold = 0;

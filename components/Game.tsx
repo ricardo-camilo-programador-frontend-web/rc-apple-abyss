@@ -30,7 +30,9 @@ import {
   History,
   Download,
   Upload,
-  RefreshCw
+  RefreshCw,
+  TrendingUp,
+  BarChart2
 } from 'lucide-react';
 
 export default function Game() {
@@ -40,6 +42,9 @@ export default function Game() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSkills, setShowSkills] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [showUpgradesModal, setShowUpgradesModal] = useState(false);
+  const [showAscensionModal, setShowAscensionModal] = useState(false);
+  const [showStatsPanelModal, setShowStatsPanelModal] = useState(false);
   const [showHelp, setShowHelp] = useState<{ title: string, content: string } | null>(null);
   const [offlineResult, setOfflineResult] = useState<{ apples: number, gold: number } | null>(() => (state as any).lastOfflineResult || null);
   const [clickEffects, setClickEffects] = useState<{ id: number, x: number, y: number, value: number }[]>([]);
@@ -176,6 +181,208 @@ export default function Game() {
     }
   };
 
+  const renderUpgradesContent = () => (
+    <>
+      {/* Click Power Upgrade */}
+      <motion.button
+        key={`click-power-${state.clickLevel}`}
+        onClick={handleBuyClickUpgrade}
+        disabled={state.gold < engine.getClickUpgradeCost()}
+        initial={false}
+        animate={{ scale: [1, 1.02, 1] }}
+        className={`group relative flex flex-col p-3 rounded-xl border-2 transition-all text-left mb-2 ${
+          state.gold >= engine.getClickUpgradeCost()
+            ? 'border-yellow-200 hover:border-yellow-400 bg-yellow-50/30 active:scale-95' 
+            : 'border-stone-100 bg-stone-50 opacity-60 cursor-not-allowed'
+        }`}
+      >
+        <div className="flex justify-between items-start mb-1">
+          <span className="font-bold text-sm flex items-center gap-2">
+            <MousePointer2 className="w-4 h-4 text-yellow-600" />
+            {t('upgrade_click_power')}
+          </span>
+          <span className="text-xs font-mono bg-white px-1.5 py-0.5 rounded border border-yellow-100">Lv.{state.clickLevel}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-1 text-yellow-600 font-mono text-sm font-bold">
+            <Coins className="w-3 h-3" />
+            {Math.floor(engine.getClickUpgradeCost()).toLocaleString()}
+          </div>
+          <div className="flex flex-col items-end">
+            <div className="text-[10px] text-stone-500">Dmg: {engine.getClickDamage().toFixed(1)}</div>
+            <div className="text-[8px] text-stone-400">Next: {(engine.getClickDamage() * 1.15).toFixed(1)}</div>
+          </div>
+        </div>
+        <div className="absolute bottom-1 right-1 text-[8px] text-stone-300 font-bold uppercase">[C]</div>
+      </motion.button>
+
+      <div className="h-px bg-stone-100 my-1" />
+
+      {WORM_UPGRADES.map(upgrade => {
+        const cost = engine.getUpgradeCost(upgrade.id);
+        const canAfford = state.gold >= cost;
+        const count = state.worms[upgrade.id] || 0;
+        const currentDPS = engine.getWormDPS(upgrade.id);
+        const nextDPS = count === 0 ? upgrade.baseDPS : currentDPS * upgrade.dpsGrowth;
+
+        return (
+          <motion.button
+            key={`${upgrade.id}-${count}`}
+            onClick={() => handleBuyUpgrade(upgrade.id)}
+            disabled={!canAfford}
+            initial={false}
+            animate={{ scale: [1, 1.02, 1] }}
+            className={`group relative flex flex-col p-3 rounded-xl border-2 transition-all text-left ${
+              canAfford 
+                ? 'border-stone-200 hover:border-red-400 bg-white active:scale-95' 
+                : 'border-stone-100 bg-stone-50 opacity-60 cursor-not-allowed'
+            }`}
+          >
+            <div className="flex justify-between items-start mb-1">
+              <span className="font-bold text-sm">{t(upgrade.nameKey)}</span>
+              <span className="text-xs font-mono bg-stone-100 px-1.5 py-0.5 rounded">Lv.{count}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-1 text-yellow-600 font-mono text-sm font-bold">
+                <Coins className="w-3 h-3" />
+                {Math.floor(cost).toLocaleString()}
+              </div>
+              <div className="flex flex-col items-end">
+                <div className="text-[10px] text-stone-500">DPS: {currentDPS.toFixed(1)}</div>
+                <div className="text-[8px] text-stone-400">Next: {nextDPS.toFixed(1)}</div>
+              </div>
+            </div>
+          </motion.button>
+        );
+      })}
+    </>
+  );
+
+  const renderAscensionContent = () => (
+    <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 flex flex-col gap-3">
+      <div className="flex items-center gap-2 text-purple-700 font-bold">
+        <Sparkles className="w-4 h-4" />
+        <span>Pending Lucky Worms: {engine.getPendingLuckyWorms()}</span>
+      </div>
+      <p className="text-[10px] text-purple-600 leading-relaxed">
+        Ascending resets your progress but grants Lucky Worms. Each Lucky Worm increases your gold earnings by 5%.
+      </p>
+      <button
+        onClick={handleAscend}
+        disabled={!engine.canAscend()}
+        className={`w-full py-2 rounded-xl font-bold text-sm transition-all ${
+          engine.canAscend()
+            ? 'bg-purple-600 text-white hover:bg-purple-700 active:scale-95 shadow-lg shadow-purple-200'
+            : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+        }`}
+      >
+        {t('ascend')}
+      </button>
+      {!engine.canAscend() && (
+        <div className="text-[10px] text-center text-stone-400">
+          {t('ascend_requirement') || 'Reach stage 50 to ascend'}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderStatsPanelContent = () => (
+    <div className="grid grid-cols-1 gap-3">
+      {/* Gold Card */}
+      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-yellow-200 transition-all group">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-yellow-50 rounded-xl group-hover:scale-110 transition-transform">
+            <Coins className="w-4 h-4 text-yellow-600" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('gold')}</span>
+            <span className="font-mono font-bold text-sm">{Math.floor(state.gold).toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stage Card */}
+      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all group">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-orange-50 rounded-xl group-hover:scale-110 transition-transform">
+            <Trophy className="w-4 h-4 text-orange-600" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('stage')}</span>
+            <span className="font-mono font-bold text-sm">{state.stage}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Click Damage Card */}
+      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-red-200 transition-all group">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-red-50 rounded-xl group-hover:scale-110 transition-transform">
+            <MousePointer2 className="w-4 h-4 text-red-600" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('stats_click_damage')}</span>
+            <span className="font-mono font-bold text-sm">{engine.getClickDamage().toFixed(1)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Idle DPS Card */}
+      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-50 rounded-xl group-hover:scale-110 transition-transform">
+            <Sword className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('stats_idle_dps')}</span>
+            <span className="font-mono font-bold text-sm">{engine.getTotalDPS().toFixed(1)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Worm Power Card */}
+      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-green-200 transition-all group">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-green-50 rounded-xl group-hover:scale-110 transition-transform">
+            <Users className="w-4 h-4 text-green-600" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Worm Power</span>
+            <span className="font-mono font-bold text-sm">
+              {Object.values(state.worms).reduce((a, b) => a + b, 0)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Lucky Worms Card */}
+      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-purple-200 transition-all group">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-purple-50 rounded-xl group-hover:scale-110 transition-transform">
+            <Sparkles className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Lucky Worms</span>
+            <span className="font-mono font-bold text-sm">{state.luckyWorms}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* History Card */}
+      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-stone-200 transition-all group">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-stone-50 rounded-xl group-hover:scale-110 transition-transform">
+            <History className="w-4 h-4 text-stone-600" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('total_eaten')}</span>
+            <span className="font-mono font-bold text-sm">{state.totalApplesEaten.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   // Calculate apple visual state
   const hpPercent = (state.appleHP / state.maxAppleHP) * 100;
   const biteCount = Math.floor((100 - hpPercent) / 20); // 5 stages of bites
@@ -187,27 +394,27 @@ export default function Game() {
       <AdsterraAd format={AdFormat.SOCIAL_BAR} />
 
       {/* Top Bar */}
-      <header className="bg-white border-b border-stone-200 p-4 flex justify-between items-center shadow-sm z-10">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Coins className="text-yellow-500 w-5 h-5" />
-            <span className="font-mono font-bold text-lg">{Math.floor(state.gold).toLocaleString()}</span>
+      <header className="bg-white border-b border-stone-200 p-2 md:p-4 flex justify-between items-center shadow-sm z-10 flex-wrap gap-2">
+        <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+          <div className="flex items-center gap-1 md:gap-2">
+            <Coins className="text-yellow-500 w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-mono font-bold text-base md:text-lg">{Math.floor(state.gold).toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Trophy className="text-orange-500 w-5 h-5" />
-            <span className="font-bold">{t('stage')}: {state.stage}</span>
+          <div className="flex items-center gap-1 md:gap-2">
+            <Trophy className="text-orange-500 w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-bold text-sm md:text-base">{t('stage')}: {state.stage}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Sparkles className="text-purple-500 w-5 h-5" />
-            <span className="font-bold cursor-help" onClick={() => setShowHelp({ title: 'Lucky Worms', content: 'Lucky Worms increase your gold income! Formula: 1 + (Lucky Worms * 0.05)' })}>
-              🐛 {state.luckyWorms} (+{Math.floor(state.luckyWorms * 5)}%)
+          <div className="flex items-center gap-1 md:gap-2">
+            <Sparkles className="text-purple-500 w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-bold text-sm md:text-base cursor-help" onClick={() => setShowHelp({ title: 'Lucky Worms', content: 'Lucky Worms increase your gold income! Formula: 1 + (Lucky Worms * 0.05)' })}>
+              🐛 {state.luckyWorms} <span className="hidden sm:inline">(+{Math.floor(state.luckyWorms * 5)}%)</span>
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowStats(true)} className="p-2 hover:bg-stone-100 rounded-full transition-colors"><History className="w-5 h-5 text-stone-600" /></button>
-          <button onClick={() => setShowSkills(true)} className="p-2 hover:bg-stone-100 rounded-full transition-colors"><Zap className="w-5 h-5 text-stone-600" /></button>
-          <button onClick={() => setShowSettings(true)} className="p-2 hover:bg-stone-100 rounded-full transition-colors"><Settings className="w-5 h-5 text-stone-600" /></button>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setShowStats(true)} className="p-1 md:p-2 hover:bg-stone-100 rounded-full transition-colors"><History className="w-4 h-4 md:w-5 md:h-5 text-stone-600" /></button>
+          <button onClick={() => setShowSkills(true)} className="p-1 md:p-2 hover:bg-stone-100 rounded-full transition-colors"><Zap className="w-4 h-4 md:w-5 md:h-5 text-stone-600" /></button>
+          <button onClick={() => setShowSettings(true)} className="p-1 md:p-2 hover:bg-stone-100 rounded-full transition-colors"><Settings className="w-4 h-4 md:w-5 md:h-5 text-stone-600" /></button>
         </div>
       </header>
 
@@ -218,85 +425,13 @@ export default function Game() {
         </div>
 
         <main className="flex-1 flex flex-col md:flex-row relative overflow-y-auto">
-          {/* Left Panel: Upgrades */}
-          <aside className="w-full md:w-72 bg-white border-r border-stone-200 overflow-y-auto p-4 flex flex-col gap-3">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">{t('upgrades')}</h2>
-          
-          {/* Click Power Upgrade */}
-          <motion.button
-            key={`click-power-${state.clickLevel}`}
-            onClick={handleBuyClickUpgrade}
-            disabled={state.gold < engine.getClickUpgradeCost()}
-            initial={false}
-            animate={{ scale: [1, 1.02, 1] }}
-            className={`group relative flex flex-col p-3 rounded-xl border-2 transition-all text-left mb-2 ${
-              state.gold >= engine.getClickUpgradeCost()
-                ? 'border-yellow-200 hover:border-yellow-400 bg-yellow-50/30 active:scale-95' 
-                : 'border-stone-100 bg-stone-50 opacity-60 cursor-not-allowed'
-            }`}
-          >
-            <div className="flex justify-between items-start mb-1">
-              <span className="font-bold text-sm flex items-center gap-2">
-                <MousePointer2 className="w-4 h-4 text-yellow-600" />
-                {t('upgrade_click_power')}
-              </span>
-              <span className="text-xs font-mono bg-white px-1.5 py-0.5 rounded border border-yellow-100">Lv.{state.clickLevel}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-1 text-yellow-600 font-mono text-sm font-bold">
-                <Coins className="w-3 h-3" />
-                {Math.floor(engine.getClickUpgradeCost()).toLocaleString()}
-              </div>
-              <div className="flex flex-col items-end">
-                <div className="text-[10px] text-stone-500">Dmg: {engine.getClickDamage().toFixed(1)}</div>
-                <div className="text-[8px] text-stone-400">Next: {(engine.getClickDamage() * 1.12).toFixed(1)}</div>
-              </div>
-            </div>
-            <div className="absolute bottom-1 right-1 text-[8px] text-stone-300 font-bold uppercase">[C]</div>
-          </motion.button>
+          {/* Left Panel: Upgrades (Desktop) */}
+          <aside className="hidden md:flex w-72 bg-white border-r border-stone-200 overflow-y-auto p-4 flex-col gap-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">{t('upgrades')}</h2>
+            {renderUpgradesContent()}
+          </aside>
 
-          <div className="h-px bg-stone-100 my-1" />
-
-          {WORM_UPGRADES.map(upgrade => {
-            const cost = engine.getUpgradeCost(upgrade.id);
-            const canAfford = state.gold >= cost;
-            const count = state.worms[upgrade.id] || 0;
-            const currentDPS = engine.getWormDPS(upgrade.id);
-            const nextDPS = count === 0 ? upgrade.baseDPS : currentDPS * upgrade.dpsGrowth;
-
-            return (
-              <motion.button
-                key={`${upgrade.id}-${count}`}
-                onClick={() => handleBuyUpgrade(upgrade.id)}
-                disabled={!canAfford}
-                initial={false}
-                animate={{ scale: [1, 1.02, 1] }}
-                className={`group relative flex flex-col p-3 rounded-xl border-2 transition-all text-left ${
-                  canAfford 
-                    ? 'border-stone-200 hover:border-red-400 bg-white active:scale-95' 
-                    : 'border-stone-100 bg-stone-50 opacity-60 cursor-not-allowed'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <span className="font-bold text-sm">{t(upgrade.nameKey)}</span>
-                  <span className="text-xs font-mono bg-stone-100 px-1.5 py-0.5 rounded">Lv.{count}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1 text-yellow-600 font-mono text-sm font-bold">
-                    <Coins className="w-3 h-3" />
-                    {Math.floor(cost).toLocaleString()}
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <div className="text-[10px] text-stone-500">DPS: {currentDPS.toFixed(1)}</div>
-                    <div className="text-[8px] text-stone-400">Next: {nextDPS.toFixed(1)}</div>
-                  </div>
-                </div>
-              </motion.button>
-            );
-          })}
-        </aside>
-
-        {/* Center: Game Plate */}
+          {/* Center: Game Plate */}
         <section className="flex-1 flex flex-col items-center justify-start p-8 relative min-h-[500px]">
           {/* Apple & Plate */}
           <div className="relative group cursor-pointer" onClick={handleClick}>
@@ -306,7 +441,8 @@ export default function Game() {
               <motion.div 
                 animate={{ 
                   scale: [1, 1.02, 1],
-                  rotate: [0, 1, -1, 0]
+                  rotate: [0, 1, -1, 0],
+                  y: [0, -8, 0]
                 }}
                 transition={{ 
                   duration: 2, 
@@ -321,6 +457,15 @@ export default function Game() {
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-2 h-6 bg-amber-800 rounded-full" />
                   {/* Leaf */}
                   <div className="absolute -top-6 left-1/2 w-8 h-4 bg-green-500 rounded-full origin-left rotate-[-30deg]" />
+                  
+                  {/* Cute Face */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 opacity-80">
+                    <div className="flex gap-6 mb-1">
+                      <div className="w-2 h-3 bg-stone-800 rounded-full" />
+                      <div className="w-2 h-3 bg-stone-800 rounded-full" />
+                    </div>
+                    <div className="w-4 h-2 border-b-2 border-stone-800 rounded-full" />
+                  </div>
                   
                   {/* Bite Marks */}
                   {Array.from({ length: biteCount }).map((_, i) => (
@@ -363,28 +508,38 @@ export default function Game() {
             </AnimatePresence>
 
             {/* Worms Visuals */}
-            {Object.entries(state.worms).map(([id, count]) => {
+            {Object.entries(state.worms).map(([id, count], index) => {
               if (count === 0) return null;
-              return Array.from({ length: Math.min(count, 5) }).map((_, i) => (
-                <motion.div
-                  key={`${id}-${i}`}
-                  animate={{
-                    x: [0, 10, -10, 0],
-                    y: [0, -10, 10, 0],
-                    rotate: [0, 45, -45, 0]
-                  }}
-                  transition={{
-                    duration: 3 + i,
-                    repeat: Infinity,
-                    ease: "linear"
-                  }}
-                  className="absolute w-6 h-2 bg-green-400 rounded-full border border-green-600 z-20"
-                  style={{
-                    top: `${Math.random() * 80 + 10}%`,
-                    left: `${Math.random() * 80 + 10}%`,
-                  }}
-                />
-              ));
+              return Array.from({ length: Math.min(count, 5) }).map((_, i) => {
+                // Deterministic pseudo-random positions based on id and index
+                const topPos = 15 + ((index * 17 + i * 23) % 70);
+                const leftPos = 15 + ((index * 31 + i * 19) % 70);
+                
+                return (
+                  <motion.div
+                    key={`${id}-${i}`}
+                    animate={{
+                      y: [0, -6, 0],
+                      scaleY: [1, 0.85, 1.05, 1],
+                      rotate: [0, -3, 3, 0]
+                    }}
+                    transition={{
+                      duration: 1.2 + (i * 0.15),
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: i * 0.2
+                    }}
+                    className="absolute w-6 h-3 bg-emerald-400 rounded-full border-2 border-emerald-600 z-20 flex items-center justify-end px-1 shadow-sm"
+                    style={{
+                      top: `${topPos}%`,
+                      left: `${leftPos}%`,
+                    }}
+                  >
+                    {/* Cute little eye */}
+                    <div className="w-1 h-1 bg-emerald-900 rounded-full" />
+                  </motion.div>
+                );
+              });
             })}
           </div>
 
@@ -443,133 +598,16 @@ export default function Game() {
           </div>
         </section>
 
-        {/* Right Panel: Ascension & Stats */}
-        <aside className="w-full md:w-72 bg-white border-l border-stone-200 p-4 flex flex-col gap-6 overflow-y-auto">
+        {/* Right Panel: Ascension & Stats (Desktop) */}
+        <aside className="hidden md:flex w-72 bg-white border-l border-stone-200 p-4 flex-col gap-6 overflow-y-auto">
           <div>
             <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4">{t('ascension')}</h2>
-            <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 flex flex-col gap-3">
-              <div className="flex items-center gap-2 text-purple-700 font-bold">
-                <Sparkles className="w-4 h-4" />
-                <span>{t('pending_souls')}: {engine.getPendingSouls()}</span>
-              </div>
-              <p className="text-[10px] text-purple-600 leading-relaxed">
-                {t('ascension_desc') || 'Ascending resets your progress but grants Gardeners Souls. Each soul increases your damage and gold earnings.'}
-              </p>
-              <button
-                onClick={handleAscend}
-                disabled={!engine.canAscend()}
-                className={`w-full py-2 rounded-xl font-bold text-sm transition-all ${
-                  engine.canAscend()
-                    ? 'bg-purple-600 text-white hover:bg-purple-700 active:scale-95 shadow-lg shadow-purple-200'
-                    : 'bg-stone-200 text-stone-400 cursor-not-allowed'
-                }`}
-              >
-                {t('ascend')}
-              </button>
-              {!engine.canAscend() && (
-                <div className="text-[10px] text-center text-stone-400">
-                  {t('ascend_requirement') || 'Reach stage 50 to ascend'}
-                </div>
-              )}
-            </div>
+            {renderAscensionContent()}
           </div>
 
           <div className="flex-1">
             <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4">{t('stats')}</h2>
-            <div className="grid grid-cols-1 gap-3">
-              {/* Gold Card */}
-              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-yellow-200 transition-all group">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-50 rounded-xl group-hover:scale-110 transition-transform">
-                    <Coins className="w-4 h-4 text-yellow-600" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('gold')}</span>
-                    <span className="font-mono font-bold text-sm">{Math.floor(state.gold).toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stage Card */}
-              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all group">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-50 rounded-xl group-hover:scale-110 transition-transform">
-                    <Trophy className="w-4 h-4 text-orange-600" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('stage')}</span>
-                    <span className="font-mono font-bold text-sm">{state.stage}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Click Damage Card */}
-              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-red-200 transition-all group">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-50 rounded-xl group-hover:scale-110 transition-transform">
-                    <MousePointer2 className="w-4 h-4 text-red-600" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('stats_click_damage')}</span>
-                    <span className="font-mono font-bold text-sm">{engine.getClickDamage().toFixed(1)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Idle DPS Card */}
-              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-50 rounded-xl group-hover:scale-110 transition-transform">
-                    <Sword className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('stats_idle_dps')}</span>
-                    <span className="font-mono font-bold text-sm">{engine.getTotalDPS().toFixed(1)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Worm Power Card */}
-              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-green-200 transition-all group">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-50 rounded-xl group-hover:scale-110 transition-transform">
-                    <Users className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Worm Power</span>
-                    <span className="font-mono font-bold text-sm">
-                      {Object.values(state.worms).reduce((a, b) => a + b, 0)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Gardeners Souls Card */}
-              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-purple-200 transition-all group">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-50 rounded-xl group-hover:scale-110 transition-transform">
-                    <Sparkles className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('souls')}</span>
-                    <span className="font-mono font-bold text-sm">{state.gardenersSouls}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* History Card */}
-              <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-stone-200 transition-all group">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-stone-50 rounded-xl group-hover:scale-110 transition-transform">
-                    <History className="w-4 h-4 text-stone-600" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('total_eaten')}</span>
-                    <span className="font-mono font-bold text-sm">{state.totalApplesEaten.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {renderStatsPanelContent()}
           </div>
         </aside>
       </main>
@@ -826,6 +864,53 @@ export default function Game() {
           </motion.div>
         ))}
       </AnimatePresence>
+
+      {/* Bottom Bar (Desktop) & Bottom Navigation (Mobile) */}
+      <footer className="bg-white border-t border-stone-200 z-10">
+        <div className="hidden md:flex p-3 justify-between items-center text-[10px] text-stone-400">
+          <div className="flex items-center gap-4">
+            <span>© 2026 Apple of the Infinite Abyss</span>
+            <Link href="/privacy" className="hover:text-stone-600 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-stone-600 transition-colors">Terms of Service</Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>v1.0.0</span>
+          </div>
+        </div>
+
+        {/* Mobile Bottom Navigation */}
+        <nav className="md:hidden flex justify-around p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <button onClick={() => setShowUpgradesModal(true)} className="flex flex-col items-center gap-1 text-stone-500 hover:text-stone-900">
+            <TrendingUp className="w-6 h-6" />
+            <span className="text-[10px] font-bold uppercase">{t('upgrades')}</span>
+          </button>
+          <button onClick={() => setShowAscensionModal(true)} className="flex flex-col items-center gap-1 text-purple-500 hover:text-purple-700">
+            <Sparkles className="w-6 h-6" />
+            <span className="text-[10px] font-bold uppercase">{t('ascension')}</span>
+          </button>
+          <button onClick={() => setShowStatsPanelModal(true)} className="flex flex-col items-center gap-1 text-blue-500 hover:text-blue-700">
+            <BarChart2 className="w-6 h-6" />
+            <span className="text-[10px] font-bold uppercase">{t('stats')}</span>
+          </button>
+        </nav>
+      </footer>
+
+      {/* Mobile Modals */}
+      <Modal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} title={t('upgrades')}>
+        <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2">
+          {renderUpgradesContent()}
+        </div>
+      </Modal>
+
+      <Modal isOpen={showAscensionModal} onClose={() => setShowAscensionModal(false)} title={t('ascension')}>
+        {renderAscensionContent()}
+      </Modal>
+
+      <Modal isOpen={showStatsPanelModal} onClose={() => setShowStatsPanelModal(false)} title={t('stats')}>
+        <div className="max-h-[60vh] overflow-y-auto pr-2">
+          {renderStatsPanelContent()}
+        </div>
+      </Modal>
     </div>
   );
 }

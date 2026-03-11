@@ -400,6 +400,7 @@ export default function Game() {
       {/* Adsterra Global Formats */}
       <AdsterraAd format={AdFormat.POPUNDER} />
       <AdsterraAd format={AdFormat.SOCIAL_BAR} />
+      <AdsterraAd format={AdFormat.SMARTLINK} />
 
       {/* Top Bar */}
       <header className="bg-white border-b border-stone-200 p-2 md:p-4 flex justify-between items-center shadow-sm z-10 flex-wrap gap-2">
@@ -428,8 +429,9 @@ export default function Game() {
 
       <div className="flex-1 flex flex-row overflow-hidden">
         {/* Left Ad - Desktop Only */}
-        <div className="hidden xl:flex w-[160px] bg-stone-200/50 items-center justify-center border-r border-stone-200">
-          <AdSenseAd slot="vertical-left" format="auto" className="w-full h-full" />
+        <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/50 items-center justify-center border-r border-stone-200 gap-4 py-4">
+          <AdSenseAd slot="vertical-left" format="auto" className="w-full flex-1" />
+          <AdsterraAd format={AdFormat.DISPLAY_BANNER_160x300} className="w-full" />
         </div>
 
         <main className="flex-1 flex flex-col md:flex-row relative overflow-y-auto">
@@ -612,8 +614,9 @@ export default function Game() {
       </main>
 
       {/* Right Ad - Desktop Only */}
-      <div className="hidden xl:flex w-[160px] bg-stone-200/50 items-center justify-center border-l border-stone-200">
-        <AdSenseAd slot="vertical-right" format="auto" className="w-full h-full" />
+      <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/50 items-center justify-center border-l border-stone-200 gap-4 py-4">
+        <AdSenseAd slot="vertical-right" format="auto" className="w-full flex-1" />
+        <AdsterraAd format={AdFormat.DISPLAY_BANNER_160x300} className="w-full" />
       </div>
     </div>
 
@@ -679,9 +682,12 @@ export default function Game() {
       <div className="w-full h-[90px] bg-stone-200/50 flex items-center justify-center border-t border-stone-200">
         <AdSenseAd slot="horizontal-footer" format="auto" className="w-full h-full max-w-4xl" />
       </div>
-      
-      {/* Adsterra Banner - Below Footer */}
-      <AdsterraAd format={AdFormat.NATIVE_BANNER} className="w-full max-w-4xl mx-auto" />
+
+      {/* Adsterra Native Banner - Below Footer */}
+      <AdsterraAd format={AdFormat.NATIVE_BANNER} className="w-full max-w-4xl mx-auto my-4" />
+
+      {/* Adsterra Display Banner 468x60 - Horizontal */}
+      <AdsterraAd format={AdFormat.DISPLAY_BANNER_468x60} className="w-full max-w-4xl mx-auto my-2" />
       
       {/* Help Modal */}
       <Modal isOpen={!!showHelp} onClose={() => setShowHelp(null)} title={showHelp?.title || ''}>

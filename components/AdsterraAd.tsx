@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { AdFormat, loadAdsterra, ENABLE_ADS } from '@/lib/ads/adsterra';
+import { AdFormat, loadAdsterra, ENABLE_ADS, ADSTERRA_ZONE_IDS } from '@/lib/ads/adsterra';
 
 interface AdsterraAdProps {
   format: AdFormat;
@@ -23,20 +23,23 @@ export default function AdsterraAd({ format, className = '', zoneId, zoneScript 
 
     const loadScript = () => {
       try {
-        const scriptUrl = zoneScript || `//pl${process.env.NEXT_PUBLIC_ADSTERRA_PUBLISHER_ID || '5657606'}.highrevenuegate.com/invoke.js`;
-        
+        const zoneConfig = ADSTERRA_ZONE_IDS[format];
+        const scriptUrl = zoneScript || zoneConfig?.scriptUrl || `//pl${process.env.NEXT_PUBLIC_ADSTERRA_PUBLISHER_ID || '5657606'}.highrevenuegate.com/invoke.js`;
+        const actualZoneId = zoneId || zoneConfig?.zoneId || `native-${format}`;
+
         // Formats that don't need a specific container (injected into head/body)
         if (
           format === AdFormat.POPUNDER || 
           format === AdFormat.SOCIAL_BAR || 
-          format === AdFormat.INTERSTITIAL
+          format === AdFormat.INTERSTITIAL ||
+          format === AdFormat.SMARTLINK
         ) {
           loadAdsterra(scriptUrl);
         } else {
           // Banner formats that need to be injected into a specific container
           loadAdsterra(scriptUrl, containerId);
         }
-        
+
         const timer = setTimeout(() => setIsLoaded(true), 0);
         return () => clearTimeout(timer);
       } catch (error) {
@@ -51,6 +54,7 @@ export default function AdsterraAd({ format, className = '', zoneId, zoneScript 
       format !== AdFormat.POPUNDER && 
       format !== AdFormat.SOCIAL_BAR && 
       format !== AdFormat.INTERSTITIAL &&
+      format !== AdFormat.SMARTLINK &&
       containerRef.current
     ) {
       const observer = new IntersectionObserver(
@@ -97,13 +101,14 @@ export default function AdsterraAd({ format, className = '', zoneId, zoneScript 
   if (
     format === AdFormat.POPUNDER || 
     format === AdFormat.SOCIAL_BAR || 
-    format === AdFormat.INTERSTITIAL
+    format === AdFormat.INTERSTITIAL ||
+    format === AdFormat.SMARTLINK
   ) {
     return null;
   }
 
-  // Fallback for Smartlink or if script fails to load
-  if (hasError || format === AdFormat.SMARTLINK) {
+  // Fallback if script fails to load
+  if (hasError) {
     // Hide empty container if script fails, or show fallback if dev wants
     if (process.env.NODE_ENV === 'development') {
       console.log(`Adsterra fallback rendered for format: ${format}`);

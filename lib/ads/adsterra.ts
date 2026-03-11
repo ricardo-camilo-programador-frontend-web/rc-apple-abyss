@@ -23,9 +23,46 @@ export enum AdFormat {
   SOCIAL_BAR = 'social_bar',
   NATIVE_BANNER = 'native_banner',
   DISPLAY_BANNER = 'display_banner',
+  DISPLAY_BANNER_468x60 = 'display_banner_468x60',
+  DISPLAY_BANNER_160x300 = 'display_banner_160x300',
   SMARTLINK = 'smartlink',
   INTERSTITIAL = 'interstitial'
 }
+
+export const ADSTERRA_ZONE_IDS: Record<AdFormat, { zoneId: string; scriptUrl: string }> = {
+  [AdFormat.POPUNDER]: {
+    zoneId: 'Popunder_1',
+    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+  },
+  [AdFormat.SOCIAL_BAR]: {
+    zoneId: 'SocialBar_1',
+    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+  },
+  [AdFormat.NATIVE_BANNER]: {
+    zoneId: 'NativeBanner_1',
+    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+  },
+  [AdFormat.DISPLAY_BANNER_468x60]: {
+    zoneId: '468x60_1',
+    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+  },
+  [AdFormat.DISPLAY_BANNER_160x300]: {
+    zoneId: '160x300_1',
+    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+  },
+  [AdFormat.SMARTLINK]: {
+    zoneId: 'Smartlink_1',
+    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+  },
+  [AdFormat.DISPLAY_BANNER]: {
+    zoneId: 'NativeBanner_1',
+    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+  },
+  [AdFormat.INTERSTITIAL]: {
+    zoneId: 'NativeBanner_1',
+    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
+  }
+};
 
 /**
  * Loads the Adsterra script asynchronously.

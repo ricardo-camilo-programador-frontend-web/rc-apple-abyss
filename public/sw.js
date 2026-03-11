@@ -51,6 +51,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Bypass Next.js image optimization requests to prevent broken images
+  if (url.pathname.startsWith('/_next/image')) {
+    return;
+  }
+
   // Handle image assets
   if (
     url.pathname.startsWith('/assets/') ||

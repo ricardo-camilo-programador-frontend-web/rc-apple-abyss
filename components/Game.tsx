@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { GameEngine } from '@/lib/game/engine';
 import { GameState, Language } from '@/lib/game/types';
 import { WORM_UPGRADES } from '@/lib/game/constants';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
 import AdsterraAd from '@/components/AdsterraAd';
@@ -460,21 +461,27 @@ export default function Game() {
                 className="relative w-60 h-60 md:w-72 md:h-72 flex items-center justify-center"
               >
                 <AnimatePresence mode="wait">
-                  <motion.img
+                  <motion.div
                     key={appleSprite}
-                    src={appleSprite}
-                    alt="Apple"
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 1.1, opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className={`w-full h-full object-contain drop-shadow-2xl transition-all duration-300 ${
+                    className={`absolute inset-0 transition-all duration-300 ${
                       state.skills.golden_harvest.isActive 
                         ? 'brightness-110 saturate-150 sepia-[0.3] hue-rotate-[40deg] drop-shadow-[0_0_15px_rgba(234,179,8,0.6)]' 
                         : ''
                     }`}
-                    referrerPolicy="no-referrer"
-                  />
+                  >
+                    <Image
+                      src={appleSprite}
+                      alt="Apple"
+                      fill
+                      sizes="(max-width: 768px) 240px, 288px"
+                      className="object-contain drop-shadow-2xl"
+                      priority
+                    />
+                  </motion.div>
                 </AnimatePresence>
               </motion.div>
             </div>

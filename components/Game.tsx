@@ -86,7 +86,7 @@ const WORM_CATEGORIES: Record<string, {
   },
   legendary: {
     title: 'Legendary Worms',
-    icon: Infinity,
+    icon: InfinityIcon,
     color: 'rose',
     ids: ['dimensional_worm', 'infinite_worm']
   }

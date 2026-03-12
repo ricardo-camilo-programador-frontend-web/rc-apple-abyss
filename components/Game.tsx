@@ -21,6 +21,8 @@ import {
   Github,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   Info,
   BookOpen,
   Zap,
@@ -32,7 +34,15 @@ import {
   Upload,
   RefreshCw,
   TrendingUp,
-  BarChart2
+  BarChart2,
+  Target,
+  Bug,
+  Crown,
+  Atom,
+  Rocket,
+  InfinityIcon,
+  Flame,
+  Heart
 } from 'lucide-react';
 
 const APPLE_SPRITES = [
@@ -49,6 +59,213 @@ const getAppleSpriteIndex = (currentHp: number, maxHp: number): number => {
   if (percent > 25) return 2;
   return 3;
 };
+
+const WORM_CATEGORIES: Record<string, {
+  title: string;
+  icon: React.ElementType;
+  color: string;
+  ids: string[];
+}> = {
+  basic: {
+    title: 'Basic Worms',
+    icon: Bug,
+    color: 'emerald',
+    ids: ['small_worm', 'hungry_worm', 'fat_worm']
+  },
+  advanced: {
+    title: 'Advanced Worms',
+    icon: Flame,
+    color: 'orange',
+    ids: ['queen_worm', 'acid_worm', 'mutant_worm']
+  },
+  special: {
+    title: 'Special Worms',
+    icon: Crown,
+    color: 'violet',
+    ids: ['mecha_worm', 'galactic_worm', 'quantum_worm']
+  },
+  legendary: {
+    title: 'Legendary Worms',
+    icon: Infinity,
+    color: 'rose',
+    ids: ['dimensional_worm', 'infinite_worm']
+  }
+};
+
+const WORM_ICONS: Record<string, React.ElementType> = {
+  small_worm: Bug,
+  hungry_worm: Target,
+  fat_worm: Users,
+  queen_worm: Crown,
+  acid_worm: Flame,
+  mutant_worm: Zap,
+  mecha_worm: Rocket,
+  galactic_worm: Sparkles,
+  quantum_worm: Atom,
+  dimensional_worm: InfinityIcon,
+  infinite_worm: InfinityIcon,
+};
+
+function UpgradeCard({ 
+  upgrade, 
+  count, 
+  cost, 
+  canAfford, 
+  currentDPS, 
+  nextDPS,
+  onBuy 
+}: {
+  upgrade: typeof WORM_UPGRADES[0];
+  count: number;
+  cost: number;
+  canAfford: boolean;
+  currentDPS: number;
+  nextDPS: number;
+  onBuy: () => void;
+}) {
+  const Icon = WORM_ICONS[upgrade.id] || Bug;
+  
+  return (
+    <motion.button
+      onClick={onBuy}
+      disabled={!canAfford}
+      whileHover={canAfford ? { scale: 1.01, y: -2 } : {}}
+      whileTap={canAfford ? { scale: 0.98 } : {}}
+      className={`w-full p-3 rounded-xl text-left transition-all duration-200 ${
+        canAfford 
+          ? 'bg-white hover:shadow-lg border border-stone-100 hover:border-stone-200 cursor-pointer' 
+          : 'bg-stone-50/50 border border-stone-100/50 opacity-50 cursor-not-allowed'
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+          canAfford ? 'bg-gradient-to-br from-stone-100 to-stone-50' : 'bg-stone-100'
+        }`}>
+          <Icon className={`w-5 h-5 ${canAfford ? 'text-stone-600' : 'text-stone-400'}`} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold text-sm truncate">{upgrade.nameKey.replace('upgrade_', '').replace(/_/g, ' ')}</span>
+            <span className="text-xs font-mono bg-stone-100 px-2 py-0.5 rounded-md shrink-0">
+              Lv.{count}
+            </span>
+          </div>
+          <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center gap-1 text-yellow-600 font-mono text-xs">
+              <Coins className="w-3 h-3" />
+              <span>{Math.floor(cost).toLocaleString()}</span>
+            </div>
+            <div className="text-[10px] text-stone-500">
+              DPS: {currentDPS.toFixed(1)} → {nextDPS.toFixed(1)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
+function StatCard({ 
+  icon: Icon, 
+  label, 
+  value, 
+  color = 'stone',
+  onClick 
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  color?: string;
+  onClick?: () => void;
+}) {
+  const colorClasses: Record<string, string> = {
+    yellow: 'from-yellow-50 to-amber-50 text-yellow-600',
+    orange: 'from-orange-50 to-amber-50 text-orange-600',
+    red: 'from-red-50 to-rose-50 text-red-600',
+    blue: 'from-blue-50 to-indigo-50 text-blue-600',
+    green: 'from-green-50 to-emerald-50 text-green-600',
+    purple: 'from-purple-50 to-violet-50 text-purple-600',
+    stone: 'from-stone-50 to-slate-50 text-stone-600',
+  };
+
+  return (
+    <motion.div 
+      whileHover={{ scale: 1.02, y: -1 }}
+      className={`p-3 bg-gradient-to-br ${colorClasses[color]} rounded-xl cursor-default ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 bg-white/60 rounded-lg flex items-center justify-center">
+          <Icon className="w-4 h-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] font-medium uppercase tracking-wider opacity-70 truncate">{label}</div>
+          <div className="font-mono font-bold text-sm truncate">{value}</div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function CollapsibleSection({ 
+  title, 
+  icon: Icon, 
+  color, 
+  children, 
+  defaultOpen = true 
+}: {
+  title: string;
+  icon: React.ElementType;
+  color: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  const colorClasses: Record<string, { bg: string; text: string; border: string }> = {
+    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
+    orange: { bg: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200' },
+    violet: { bg: 'bg-violet-50', text: 'text-violet-600', border: 'border-violet-200' },
+    rose: { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200' },
+    yellow: { bg: 'bg-yellow-50', text: 'text-yellow-600', border: 'border-yellow-200' },
+  };
+
+  const colors = colorClasses[color] || colorClasses.emerald;
+
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full flex items-center justify-between p-2.5 rounded-lg ${colors.bg} ${colors.border} border transition-all hover:shadow-sm`}
+      >
+        <div className="flex items-center gap-2">
+          <Icon className={`w-4 h-4 ${colors.text}`} />
+          <span className={`font-semibold text-sm ${colors.text}`}>{title}</span>
+        </div>
+        {isOpen ? (
+          <ChevronUp className={`w-4 h-4 ${colors.text}`} />
+        ) : (
+          <ChevronDown className={`w-4 h-4 ${colors.text}`} />
+        )}
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="pt-2 space-y-2">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function Game() {
   const [engine] = useState(() => new GameEngine());
@@ -109,7 +326,7 @@ export default function Game() {
     return () => clearTimeout(timer);
   }, []);
 
-  if (!isMounted || !state || !engine) return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  if (!isMounted || !state || !engine) return <div className="flex items-center justify-center h-screen bg-stone-50">Loading...</div>;
 
   const t = (key: string, params?: any) => engine.getLocalization().t(key, params);
 
@@ -117,11 +334,9 @@ export default function Game() {
     engine.clickApple();
     const damage = engine.getClickDamage();
     
-    // Trigger shake animation
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 150);
     
-    // Add click effect
     const newEffect = {
       id: clickIdCounter.current++,
       x: e.clientX,
@@ -170,7 +385,6 @@ export default function Game() {
     navigator.clipboard.writeText(saveStr).then(() => {
       alert('Save copied to clipboard!');
     }).catch(() => {
-      // Fallback if clipboard fails
       prompt('Copy your save string:', saveStr);
     });
   };
@@ -201,500 +415,505 @@ export default function Game() {
     }
   };
 
-  const renderUpgradesContent = () => (
-    <>
-      {/* Click Power Upgrade */}
-      <motion.button
-        key={`click-power-${state.clickLevel}`}
-        onClick={handleBuyClickUpgrade}
-        disabled={state.gold < engine.getClickUpgradeCost()}
-        initial={false}
-        animate={{ scale: [1, 1.02, 1] }}
-        className={`group relative flex flex-col p-3 rounded-xl border-2 transition-all text-left mb-2 ${
-          state.gold >= engine.getClickUpgradeCost()
-            ? 'border-yellow-200 hover:border-yellow-400 bg-yellow-50/30 active:scale-95' 
-            : 'border-stone-100 bg-stone-50 opacity-60 cursor-not-allowed'
-        }`}
-      >
-        <div className="flex justify-between items-start mb-1">
-          <span className="font-bold text-sm flex items-center gap-2">
-            <MousePointer2 className="w-4 h-4 text-yellow-600" />
-            {t('upgrade_click_power')}
-          </span>
-          <span className="text-xs font-mono bg-white px-1.5 py-0.5 rounded border border-yellow-100">Lv.{state.clickLevel}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-1 text-yellow-600 font-mono text-sm font-bold">
-            <Coins className="w-3 h-3" />
-            {Math.floor(engine.getClickUpgradeCost()).toLocaleString()}
-          </div>
-          <div className="flex flex-col items-end">
-            <div className="text-[10px] text-stone-500">Dmg: {engine.getClickDamage().toFixed(1)}</div>
-            <div className="text-[8px] text-stone-400">Next: {(engine.getClickDamage() * 1.15).toFixed(1)}</div>
-          </div>
-        </div>
-        <div className="absolute bottom-1 right-1 text-[8px] text-stone-300 font-bold uppercase">[C]</div>
-      </motion.button>
+  const renderUpgradesContent = () => {
+    const upgradesByCategory = Object.entries(WORM_CATEGORIES).map(([key, category]) => ({
+      ...category,
+      upgrades: category.ids.map(id => WORM_UPGRADES.find(u => u.id === id)).filter(Boolean)
+    }));
 
-      <div className="h-px bg-stone-100 my-1" />
-
-      {WORM_UPGRADES.map(upgrade => {
-        const cost = engine.getUpgradeCost(upgrade.id);
-        const canAfford = state.gold >= cost;
-        const count = state.worms[upgrade.id] || 0;
-        const currentDPS = engine.getWormDPS(upgrade.id);
-        const nextDPS = count === 0 ? upgrade.baseDPS : currentDPS * upgrade.dpsGrowth;
-
-        return (
+    return (
+      <>
+        <CollapsibleSection 
+          title="Click Power" 
+          icon={MousePointer2} 
+          color="yellow"
+        >
           <motion.button
-            key={`${upgrade.id}-${count}`}
-            onClick={() => handleBuyUpgrade(upgrade.id)}
-            disabled={!canAfford}
-            initial={false}
-            animate={{ scale: [1, 1.02, 1] }}
-            className={`group relative flex flex-col p-3 rounded-xl border-2 transition-all text-left ${
-              canAfford 
-                ? 'border-stone-200 hover:border-red-400 bg-white active:scale-95' 
-                : 'border-stone-100 bg-stone-50 opacity-60 cursor-not-allowed'
+            onClick={handleBuyClickUpgrade}
+            disabled={state.gold < engine.getClickUpgradeCost()}
+            whileHover={state.gold >= engine.getClickUpgradeCost() ? { scale: 1.01, y: -2 } : {}}
+            whileTap={state.gold >= engine.getClickUpgradeCost() ? { scale: 0.98 } : {}}
+            className={`w-full p-3 rounded-xl text-left transition-all duration-200 ${
+              state.gold >= engine.getClickUpgradeCost()
+                ? 'bg-white hover:shadow-lg border border-yellow-200 cursor-pointer' 
+                : 'bg-stone-50/50 border border-stone-100/50 opacity-50 cursor-not-allowed'
             }`}
           >
-            <div className="flex justify-between items-start mb-1">
-              <span className="font-bold text-sm">{t(upgrade.nameKey)}</span>
-              <span className="text-xs font-mono bg-stone-100 px-1.5 py-0.5 rounded">Lv.{count}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-1 text-yellow-600 font-mono text-sm font-bold">
-                <Coins className="w-3 h-3" />
-                {Math.floor(cost).toLocaleString()}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-yellow-100 to-amber-50 rounded-lg flex items-center justify-center">
+                <MousePointer2 className="w-5 h-5 text-yellow-600" />
               </div>
-              <div className="flex flex-col items-end">
-                <div className="text-[10px] text-stone-500">DPS: {currentDPS.toFixed(1)}</div>
-                <div className="text-[8px] text-stone-400">Next: {nextDPS.toFixed(1)}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-sm">Click Power</span>
+                  <span className="text-xs font-mono bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-md shrink-0">
+                    Lv.{state.clickLevel}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <div className="flex items-center gap-1 text-yellow-600 font-mono text-xs">
+                    <Coins className="w-3 h-3" />
+                    <span>{Math.floor(engine.getClickUpgradeCost()).toLocaleString()}</span>
+                  </div>
+                  <div className="text-[10px] text-stone-500">
+                    Dmg: {engine.getClickDamage().toFixed(1)}
+                  </div>
+                </div>
               </div>
             </div>
+            <div className="absolute bottom-1 right-1 text-[8px] text-stone-300 font-bold uppercase">[C]</div>
           </motion.button>
-        );
-      })}
-    </>
-  );
+        </CollapsibleSection>
 
-  const renderAscensionContent = () => (
-    <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 flex flex-col gap-3">
-      <div className="flex items-center gap-2 text-purple-700 font-bold">
-        <Sparkles className="w-4 h-4" />
-        <span>Pending Lucky Worms: {engine.getPendingLuckyWorms()}</span>
-      </div>
-      <p className="text-[10px] text-purple-600 leading-relaxed">
-        Ascending resets your progress but grants Lucky Worms. Each Lucky Worm increases your gold earnings by 5%.
-      </p>
-      <button
-        onClick={handleAscend}
-        disabled={!engine.canAscend()}
-        className={`w-full py-2 rounded-xl font-bold text-sm transition-all ${
-          engine.canAscend()
-            ? 'bg-purple-600 text-white hover:bg-purple-700 active:scale-95 shadow-lg shadow-purple-200'
-            : 'bg-stone-200 text-stone-400 cursor-not-allowed'
-        }`}
-      >
-        {t('ascend')}
-      </button>
-      {!engine.canAscend() && (
-        <div className="text-[10px] text-center text-stone-400">
-          {t('ascend_requirement') || 'Reach stage 50 to ascend'}
-        </div>
-      )}
-    </div>
-  );
+        {upgradesByCategory.map(category => (
+          <CollapsibleSection 
+            key={category.title}
+            title={category.title} 
+            icon={category.icon} 
+            color={category.color}
+            defaultOpen={category.title === 'Basic Worms'}
+          >
+            {category.upgrades.map(upgrade => {
+              if (!upgrade) return null;
+              const cost = engine.getUpgradeCost(upgrade.id);
+              const canAfford = state.gold >= cost;
+              const count = state.worms[upgrade.id] || 0;
+              const currentDPS = engine.getWormDPS(upgrade.id);
+              const nextDPS = count === 0 ? upgrade.baseDPS : currentDPS * upgrade.dpsGrowth;
 
-  const renderStatsPanelContent = () => (
-    <div className="grid grid-cols-1 gap-3">
-      {/* Gold Card */}
-      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-yellow-200 transition-all group">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-yellow-50 rounded-xl group-hover:scale-110 transition-transform">
-            <Coins className="w-4 h-4 text-yellow-600" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('gold')}</span>
-            <span className="font-mono font-bold text-sm">{Math.floor(state.gold).toLocaleString()}</span>
-          </div>
-        </div>
-      </div>
+              return (
+                <UpgradeCard
+                  key={upgrade.id}
+                  upgrade={upgrade}
+                  count={count}
+                  cost={cost}
+                  canAfford={canAfford}
+                  currentDPS={currentDPS}
+                  nextDPS={nextDPS}
+                  onBuy={() => handleBuyUpgrade(upgrade.id)}
+                />
+              );
+            })}
+          </CollapsibleSection>
+        ))}
+      </>
+    );
+  };
 
-      {/* Stage Card */}
-      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all group">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-orange-50 rounded-xl group-hover:scale-110 transition-transform">
-            <Trophy className="w-4 h-4 text-orange-600" />
+  const renderAscensionContent = () => {
+    const progress = Math.min((state.stage / 50) * 100, 100);
+    const canAscend = engine.canAscend();
+    const pendingWorms = engine.getPendingLuckyWorms();
+
+    return (
+      <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-4 border border-violet-100">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-violet-600" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('stage')}</span>
-            <span className="font-mono font-bold text-sm">{state.stage}</span>
+          <div>
+            <div className="font-semibold text-sm text-violet-900">Ascension</div>
+            <div className="text-[10px] text-violet-600">Reset for permanent bonuses</div>
           </div>
         </div>
-      </div>
 
-      {/* Click Damage Card */}
-      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-red-200 transition-all group">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-red-50 rounded-xl group-hover:scale-110 transition-transform">
-            <MousePointer2 className="w-4 h-4 text-red-600" />
+        <div className="mb-3">
+          <div className="flex justify-between text-xs mb-1">
+            <span className="text-violet-600">Progress to Stage 50</span>
+            <span className="font-mono text-violet-900">{state.stage}/50</span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('stats_click_damage')}</span>
-            <span className="font-mono font-bold text-sm">{engine.getClickDamage().toFixed(1)}</span>
+          <div className="h-2 bg-violet-100 rounded-full overflow-hidden">
+            <motion.div 
+              className="h-full bg-gradient-to-r from-violet-500 to-purple-500"
+              initial={false}
+              animate={{ width: `${progress}%` }}
+              transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+            />
           </div>
         </div>
-      </div>
 
-      {/* Idle DPS Card */}
-      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-xl group-hover:scale-110 transition-transform">
-            <Sword className="w-4 h-4 text-blue-600" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('stats_idle_dps')}</span>
-            <span className="font-mono font-bold text-sm">{engine.getTotalDPS().toFixed(1)}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Worm Power Card */}
-      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-green-200 transition-all group">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-green-50 rounded-xl group-hover:scale-110 transition-transform">
-            <Users className="w-4 h-4 text-green-600" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Worm Power</span>
-            <span className="font-mono font-bold text-sm">
-              {Object.values(state.worms).reduce((a, b) => a + b, 0)}
+        {canAscend && (
+          <div className="flex items-center gap-2 p-2 bg-violet-100/50 rounded-lg mb-3">
+            <Sparkles className="w-4 h-4 text-violet-600" />
+            <span className="text-sm font-medium text-violet-900">
+              {pendingWorms} Lucky Worms ready!
             </span>
           </div>
+        )}
+
+        <button
+          onClick={handleAscend}
+          disabled={!canAscend}
+          className={`w-full py-2.5 rounded-xl font-bold text-sm transition-all ${
+            canAscend
+              ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 active:scale-95 shadow-lg shadow-violet-200'
+              : 'bg-violet-100 text-violet-400 cursor-not-allowed'
+          }`}
+        >
+          {canAscend ? 'Ascend Now!' : `Reach Stage 50`}
+        </button>
+
+        <div className="mt-2 text-[10px] text-violet-500 text-center">
+          Lucky Worms: +5% gold each
+        </div>
+      </div>
+    );
+  };
+
+  const renderStatsPanelContent = () => (
+    <div className="space-y-4">
+      <div>
+        <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2">Economy</div>
+        <div className="grid grid-cols-2 gap-2">
+          <StatCard 
+            icon={Coins} 
+            label="Gold" 
+            value={Math.floor(state.gold).toLocaleString()} 
+            color="yellow" 
+          />
+          <StatCard 
+            icon={Trophy} 
+            label="Stage" 
+            value={state.stage} 
+            color="orange" 
+          />
         </div>
       </div>
 
-      {/* Lucky Worms Card */}
-      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-purple-200 transition-all group">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-purple-50 rounded-xl group-hover:scale-110 transition-transform">
-            <Sparkles className="w-4 h-4 text-purple-600" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Lucky Worms</span>
-            <span className="font-mono font-bold text-sm">{state.luckyWorms}</span>
-          </div>
+      <div>
+        <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2">Combat</div>
+        <div className="grid grid-cols-2 gap-2">
+          <StatCard 
+            icon={MousePointer2} 
+            label="Click Dmg" 
+            value={engine.getClickDamage().toFixed(1)} 
+            color="red" 
+          />
+          <StatCard 
+            icon={Sword} 
+            label="Idle DPS" 
+            value={engine.getTotalDPS().toFixed(1)} 
+            color="blue" 
+          />
         </div>
       </div>
 
-      {/* History Card */}
-      <div className="p-3 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md hover:border-stone-200 transition-all group">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-stone-50 rounded-xl group-hover:scale-110 transition-transform">
-            <History className="w-4 h-4 text-stone-600" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{t('total_eaten')}</span>
-            <span className="font-mono font-bold text-sm">{state.totalApplesEaten.toLocaleString()}</span>
-          </div>
+      <div>
+        <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2">Progression</div>
+        <div className="grid grid-cols-2 gap-2">
+          <StatCard 
+            icon={Users} 
+            label="Worms" 
+            value={Object.values(state.worms).reduce((a, b) => a + b, 0)} 
+            color="green" 
+          />
+          <StatCard 
+            icon={Sparkles} 
+            label="Lucky" 
+            value={`${state.luckyWorms} (+${state.luckyWorms * 5}%)`} 
+            color="purple" 
+          />
+          <StatCard 
+            icon={History} 
+            label="Eaten" 
+            value={state.totalApplesEaten.toLocaleString()} 
+            color="stone" 
+          />
         </div>
       </div>
     </div>
   );
 
-  // Calculate apple visual state
   const hpPercent = (state.appleHP / state.maxAppleHP) * 100;
   const activeSpriteIndex = getAppleSpriteIndex(state.appleHP, state.maxAppleHP);
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-100 overflow-hidden select-none">
-      {/* Adsterra Global Formats */}
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 overflow-hidden select-none">
       <AdsterraAd format={AdFormat.POPUNDER} />
       <AdsterraAd format={AdFormat.SOCIAL_BAR} />
       <AdsterraAd format={AdFormat.SMARTLINK} />
 
-      {/* Top Bar */}
-      <header className="bg-white border-b border-stone-200 p-2 md:p-4 flex justify-between items-center shadow-sm z-10 flex-wrap gap-2">
-        <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-          <div className="flex items-center gap-1 md:gap-2">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-stone-200/50 p-2 md:p-3 flex justify-between items-center z-10 flex-wrap gap-2 sticky top-0">
+        <div className="flex items-center gap-3 md:gap-6 flex-wrap">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-100">
             <Coins className="text-yellow-500 w-4 h-4 md:w-5 md:h-5" />
-            <span className="font-mono font-bold text-base md:text-lg">{Math.floor(state.gold).toLocaleString()}</span>
+            <span className="font-mono font-bold text-base md:text-lg text-yellow-700">{Math.floor(state.gold).toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-1 md:gap-2">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-100">
             <Trophy className="text-orange-500 w-4 h-4 md:w-5 md:h-5" />
-            <span className="font-bold text-sm md:text-base">{t('stage')}: {state.stage}</span>
+            <span className="font-bold text-sm md:text-base text-orange-700">{t('stage')}: {state.stage}</span>
           </div>
-          <div className="flex items-center gap-1 md:gap-2">
-            <Sparkles className="text-purple-500 w-4 h-4 md:w-5 md:h-5" />
-            <span className="font-bold text-sm md:text-base cursor-help" onClick={() => setShowHelp({ title: 'Lucky Worms', content: 'Lucky Worms increase your gold income! Formula: 1 + (Lucky Worms * 0.05)' })}>
-              🐛 {state.luckyWorms} <span className="hidden sm:inline">(+{Math.floor(state.luckyWorms * 5)}%)</span>
+          <button 
+            onClick={() => setShowHelp({ title: 'Lucky Worms', content: 'Lucky Worms increase your gold income! Formula: 1 + (Lucky Worms * 0.05)' })}
+            className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl border border-violet-100 hover:border-violet-200 transition-colors"
+          >
+            <Sparkles className="text-violet-500 w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-bold text-sm md:text-base text-violet-700">
+              {state.luckyWorms} <span className="hidden sm:inline opacity-70">(+{state.luckyWorms * 5}%)</span>
             </span>
-          </div>
+          </button>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setShowStats(true)} className="p-1 md:p-2 hover:bg-stone-100 rounded-full transition-colors"><History className="w-4 h-4 md:w-5 md:h-5 text-stone-600" /></button>
-          <button onClick={() => setShowSkills(true)} className="p-1 md:p-2 hover:bg-stone-100 rounded-full transition-colors"><Zap className="w-4 h-4 md:w-5 md:h-5 text-stone-600" /></button>
-          <button onClick={() => setShowSettings(true)} className="p-1 md:p-2 hover:bg-stone-100 rounded-full transition-colors"><Settings className="w-4 h-4 md:w-5 md:h-5 text-stone-600" /></button>
+          <button onClick={() => setShowStats(true)} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Statistics">
+            <History className="w-5 h-5 text-stone-500" />
+          </button>
+          <button onClick={() => setShowSkills(true)} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Skills">
+            <Zap className="w-5 h-5 text-stone-500" />
+          </button>
+          <button onClick={() => setShowSettings(true)} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Settings">
+            <Settings className="w-5 h-5 text-stone-500" />
+          </button>
         </div>
       </header>
 
       <div className="flex-1 flex flex-row overflow-hidden">
-        {/* Left Ad - Desktop Only */}
-        <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/50 items-center justify-center border-r border-stone-200 gap-4 py-4">
+        <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/30 items-center justify-center border-r border-stone-200/50 gap-4 py-4">
           <AdSenseAd slot="vertical-left" format="auto" className="w-full flex-1" />
           <AdsterraAd format={AdFormat.DISPLAY_BANNER_160x300} className="w-full" />
         </div>
 
-        <main className="flex-1 flex flex-col md:flex-row relative overflow-y-auto">
-          {/* Left Panel: Upgrades (Desktop) */}
-          <aside className="hidden md:flex w-72 bg-white border-r border-stone-200 overflow-y-auto p-4 flex-col gap-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">{t('upgrades')}</h2>
+        <main className="flex-1 flex flex-col lg:flex-row relative overflow-y-auto">
+          <aside className="hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-r border-stone-200/50 overflow-y-auto p-4 flex-col gap-2">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400">{t('upgrades')}</h2>
+              <span className="text-[10px] text-stone-400 font-mono">[C] quick buy</span>
+            </div>
             {renderUpgradesContent()}
           </aside>
 
-          {/* Center: Game Plate */}
-        <section className="flex-1 flex flex-col items-center justify-start p-8 relative min-h-[500px]">
-          {/* Apple & Plate */}
-          <div className="relative group cursor-pointer" onClick={handleClick}>
-            {/* Plate */}
-            <div className={`w-64 h-64 md:w-80 md:h-80 bg-white rounded-full shadow-inner border-8 border-stone-200 flex items-center justify-center apple-shadow transition-all duration-300 ${state.skills.golden_harvest.isActive ? 'skill-glow scale-105 border-yellow-400' : ''}`}>
-              {/* Apple Sprite (CSS based for performance/simplicity) */}
-              <motion.div 
-                animate={{ 
-                  scale: [1, 1.01, 1],
-                }}
-                transition={{ 
-                  duration: 0.15,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className={`relative w-60 h-60 md:w-72 md:h-72 flex items-center justify-center ${isShaking ? 'shake-active' : ''}`}
-              >
-                <div className={`apple-sprite-container absolute inset-0 transition-all duration-300 ${
-                  state.skills.golden_harvest.isActive 
-                    ? 'brightness-110 saturate-150 sepia-[0.3] hue-rotate-[40deg] drop-shadow-[0_0_15px_rgba(234,179,8,0.6)]' 
-                    : ''
+          <section className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative min-h-[500px]">
+            <div className="relative w-full max-w-lg">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-100/30 via-orange-50/20 to-yellow-50/30 rounded-full blur-3xl scale-150" />
+              
+              <div className="relative group cursor-pointer" onClick={handleClick}>
+                <div className={`relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 mx-auto transition-all duration-500 ${
+                  state.skills.golden_harvest.isActive ? 'scale-105' : ''
                 }`}>
-                  {APPLE_SPRITES.map((src, index) => (
-                    <img
-                      key={src}
-                      src={src}
-                      alt="Apple"
-                      className="apple-sprite"
-                      loading="eager"
-                      decoding="async"
-                      style={{ opacity: index === activeSpriteIndex ? 1 : 0 }}
+                  <div className={`absolute inset-0 bg-gradient-to-br from-white via-stone-50 to-white rounded-full shadow-2xl transition-all duration-300 ${
+                    state.skills.golden_harvest.isActive 
+                      ? 'border-4 border-yellow-400 shadow-yellow-200/50' 
+                      : 'border-4 border-stone-100'
+                  }`} />
+                  
+                  <div className="absolute inset-4 bg-gradient-to-br from-stone-50 to-white rounded-full shadow-inner flex items-center justify-center">
+                    <motion.div 
+                      animate={{ scale: [1, 1.02, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      className={`relative w-full h-full flex items-center justify-center ${isShaking ? 'shake-active' : ''}`}
+                    >
+                      <div className={`apple-sprite-container absolute inset-8 transition-all duration-300 ${
+                        state.skills.golden_harvest.isActive 
+                          ? 'brightness-110 saturate-150 sepia-[0.3] hue-rotate-[40deg] drop-shadow-[0_0_20px_rgba(234,179,8,0.6)]' 
+                          : ''
+                      }`}>
+                        {APPLE_SPRITES.map((src, index) => (
+                          <img
+                            key={src}
+                            src={src}
+                            alt="Apple"
+                            className="apple-sprite"
+                            loading="eager"
+                            decoding="async"
+                            style={{ opacity: index === activeSpriteIndex ? 1 : 0 }}
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {state.skills.golden_harvest.isActive && particleOffsets.map((offset, i) => (
+                    <motion.div
+                      key={`particle-${i}`}
+                      initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                      animate={{ 
+                        opacity: [0, 1, 0], 
+                        scale: [0, 1.5, 0],
+                        x: offset.x,
+                        y: offset.y
+                      }}
+                      transition={{ 
+                        duration: 1.5, 
+                        repeat: Infinity, 
+                        delay: offset.delay
+                      }}
+                      className="absolute top-1/2 left-1/2 w-3 h-3 bg-yellow-400 rounded-full z-30 shadow-lg"
                     />
                   ))}
+                </AnimatePresence>
+              </div>
+
+              <div className="mt-8 space-y-4">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-stone-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Heart className="w-4 h-4 text-red-500" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Apple HP</span>
+                    </div>
+                    <span className="font-mono text-sm font-bold text-stone-700">
+                      {Math.ceil(state.appleHP).toLocaleString()} / {state.maxAppleHP.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="h-3 bg-stone-100 rounded-full overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-gradient-to-r from-red-500 via-red-400 to-orange-400 rounded-full"
+                      initial={false}
+                      animate={{ width: `${hpPercent}%` }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.2 }}
+                    />
+                  </div>
                 </div>
-              </motion.div>
-            </div>
 
-            {/* Skill Particles */}
-            <AnimatePresence>
-              {state.skills.golden_harvest.isActive && particleOffsets.map((offset, i) => (
-                <motion.div
-                  key={`particle-${i}`}
-                  initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
-                  animate={{ 
-                    opacity: [0, 1, 0], 
-                    scale: [0, 1.5, 0],
-                    x: offset.x,
-                    y: offset.y
-                  }}
-                  transition={{ 
-                    duration: 1.5, 
-                    repeat: Infinity, 
-                    delay: offset.delay
-                  }}
-                  className="absolute top-1/2 left-1/2 w-3 h-3 bg-yellow-400 rounded-full z-30 shadow-lg"
-                />
-              ))}
-            </AnimatePresence>
-
-          </div>
-
-          {/* HP Bar */}
-          <div className="mt-12 w-full max-w-xs flex flex-col gap-6">
-            <div>
-              <div className="flex justify-between text-xs font-bold mb-1 uppercase tracking-tighter text-stone-500">
-                <span>HP</span>
-                <span>{Math.ceil(state.appleHP).toLocaleString()} / {state.maxAppleHP.toLocaleString()}</span>
-              </div>
-              <div className="h-4 bg-stone-200 rounded-full overflow-hidden shadow-inner border border-stone-300">
-                <motion.div 
-                  className="h-full bg-gradient-to-r from-red-500 to-red-400"
-                  initial={false}
-                  animate={{ width: `${hpPercent}%` }}
-                  transition={{ type: "spring", bounce: 0, duration: 0.2 }}
-                />
-              </div>
-            </div>
-
-            {/* Skill Button */}
-            <div className="flex justify-center">
-              <button
-                onClick={handleActivateSkill}
-                disabled={state.skills.golden_harvest.cooldownRemaining > 0 || state.skills.golden_harvest.isActive}
-                className={`group relative flex items-center gap-3 px-6 py-3 rounded-2xl font-bold transition-all overflow-hidden ${
-                  state.skills.golden_harvest.isActive
-                    ? 'bg-yellow-500 text-white skill-glow'
-                    : state.skills.golden_harvest.cooldownRemaining > 0
-                    ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
-                    : 'bg-white border-2 border-yellow-400 text-yellow-600 hover:bg-yellow-50 active:scale-95 shadow-lg shadow-yellow-100'
-                }`}
-              >
-                <Zap className={`w-5 h-5 ${state.skills.golden_harvest.isActive ? 'animate-bounce' : ''}`} />
-                <div className="flex flex-col items-start leading-none">
-                  <span className="text-sm">{t('skill_golden_harvest')}</span>
-                  <span className="text-[10px] opacity-70">
-                    {state.skills.golden_harvest.isActive 
-                      ? `${t('skill_active')}: ${Math.ceil(state.skills.golden_harvest.remainingDuration)}s`
+                <motion.button
+                  onClick={handleActivateSkill}
+                  disabled={state.skills.golden_harvest.cooldownRemaining > 0 || state.skills.golden_harvest.isActive}
+                  whileHover={!state.skills.golden_harvest.cooldownRemaining && !state.skills.golden_harvest.isActive ? { scale: 1.02 } : {}}
+                  whileTap={!state.skills.golden_harvest.cooldownRemaining && !state.skills.golden_harvest.isActive ? { scale: 0.98 } : {}}
+                  className={`w-full relative flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-bold transition-all overflow-hidden ${
+                    state.skills.golden_harvest.isActive
+                      ? 'bg-gradient-to-r from-yellow-400 to-amber-400 text-white shadow-lg shadow-yellow-200/50'
                       : state.skills.golden_harvest.cooldownRemaining > 0
-                      ? `${t('skill_cooldown')}: ${Math.ceil(state.skills.golden_harvest.cooldownRemaining)}s`
-                      : 'Ready!'}
-                  </span>
-                </div>
-                
-                {/* Cooldown Overlay */}
-                {state.skills.golden_harvest.cooldownRemaining > 0 && !state.skills.golden_harvest.isActive && (
-                  <motion.div 
-                    className="absolute inset-0 bg-black/5"
-                    initial={false}
-                    animate={{ height: `${(state.skills.golden_harvest.cooldownRemaining / 120) * 100}%` }}
-                  />
-                )}
-              </button>
+                      ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 text-yellow-700 hover:border-yellow-400 shadow-lg shadow-yellow-100/50'
+                  }`}
+                >
+                  <Zap className={`w-5 h-5 ${state.skills.golden_harvest.isActive ? 'animate-bounce' : ''}`} />
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm">{t('skill_golden_harvest')}</span>
+                    <span className="text-[10px] opacity-70">
+                      {state.skills.golden_harvest.isActive 
+                        ? `${t('skill_active')}: ${Math.ceil(state.skills.golden_harvest.remainingDuration)}s`
+                        : state.skills.golden_harvest.cooldownRemaining > 0
+                        ? `${t('skill_cooldown')}: ${Math.ceil(state.skills.golden_harvest.cooldownRemaining)}s`
+                        : 'x5 Click, x2.5 Idle'}
+                    </span>
+                  </div>
+                  
+                  {state.skills.golden_harvest.cooldownRemaining > 0 && !state.skills.golden_harvest.isActive && (
+                    <motion.div 
+                      className="absolute inset-0 bg-stone-200/50"
+                      initial={false}
+                      animate={{ height: `${(state.skills.golden_harvest.cooldownRemaining / 120) * 100}%` }}
+                    />
+                  )}
+                </motion.button>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* Right Panel: Ascension & Stats (Desktop) */}
-        <aside className="hidden md:flex w-72 bg-white border-l border-stone-200 p-4 flex-col gap-6 overflow-y-auto">
-          <div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4">{t('ascension')}</h2>
-            {renderAscensionContent()}
-          </div>
+          <aside className="hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-l border-stone-200/50 p-4 flex-col gap-4 overflow-y-auto">
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">{t('ascension')}</h2>
+              {renderAscensionContent()}
+            </div>
 
-          <div className="flex-1">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4">{t('stats')}</h2>
-            {renderStatsPanelContent()}
-          </div>
-        </aside>
-      </main>
+            <div className="flex-1">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">{t('stats')}</h2>
+              {renderStatsPanelContent()}
+            </div>
+          </aside>
+        </main>
 
-      {/* Right Ad - Desktop Only */}
-      <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/50 items-center justify-center border-l border-stone-200 gap-4 py-4">
-        <AdSenseAd slot="vertical-right" format="auto" className="w-full flex-1" />
-        <AdsterraAd format={AdFormat.DISPLAY_BANNER_160x300} className="w-full" />
+        <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/30 items-center justify-center border-l border-stone-200/50 gap-4 py-4">
+          <AdSenseAd slot="vertical-right" format="auto" className="w-full flex-1" />
+          <AdsterraAd format={AdFormat.DISPLAY_BANNER_160x300} className="w-full" />
+        </div>
       </div>
-    </div>
 
-    {/* Mobile Bottom Navigation */}
-    <nav className="md:hidden bg-white border-t border-stone-200 flex justify-around p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
-      <button onClick={() => setShowUpgradesModal(true)} className="flex flex-col items-center gap-1 text-stone-500 hover:text-stone-900">
-        <TrendingUp className="w-6 h-6" />
-        <span className="text-[10px] font-bold uppercase">{t('upgrades')}</span>
-      </button>
-      <button onClick={() => setShowAscensionModal(true)} className="flex flex-col items-center gap-1 text-purple-500 hover:text-purple-700">
-        <Sparkles className="w-6 h-6" />
-        <span className="text-[10px] font-bold uppercase">{t('ascension')}</span>
-      </button>
-      <button onClick={() => setShowStatsPanelModal(true)} className="flex flex-col items-center gap-1 text-blue-500 hover:text-blue-700">
-        <BarChart2 className="w-6 h-6" />
-        <span className="text-[10px] font-bold uppercase">{t('stats')}</span>
-      </button>
-    </nav>
+      <nav className="lg:hidden bg-white/80 backdrop-blur-sm border-t border-stone-200/50 flex justify-around p-3 z-10">
+        <button onClick={() => setShowUpgradesModal(true)} className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-stone-100 transition-colors">
+          <TrendingUp className="w-5 h-5 text-stone-600" />
+          <span className="text-[10px] font-bold uppercase text-stone-500">{t('upgrades')}</span>
+        </button>
+        <button onClick={() => setShowAscensionModal(true)} className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-violet-50 transition-colors">
+          <Sparkles className="w-5 h-5 text-violet-600" />
+          <span className="text-[10px] font-bold uppercase text-violet-600">{t('ascension')}</span>
+        </button>
+        <button onClick={() => setShowStatsPanelModal(true)} className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors">
+          <BarChart2 className="w-5 h-5 text-blue-600" />
+          <span className="text-[10px] font-bold uppercase text-blue-600">{t('stats')}</span>
+        </button>
+      </nav>
 
-    {/* Bottom Bar */}
-    <footer className="bg-white border-t border-stone-200 p-4 md:p-3 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs text-stone-400 z-10 gap-4 md:gap-2">
+      <footer className="bg-white/80 backdrop-blur-sm border-t border-stone-200/50 p-3 md:p-4 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs text-stone-400 z-10 gap-3 md:gap-2">
         <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
-          <span className="w-full md:w-auto text-center mb-1 md:mb-0">© 2026 Apple of the Infinite Abyss</span>
+          <span className="font-medium">Apple of the Infinite Abyss</span>
           <a 
             href="https://github.com/ricardo-camilo-programador-frontend-web" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="flex items-center gap-1 hover:text-stone-600 transition-colors font-medium"
+            className="flex items-center gap-1 hover:text-stone-600 transition-colors"
           >
             <Github className="w-3 h-3 md:w-4 md:h-4" />
             GitHub
           </a>
-          <span className="hidden md:inline text-stone-300">•</span>
           <a 
             href="https://ricardo-camilo-dev-frontend-web.netlify.app/" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="flex items-center gap-1 hover:text-stone-600 transition-colors font-medium"
+            className="hover:text-stone-600 transition-colors hidden md:inline"
           >
             Portfolio
           </a>
-          <span className="hidden md:inline text-stone-300">•</span>
-          <Link href="/privacy" className="hover:text-stone-600 transition-colors font-medium">Privacy Policy</Link>
-          <span className="hidden md:inline text-stone-300">•</span>
-          <Link href="/terms" className="hover:text-stone-600 transition-colors font-medium">Terms of Service</Link>
+          <Link href="/privacy" className="hover:text-stone-600 transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-stone-600 transition-colors">Terms</Link>
         </div>
         <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
           <Link 
             href="/apple-varieties" 
-            className="flex items-center gap-1 hover:text-stone-600 transition-colors font-medium"
+            className="flex items-center gap-1 hover:text-stone-600 transition-colors"
           >
-            <BookOpen className="w-3 h-3 md:w-4 md:h-4" />
+            <BookOpen className="w-3 h-3" />
             <span>{t('apple_guide_footer_link')}</span>
           </Link>
-          <div className="flex items-center gap-1 font-medium">
-            <Info className="w-3 h-3 md:w-4 md:h-4" />
+          <div className="flex items-center gap-1">
+            <Info className="w-3 h-3" />
             <span>v1.0.0</span>
           </div>
         </div>
       </footer>
 
-      {/* Footer Ad - Mobile/Desktop */}
-      <div className="w-full h-[90px] bg-stone-200/50 flex items-center justify-center border-t border-stone-200">
+      <div className="w-full h-[90px] bg-stone-200/30 flex items-center justify-center border-t border-stone-200/50">
         <AdSenseAd slot="horizontal-footer" format="auto" className="w-full h-full max-w-4xl" />
       </div>
 
-      {/* Adsterra Native Banner - Below Footer */}
       <AdsterraAd format={AdFormat.NATIVE_BANNER} className="w-full max-w-4xl mx-auto my-4" />
-
-      {/* Adsterra Display Banner 468x60 - Horizontal */}
       <AdsterraAd format={AdFormat.DISPLAY_BANNER_468x60} className="w-full max-w-4xl mx-auto my-2" />
       
-      {/* Help Modal */}
       <Modal isOpen={!!showHelp} onClose={() => setShowHelp(null)} title={showHelp?.title || ''}>
         <p className="text-stone-600 text-sm leading-relaxed">{showHelp?.content}</p>
       </Modal>
 
-      {/* Skills Modal */}
       <Modal isOpen={showSkills} onClose={() => setShowSkills(false)} title={t('skills')}>
         <div className="space-y-4">
           <button 
             onClick={() => { engine.activateSkill('golden_harvest'); setShowSkills(false); }}
-            className="w-full p-4 bg-yellow-100 border-2 border-yellow-300 rounded-2xl flex items-center justify-between hover:bg-yellow-200 transition-all"
+            className="w-full p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-200 rounded-2xl flex items-center justify-between hover:border-yellow-300 transition-all"
           >
             <div className="flex items-center gap-3">
-              <Sparkles className="w-6 h-6 text-yellow-600" />
+              <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-yellow-600" />
+              </div>
               <div className="text-left">
                 <div className="font-bold text-yellow-900">Golden Harvest</div>
-                <div className="text-xs text-yellow-700">x5 Click, x2.5 Idle</div>
+                <div className="text-xs text-yellow-700">x5 Click Gold, x2.5 Idle Gold for 20s</div>
               </div>
             </div>
-            <div className="text-xs font-bold bg-yellow-200 px-2 py-1 rounded-full">Active</div>
+            <div className="text-xs font-bold bg-yellow-200 px-2 py-1 rounded-full text-yellow-800">Active</div>
           </button>
         </div>
       </Modal>
 
-      {/* Stats Modal */}
       <Modal isOpen={showStats} onClose={() => setShowStats(false)} title={t('statistics')}>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between"><span>Total Clicks:</span> <span className="font-mono font-bold">{state.totalClicks}</span></div>
           <div className="flex justify-between"><span>Apples Eaten:</span> <span className="font-mono font-bold">{state.totalApplesEaten}</span></div>
           <div className="flex justify-between"><span>Lucky Worms:</span> <span className="font-mono font-bold">{state.luckyWorms}</span></div>
-          <div className="flex justify-between"><span>Gold Bonus:</span> <span className="font-mono font-bold">+{Math.floor(state.luckyWorms * 5)}%</span></div>
+          <div className="flex justify-between"><span>Gold Bonus:</span> <span className="font-mono font-bold">+{state.luckyWorms * 5}%</span></div>
         </div>
       </Modal>
 
-      {/* Settings Modal */}
       <AnimatePresence>
         {showSettings && (
           <motion.div 
@@ -722,7 +941,6 @@ export default function Game() {
               </div>
               
               <div className="p-6 space-y-6">
-                {/* Sound */}
                 <div className="space-y-3">
                   <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
                     <Volume2 className="w-3 h-3" />
@@ -753,13 +971,12 @@ export default function Game() {
                   </div>
                 </div>
 
-                {/* Language */}
                 <div className="space-y-3">
                   <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
                     <Languages className="w-3 h-3" />
                     {t('settings_language')}
                   </label>
-                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
+                  <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
                     {(['en', 'zh', 'hi', 'es', 'fr', 'ar', 'bn', 'pt', 'ru', 'ur', 'id', 'de', 'ja', 'sw', 'mr', 'te', 'tr', 'ta', 'vi', 'ko'] as Language[]).map(lang => (
                       <button
                         key={lang}
@@ -776,7 +993,6 @@ export default function Game() {
                   </div>
                 </div>
 
-                {/* Save Management */}
                 <div className="space-y-3 pt-4 border-t border-stone-100">
                   <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
                     <Download className="w-3 h-3" />
@@ -796,7 +1012,7 @@ export default function Game() {
                         type="text" 
                         value={importString}
                         onChange={(e) => setImportString(e.target.value)}
-                        placeholder="Paste save string here..."
+                        placeholder="Paste save string..."
                         className="flex-1 p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-red-300"
                       />
                       <button 
@@ -816,7 +1032,7 @@ export default function Game() {
                       className="flex items-center justify-center gap-2 p-3 mt-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors font-medium text-sm border border-red-100"
                     >
                       <RefreshCw className="w-4 h-4" />
-                      Hard Reset Game
+                      Hard Reset
                     </button>
                   </div>
                 </div>
@@ -826,7 +1042,6 @@ export default function Game() {
         )}
       </AnimatePresence>
 
-      {/* Offline Progress Modal */}
       <AnimatePresence>
         {offlineResult && (
           <motion.div 
@@ -840,7 +1055,7 @@ export default function Game() {
               animate={{ scale: 1, y: 0 }}
               className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-8 text-center space-y-6"
             >
-              <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto">
+              <div className="w-20 h-20 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-full flex items-center justify-center mx-auto">
                 <Coins className="w-10 h-10 text-yellow-600" />
               </div>
               <h2 className="text-2xl font-bold">{t('offline_welcome')}</h2>
@@ -849,7 +1064,7 @@ export default function Game() {
               </p>
               <button 
                 onClick={() => setOfflineResult(null)}
-                className="w-full py-4 bg-red-500 text-white rounded-2xl font-bold hover:bg-red-600 transition-all shadow-lg shadow-red-200 active:scale-95"
+                className="w-full py-4 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-2xl font-bold hover:from-red-600 hover:to-rose-600 transition-all shadow-lg shadow-red-200 active:scale-95"
               >
                 {t('awesome') || 'Awesome!'}
               </button>
@@ -858,7 +1073,6 @@ export default function Game() {
         )}
       </AnimatePresence>
 
-      {/* Click Effects */}
       <AnimatePresence>
         {clickEffects.map(effect => (
           <motion.div
@@ -873,7 +1087,6 @@ export default function Game() {
         ))}
       </AnimatePresence>
 
-      {/* Mobile Modals */}
       <Modal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} title={t('upgrades')}>
         <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2">
           {renderUpgradesContent()}

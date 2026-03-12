@@ -35,12 +35,19 @@ import {
   BarChart2
 } from 'lucide-react';
 
-const getAppleSprite = (currentHp: number, maxHp: number): string => {
+const APPLE_SPRITES = [
+  '/assets/apples/red-delicious-apple-1.webp',
+  '/assets/apples/red-delicious-apple-2.webp',
+  '/assets/apples/red-delicious-apple-3.webp',
+  '/assets/apples/red-delicious-apple-4.webp',
+] as const;
+
+const getAppleSpriteIndex = (currentHp: number, maxHp: number): number => {
   const percent = (currentHp / maxHp) * 100;
-  if (percent > 75) return '/assets/apples/red-delicious-apple-1.webp';
-  if (percent > 50) return '/assets/apples/red-delicious-apple-2.webp';
-  if (percent > 25) return '/assets/apples/red-delicious-apple-3.webp';
-  return '/assets/apples/red-delicious-apple-4.webp';
+  if (percent > 75) return 0;
+  if (percent > 50) return 1;
+  if (percent > 25) return 2;
+  return 3;
 };
 
 export default function Game() {
@@ -398,7 +405,7 @@ export default function Game() {
 
   // Calculate apple visual state
   const hpPercent = (state.appleHP / state.maxAppleHP) * 100;
-  const appleSprite = getAppleSprite(state.appleHP, state.maxAppleHP);
+  const activeSpriteIndex = getAppleSpriteIndex(state.appleHP, state.maxAppleHP);
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-100 overflow-hidden select-none">
@@ -464,28 +471,23 @@ export default function Game() {
                 }}
                 className={`relative w-60 h-60 md:w-72 md:h-72 flex items-center justify-center ${isShaking ? 'shake-active' : ''}`}
               >
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={appleSprite}
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 1.1, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className={`absolute inset-0 transition-all duration-300 ${
-                      state.skills.golden_harvest.isActive 
-                        ? 'brightness-110 saturate-150 sepia-[0.3] hue-rotate-[40deg] drop-shadow-[0_0_15px_rgba(234,179,8,0.6)]' 
-                        : ''
-                    }`}
-                  >
+                <div className={`apple-sprite-container absolute inset-0 transition-all duration-300 ${
+                  state.skills.golden_harvest.isActive 
+                    ? 'brightness-110 saturate-150 sepia-[0.3] hue-rotate-[40deg] drop-shadow-[0_0_15px_rgba(234,179,8,0.6)]' 
+                    : ''
+                }`}>
+                  {APPLE_SPRITES.map((src, index) => (
                     <img
-                      src={appleSprite}
+                      key={src}
+                      src={src}
                       alt="Apple"
-                      className="absolute inset-0 w-full h-full object-contain drop-shadow-2xl"
-                      loading="lazy"
+                      className="apple-sprite"
+                      loading="eager"
                       decoding="async"
+                      style={{ opacity: index === activeSpriteIndex ? 1 : 0 }}
                     />
-                  </motion.div>
-                </AnimatePresence>
+                  ))}
+                </div>
               </motion.div>
             </div>
 

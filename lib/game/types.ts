@@ -17,6 +17,35 @@ export interface SkillState {
   cooldownRemaining: number;
 }
 
+export interface LuckyWormsConfig {
+  goldBonusPerWorm: number;
+  damageBonusPerWorm: number;
+}
+
+export interface StatisticsData {
+  totalClicks: number;
+  totalApplesEaten: number;
+  totalGoldEarned: number;
+  highestStage: number;
+  totalAscensions: number;
+  luckyWormsCollected: number;
+  goldenHarvestActivations: number;
+}
+
+export interface HelpContent {
+  titleKey: string;
+  descriptionKey: string;
+  formula?: string;
+}
+
+export type HelpTopicId = 
+  | 'lucky_worms'
+  | 'golden_harvest'
+  | 'ascension'
+  | 'click_damage'
+  | 'idle_damage'
+  | 'worm_upgrades';
+
 export interface GameState {
   gold: number;
   stage: number;
@@ -29,12 +58,9 @@ export interface GameState {
   luckyWorms: number;
   highestStage: number;
   lastSaveTimestamp: number;
-  worms: {
-    [key: string]: number;
-  };
-  skills: {
-    [key: string]: SkillState;
-  };
+  worms: Record<string, number>;
+  skills: Record<string, SkillState>;
+  statistics: StatisticsData;
   settings: {
     language: Language;
     muted: boolean;

@@ -1,22 +1,32 @@
-import { GameState, Language, WormUpgrade } from './types';
-import { INITIAL_STATE, WORM_UPGRADES, CLICK_UPGRADE } from './constants';
+import { GameState, Language } from './types';
+import { INITIAL_STATE, WORM_UPGRADES, CLICK_UPGRADE, LUCKY_WORMS_CONFIG } from './constants';
 import { AudioSystem } from './audio';
 import { LocalizationSystem } from './localization';
 import { SkillSystem } from './skills';
+import { OfflineProgressSystem, OfflineProgressResult } from './offline';
 
 export class GameEngine {
   private state: GameState;
   private audio: AudioSystem;
   private localization: LocalizationSystem;
   private skills: SkillSystem;
+  private offlineSystem: OfflineProgressSystem;
   private lastTick: number = Date.now();
-  private saveInterval: any;
+  private saveInterval: ReturnType<typeof setInterval> | null = null;
+
+  private readonly SAVE_KEY = 'apple_clicker_save';
 
   constructor() {
     this.state = this.loadGame();
     this.audio = new AudioSystem(this.state.settings.muted, this.state.settings.volume);
     this.localization = new LocalizationSystem(this.state.settings.language);
     this.skills = new SkillSystem(this.state);
+    this.offlineSystem = new OfflineProgressSystem({}, {
+      getCurrentState: () => this.state,
+      getWormDPS: (id) => this.getWormDPS(id),
+      getTotalDPS: () => this.getTotalDPS(),
+      getGoldMultiplier: () => this.getGoldMultiplier(),
+    });
     
     this.calculateOfflineProgress();
     this.startAutoSave();
@@ -24,18 +34,11 @@ export class GameEngine {
 
   private loadGame(): GameState {
     if (typeof window === 'undefined') return INITIAL_STATE;
-    const saved = localStorage.getItem('apple_clicker_save');
+    const saved = localStorage.getItem(this.SAVE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Merge with initial state to handle new properties in updates
-        return { 
-          ...INITIAL_STATE, 
-          ...parsed, 
-          worms: { ...INITIAL_STATE.worms, ...(parsed.worms || {}) },
-          skills: { ...INITIAL_STATE.skills, ...(parsed.skills || {}) },
-          settings: { ...INITIAL_STATE.settings, ...(parsed.settings || {}) } 
-        };
+        return this.mergeWithInitialState(parsed);
       } catch (e) {
         console.error('Failed to parse save', e);
       }
@@ -43,57 +46,41 @@ export class GameEngine {
     return INITIAL_STATE;
   }
 
-  public saveGame() {
-    if (typeof window === 'undefined') return;
-    this.state.lastSaveTimestamp = Date.now();
-    localStorage.setItem('apple_clicker_save', JSON.stringify(this.state));
+  private mergeWithInitialState(parsed: Partial<GameState>): GameState {
+    return { 
+      ...INITIAL_STATE, 
+      ...parsed, 
+      worms: { ...INITIAL_STATE.worms, ...(parsed.worms || {}) },
+      skills: { ...INITIAL_STATE.skills, ...(parsed.skills || {}) },
+      settings: { ...INITIAL_STATE.settings, ...(parsed.settings || {}) } 
+    };
   }
 
-  private startAutoSave() {
+  public saveGame(): void {
+    if (typeof window === 'undefined') return;
+    this.state.lastSaveTimestamp = Date.now();
+    localStorage.setItem(this.SAVE_KEY, JSON.stringify(this.state));
+  }
+
+  private startAutoSave(): void {
     this.saveInterval = setInterval(() => this.saveGame(), 10000);
     if (typeof window !== 'undefined') {
       window.addEventListener('beforeunload', () => this.saveGame());
     }
   }
 
-  private calculateOfflineProgress() {
-    const now = Date.now();
-    let offlineTimeMs = now - this.state.lastSaveTimestamp;
-    if (offlineTimeMs < 10000) return; // Less than 10 seconds, ignore
-
-    // Cap offline progress to 12 hours
-    const MAX_OFFLINE_MS = 12 * 60 * 60 * 1000;
-    if (offlineTimeMs > MAX_OFFLINE_MS) {
-      offlineTimeMs = MAX_OFFLINE_MS;
+  private calculateOfflineProgress(): void {
+    const result = this.offlineSystem.calculate();
+    if (result) {
+      this.offlineSystem.applyToState(result);
+      (this.state as any).lastOfflineResult = {
+        apples: result.applesEaten,
+        gold: result.goldGained,
+      };
     }
-
-    const dps = this.getTotalDPS();
-    if (dps <= 0) return;
-
-    const totalDamage = (dps * offlineTimeMs) / 1000;
-    let remainingDamage = totalDamage;
-    let applesEaten = 0;
-    let goldGained = 0;
-
-    // Simulate eating apples
-    while (remainingDamage >= this.state.appleHP) {
-      remainingDamage -= this.state.appleHP;
-      goldGained += this.state.appleHP * this.getGoldMultiplier();
-      applesEaten++;
-      this.advanceStage();
-      // Recalculate HP for next stage
-      this.state.appleHP = this.state.maxAppleHP;
-    }
-
-    this.state.appleHP -= remainingDamage;
-    this.state.gold += goldGained;
-    this.state.totalApplesEaten += applesEaten;
-
-    // We'll show a notification in the UI later
-    (this.state as any).lastOfflineResult = { apples: applesEaten, gold: goldGained };
   }
 
-  public tick() {
+  public tick(): void {
     const now = Date.now();
     const deltaTime = (now - this.lastTick) / 1000;
     this.lastTick = now;
@@ -106,14 +93,14 @@ export class GameEngine {
     }
   }
 
-  public clickApple() {
+  public clickApple(): void {
     const damage = this.getClickDamage();
     this.applyDamage(damage, true);
     this.state.totalClicks++;
     this.audio.playClick();
   }
 
-  private applyDamage(damage: number, isClick: boolean) {
+  private applyDamage(damage: number, isClick: boolean): void {
     this.state.appleHP -= damage;
     this.state.gold += damage * this.getGoldMultiplier();
 
@@ -125,37 +112,23 @@ export class GameEngine {
     }
   }
 
-  private advanceStage() {
+  private advanceStage(): void {
     this.state.stage++;
     if (this.state.stage > this.state.highestStage) {
       this.state.highestStage = this.state.stage;
     }
-    // Exponential growth: HP = 50 * 1.5^(stage-1)
-    this.state.maxAppleHP = Math.floor(50 * Math.pow(1.5, this.state.stage - 1));
+    this.state.maxAppleHP = this.calculateMaxAppleHP(this.state.stage);
   }
 
-  public getGoldMultiplier(): number {
-    const base = 1 * Math.pow(CLickUpgrade.damageGrowth, this.state.clickLevel)
-    const luckyWormBonus = 1 + (this.state.luckyWorms * 0.1); // 10% per worm
-    return dps;
-  } * 0) return 0;
-  } else {
-      this.state.appleHP = 0) return 0
-      }
-      }
-      this.state.appleHP = 0) return 10;
-    }
-  } else {
-      damage *= 0
-      return base * 1 + 1.15
-  } else {
-      this.state.appleHP += damage;
-      this.state.gold += damage * this.getGoldMultiplier();
-    } else {
-      this.advanceStage();
-      this.state.appleHP = 0
-      this.state.maxAppleHP = 10
-    }
+  private calculateMaxAppleHP(stage: number): number {
+    return Math.floor(50 * Math.pow(1.5, stage - 1));
+  }
+
+  public getClickDamage(): number {
+    const baseDamage = 1 * Math.pow(CLICK_UPGRADE.damageGrowth, this.state.clickLevel);
+    const luckyWormBonus = 1 + (this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm);
+    const skillMultiplier = this.skills.getGoldMultiplierClick();
+    return baseDamage * luckyWormBonus * skillMultiplier;
   }
 
   public getWormDPS(id: string): number {
@@ -167,30 +140,17 @@ export class GameEngine {
   }
 
   public getTotalDPS(): number {
-    let dps = 0;
-    WORM_UPGRADES.forEach(upgrade => {
-      dps += this.getWormDPS(upgrade.id);
-    });
-    const luckyWormBonus = 1 + (this.state.luckyWorms * 0.10);
+    let totalDPS = 0;
+    for (const upgrade of WORM_UPGRADES) {
+      totalDPS += this.getWormDPS(upgrade.id);
+    }
+    const luckyWormBonus = 1 + (this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm);
     const skillMultiplier = this.skills.getGoldMultiplierIdle();
-    return dps * luckyWormBonus * skillMultiplier;
+    return totalDPS * luckyWormBonus * skillMultiplier;
   }
 
   public getGoldMultiplier(): number {
-    return 1 + (this.state.luckyWorms * 0.05);
-  }
-
-  public buyUpgrade(upgradeId: string) {
-    const upgrade = WORM_UPGRADES.find(u => u.id === upgradeId);
-    if (!upgrade) return;
-
-    const cost = this.getUpgradeCost(upgradeId);
-    if (this.state.gold >= cost) {
-      this.state.gold -= cost;
-      this.state.worms[upgradeId] = (this.state.worms[upgradeId] || 0) + 1;
-      this.audio.playUpgrade();
-      this.saveGame();
-    }
+    return 1 + (this.state.luckyWorms * LUCKY_WORMS_CONFIG.goldBonusPerWorm);
   }
 
   public getUpgradeCost(upgradeId: string): number {
@@ -200,11 +160,21 @@ export class GameEngine {
     return Math.floor(upgrade.baseCost * Math.pow(upgrade.costGrowth, count));
   }
 
+  public buyUpgrade(upgradeId: string): void {
+    const cost = this.getUpgradeCost(upgradeId);
+    if (this.state.gold >= cost) {
+      this.state.gold -= cost;
+      this.state.worms[upgradeId] = (this.state.worms[upgradeId] || 0) + 1;
+      this.audio.playUpgrade();
+      this.saveGame();
+    }
+  }
+
   public getClickUpgradeCost(): number {
     return Math.floor(20 * Math.pow(1.15, this.state.clickLevel));
   }
 
-  public buyClickUpgrade() {
+  public buyClickUpgrade(): boolean {
     const cost = this.getClickUpgradeCost();
     if (this.state.gold >= cost) {
       this.state.gold -= cost;
@@ -225,13 +195,12 @@ export class GameEngine {
     return Math.floor(Math.sqrt(this.state.highestStage));
   }
 
-  public ascend() {
+  public ascend(): void {
     if (!this.canAscend()) return;
 
     const worms = this.getPendingLuckyWorms();
     this.state.luckyWorms += worms;
     
-    // Reset progress
     this.state.gold = 0;
     this.state.stage = 1;
     this.state.appleHP = 50;
@@ -243,28 +212,28 @@ export class GameEngine {
     this.saveGame();
   }
 
-  public setMuted(muted: boolean) {
+  public setMuted(muted: boolean): void {
     this.state.settings.muted = muted;
     this.audio.setMuted(muted);
     this.saveGame();
   }
 
-  public setVolume(volume: number) {
+  public setVolume(volume: number): void {
     this.state.settings.volume = volume;
     this.audio.setVolume(volume);
     this.saveGame();
   }
 
-  public setLanguage(lang: Language) {
+  public setLanguage(lang: Language): void {
     this.state.settings.language = lang;
     this.localization.setLanguage(lang);
     this.saveGame();
   }
 
-  public activateSkill(skillId: string) {
+  public activateSkill(skillId: string): void {
     if (skillId === 'golden_harvest') {
       this.skills.activateSkill(skillId, 20, 120);
-      this.audio.playUpgrade(); // Use upgrade sound for skill activation for now
+      this.audio.playUpgrade();
     }
   }
 
@@ -286,16 +255,12 @@ export class GameEngine {
 
   public exportSave(): string {
     const dataStr = JSON.stringify(this.state);
-    
-    // Simple checksum for basic anti-cheat
     let checksum = 0;
     for (let i = 0; i < dataStr.length; i++) {
       checksum = ((checksum << 5) - checksum) + dataStr.charCodeAt(i);
       checksum |= 0;
     }
-    
-    const saveObj = { data: this.state, hash: checksum };
-    return btoa(JSON.stringify(saveObj));
+    return btoa(JSON.stringify({ data: this.state, hash: checksum }));
   }
 
   public importSave(saveStr: string): boolean {
@@ -314,28 +279,25 @@ export class GameEngine {
       
       if (checksum !== saveObj.hash) return false;
       
-      // Sanity checks
       const data = saveObj.data;
-      if (typeof data.gold !== 'number' || data.gold < 0 || data.gold > 1e100) return false;
-      if (typeof data.stage !== 'number' || data.stage < 1 || data.stage > 1000000) return false;
-      if (typeof data.totalClicks !== 'number' || data.totalClicks < 0) return false;
+      if (!this.validateSaveData(data)) return false;
       
-      this.state = { 
-        ...INITIAL_STATE, 
-        ...data, 
-        worms: { ...INITIAL_STATE.worms, ...(data.worms || {}) },
-        skills: { ...INITIAL_STATE.skills, ...(data.skills || {}) },
-        settings: { ...INITIAL_STATE.settings, ...(data.settings || {}) } 
-      };
-      
+      this.state = this.mergeWithInitialState(data);
       this.saveGame();
       return true;
-    } catch (e) {
+    } catch {
       return false;
     }
   }
 
-  public resetGame() {
+  private validateSaveData(data: any): boolean {
+    if (typeof data.gold !== 'number' || data.gold < 0 || data.gold > 1e100) return false;
+    if (typeof data.stage !== 'number' || data.stage < 1 || data.stage > 1000000) return false;
+    if (typeof data.totalClicks !== 'number' || data.totalClicks < 0) return false;
+    return true;
+  }
+
+  public resetGame(): void {
     this.state = { ...INITIAL_STATE, settings: this.state.settings };
     this.saveGame();
   }

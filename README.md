@@ -1,20 +1,78 @@
+# 🍎 Apple of the Infinite Abyss
+
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+
+**Aplicacao AI Studio com Gemini API**
+
+[Demo](https://of-the-infinite-abyss.netlify.app/) • [Portfolio](https://persona-nextjs-chronicles-part-2.netlify.app/)
+
 </div>
 
-# Run and deploy your AI Studio app
+## 📋 Sobre
 
-This contains everything you need to run your app locally.
+Aplicacao desenvolvida com AI Studio e Gemini API para geracao de conteudo inteligente.
 
-View your app in AI Studio: https://ai.studio/apps/0779febe-c4fb-4787-af63-a9d4532348b2
+## 🚀 Tecnologias
 
-## Run Locally
+| Tecnologia | Versao | Uso |
+|------------|--------|-----|
+| Next.js | 15.x | Framework React |
+| React | 19.x | UI Library |
+| TypeScript | 5.x | Linguagem |
+| TailwindCSS | 4.x | Estilizacao |
+| Gemini API | - | AI Integration |
 
-**Prerequisites:**  Node.js
+## 🏃 Quick Start
 
+```bash
+# Clonar repositorio
+git clone https://github.com/ricardo-camilo-programador-frontend-web/apple-of-the-infinite-abyss.git
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+# Instalar dependencias
+npm install
+
+# Configurar ambiente
+cp .env.example .env.local
+# Adicionar GEMINI_API_KEY no .env.local
+
+# Rodar desenvolvimento
+npm run dev
+```
+
+## 📁 Estrutura
+
+```
+apple-of-the-infinite-abyss/
+├── app/                    # Next.js App Router
+├── components/             # Componentes React
+├── hooks/                  # Custom Hooks
+├── lib/                    # Utilitarios
+├── docs/                   # Documentacao
+│   └── github-workflow/    # Padroes GitHub
+└── .github/                # Templates e CI/CD
+```
+
+## 📚 Documentacao
+
+- [Workflow GitHub](./docs/github-workflow/README.md)
+- [Padroes de Qualidade](./docs/github-workflow/CODE_QUALITY.md)
+- [Padroes de Commit](./docs/github-workflow/COMMIT-PATTERN.md)
+
+## 📜 Scripts
+
+| Comando | Descricao |
+|---------|-----------|
+| `npm run dev` | Servidor desenvolvimento |
+| `npm run build` | Build producao |
+| `npm run start` | Servidor producao |
+| `npm run lint` | Verificacao de codigo |
+
+## 👤 Autor
+
+**Ricardo Camilo**
+- Portfolio: [persona-nextjs-chronicles-part-2.netlify.app](https://persona-nextjs-chronicles-part-2.netlify.app/)
+- GitHub: [@ricardo-camilo-programador-frontend-web](https://github.com/ricardo-camilo-programador-frontend-web)
+
+## 📄 Licenca
+
+MIT License

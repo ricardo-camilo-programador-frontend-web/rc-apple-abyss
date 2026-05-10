@@ -1,3 +1,4 @@
+[![CI](https://github.com/ricardo-camilo-programador-frontend-web/apple-of-the-infinite-abyss/actions/workflows/ci.yml/badge.svg)](https://github.com/ricardo-camilo-programador-frontend-web/apple-of-the-infinite-abyss/actions)
 # 🍎 Apple of the Infinite Abyss
 
 <div align="center">

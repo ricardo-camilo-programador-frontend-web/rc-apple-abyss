@@ -41,6 +41,7 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
   const onMaxRetriesRef = useRef(onMaxRetriesReached);
   const mountedRef = useRef(true);
   const abortRef = useRef(false);
+  const loadingRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync refs outside render (React 19 rule)
@@ -63,8 +64,9 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
 
   const execute = useCallback(
     async (...args: A): Promise<T | null> => {
-      // Guard against concurrent calls
-      if (loading) return null;
+      // Guard against concurrent calls using ref (not stale closure state)
+      if (loadingRef.current) return null;
+      loadingRef.current = true;
 
       setLoading(true);
       setError(null);
@@ -72,6 +74,7 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
       try {
         const result = await asyncFnRef.current(...args);
         if (!mountedRef.current) return null;
+        loadingRef.current = false;
         setRetryCount(0);
         setLoading(false);
         return result;
@@ -82,19 +85,24 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
 
         let lastError = caughtError;
 
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-          if (abortRef.current || !mountedRef.current) return null;
+        // Retry loop: maxRetries attempts (not maxRetries+1)
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          if (abortRef.current || !mountedRef.current) {
+            loadingRef.current = false;
+            return null;
+          }
 
           try {
             const result = await asyncFnRef.current(...args);
             if (!mountedRef.current) return null;
+            loadingRef.current = false;
             setRetryCount(0);
             setLoading(false);
             return result;
           } catch (retryErr) {
             lastError = retryErr instanceof Error ? retryErr : new Error(String(retryErr));
 
-            if (attempt < maxRetries && !abortRef.current && mountedRef.current) {
+            if (attempt < maxRetries - 1 && !abortRef.current && mountedRef.current) {
               const newCount = attempt + 1;
               setRetryCount(newCount);
               onRetryRef.current?.(newCount, lastError);
@@ -111,13 +119,14 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
         }
 
         if (!mountedRef.current) return null;
+        loadingRef.current = false;
         setError(lastError);
         setLoading(false);
         onMaxRetriesRef.current?.(lastError);
         return null;
       }
     },
-    [loading, maxRetries, delay, backoff]
+    [maxRetries, delay, backoff]
   );
 
   const reset = useCallback(() => {
@@ -126,6 +135,7 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
       timeoutRef.current = null;
     }
     abortRef.current = true;
+    loadingRef.current = false;
     setLoading(false);
     setError(null);
     setRetryCount(0);

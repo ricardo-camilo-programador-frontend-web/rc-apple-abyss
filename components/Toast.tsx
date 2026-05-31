@@ -47,10 +47,35 @@ export function useToast() {
   return context;
 }
 
+// Static lookup maps hoisted to module scope to avoid per-render allocation
+const toastIcons: Record<ToastType, React.ElementType> = {
+  success: CheckCircle,
+  error: AlertCircle,
+  warning: AlertTriangle,
+  info: Info,
+};
+
+const toastColors: Record<ToastType, { bg: string; border: string; icon: string }> = {
+  success: { bg: 'from-green-50 to-emerald-50', border: 'border-green-200', icon: 'text-green-500' },
+  error: { bg: 'from-red-50 to-rose-50', border: 'border-red-200', icon: 'text-red-500' },
+  warning: { bg: 'from-yellow-50 to-amber-50', border: 'border-yellow-200', icon: 'text-yellow-500' },
+  info: { bg: 'from-blue-50 to-indigo-50', border: 'border-blue-200', icon: 'text-blue-500' },
+};
+
+const actionColors: Record<ToastType, string> = {
+  success: 'text-emerald-500 hover:text-emerald-600',
+  error: 'text-red-500 hover:text-red-600',
+  warning: 'text-amber-500 hover:text-amber-600',
+  info: 'text-blue-500 hover:text-blue-600',
+};
+
 interface ToastProviderProps {
   children: ReactNode;
   maxToasts?: number;
 }
+
+// Maximum auto-dismiss delay to prevent setTimeout(fn, Infinity) which resolves immediately
+const MAX_DURATION = 86_400_000; // 24 hours
 
 export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -83,11 +108,12 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
       // Guard against post-unmount invocation
       if (!mountedRef.current) return '';
 
-      const id = `toast-${crypto.randomUUID()}`;
+      const id = crypto.randomUUID();
+      const duration = toast.duration ?? 5000;
       const newToast: Toast = {
         ...toast,
         id,
-        duration: toast.duration ?? 5000,
+        duration,
       };
 
       setToasts((prev) => {
@@ -106,10 +132,12 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
         return updated.slice(-maxToasts);
       });
 
-      if (newToast.duration && newToast.duration > 0) {
+      // Only set auto-dismiss timer for finite positive durations (0 = no auto-dismiss)
+      if (duration > 0 && Number.isFinite(duration)) {
+        const safeDuration = Math.min(duration, MAX_DURATION);
         const timeout = setTimeout(() => {
           removeToast(id);
-        }, newToast.duration);
+        }, safeDuration);
         timeoutRefs.current.set(id, timeout);
       }
 
@@ -170,7 +198,12 @@ interface ToastContainerProps {
 
 function ToastContainer({ toasts, removeToast }: ToastContainerProps) {
   return (
-    <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+    <div
+      role="region"
+      aria-live="polite"
+      aria-label="Notifications"
+      className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full pointer-events-none"
+    >
       <AnimatePresence mode="popLayout">
         {toasts.map((toast) => (
           <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
@@ -180,41 +213,20 @@ function ToastContainer({ toasts, removeToast }: ToastContainerProps) {
   );
 }
 
-// Action button color mapping by toast type
-const actionColors: Record<ToastType, string> = {
-  success: 'text-emerald-500 hover:text-emerald-600',
-  error: 'text-red-500 hover:text-red-600',
-  warning: 'text-amber-500 hover:text-amber-600',
-  info: 'text-blue-500 hover:text-blue-600',
-};
-
 interface ToastItemProps {
   toast: Toast;
   onClose: () => void;
 }
 
 function ToastItem({ toast, onClose }: ToastItemProps) {
-  const icons: Record<ToastType, React.ElementType> = {
-    success: CheckCircle,
-    error: AlertCircle,
-    warning: AlertTriangle,
-    info: Info,
-  };
-
-  const colors: Record<ToastType, { bg: string; border: string; icon: string }> = {
-    success: { bg: 'from-green-50 to-emerald-50', border: 'border-green-200', icon: 'text-green-500' },
-    error: { bg: 'from-red-50 to-rose-50', border: 'border-red-200', icon: 'text-red-500' },
-    warning: { bg: 'from-yellow-50 to-amber-50', border: 'border-yellow-200', icon: 'text-yellow-500' },
-    info: { bg: 'from-blue-50 to-indigo-50', border: 'border-blue-200', icon: 'text-blue-500' },
-  };
-
-  const Icon = icons[toast.type];
-  const color = colors[toast.type];
+  const Icon = toastIcons[toast.type];
+  const color = toastColors[toast.type];
   const actionColor = actionColors[toast.type];
 
   return (
     <motion.div
       layout
+      role="alert"
       initial={{ opacity: 0, y: 50, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
@@ -233,8 +245,11 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
           {toast.action && (
             <button
               onClick={() => {
-                toast.action!.onClick();
-                onClose();
+                try {
+                  toast.action!.onClick();
+                } finally {
+                  onClose();
+                }
               }}
               className={`text-xs font-bold ${actionColor} mt-2 transition-colors`}
             >
@@ -246,6 +261,7 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
         <button
           onClick={onClose}
           className="shrink-0 text-stone-400 hover:text-stone-600 transition-colors"
+          aria-label="Close notification"
         >
           <X className="w-4 h-4" />
         </button>

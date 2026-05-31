@@ -34,8 +34,8 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
     onMaxRetriesReached,
   } = options;
 
-  // Clamp delay to non-negative
-  const delay = Math.max(0, rawDelay);
+  // Clamp delay to valid non-negative finite number
+  const delay = Number.isFinite(rawDelay) && rawDelay >= 0 ? rawDelay : 1000;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -94,8 +94,11 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
         !mountedRef.current || abortRef.current || generationRef.current !== currentGeneration;
 
       // Helper: clean up loading state safely
+      // Only clear loadingRef when this operation still owns it (same generation)
       const cleanup = () => {
-        loadingRef.current = false;
+        if (generationRef.current === currentGeneration) {
+          loadingRef.current = false;
+        }
         if (!isStale()) {
           setLoading(false);
         }
@@ -218,9 +221,10 @@ export async function retryAsync<T>(
   fn: () => Promise<T>,
   options: RetryAsyncOptions = {}
 ): Promise<T> {
-  const { maxRetries = 3, delay: rawDelay = 1000, backoff = true } = options;
-  const delay = Math.max(0, rawDelay);
-  let lastError: Error | null = null;
+  const { maxRetries: rawMaxRetries = 3, delay: rawDelay = 1000, backoff = true } = options;
+  const maxRetries = Math.max(0, Math.floor(rawMaxRetries));
+  const delay = Number.isFinite(rawDelay) && rawDelay >= 0 ? rawDelay : 1000;
+  let lastError: Error = new Error('retryAsync: no attempts made');
 
   // Total attempts = 1 initial + maxRetries retries
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -246,7 +250,7 @@ export function useNetworkRetry<T>(
   url: string,
   options: Omit<RequestInit, 'signal'> & UseRetryOptions = {}
 ) {
-  const { maxRetries = 3, delay = 1000, backoff = true, ...fetchOptions } = options;
+  const { maxRetries = 3, delay = 1000, backoff = true, onRetry, onMaxRetriesReached, ...fetchOptions } = options;
 
   // Use ref to avoid re-creating fetchData every render
   const fetchOptionsRef = useRef(fetchOptions);
@@ -264,5 +268,5 @@ export function useNetworkRetry<T>(
     return response.json() as Promise<T>;
   }, []);
 
-  return useRetry(fetchData, { maxRetries, delay, backoff });
+  return useRetry(fetchData, { maxRetries, delay, backoff, onRetry, onMaxRetriesReached });
 }

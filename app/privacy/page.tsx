@@ -8,7 +8,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-xl font-bold mb-2">Last Updated: {new Date().toLocaleDateString()}</h2>
             <p className="leading-relaxed">
-              Apple of the Infinite Abyss ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our web application.
+              Apple of the Infinite Abyss (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our web application.
             </p>
           </section>
 
@@ -84,7 +84,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold mb-3">6. Children's Privacy</h2>
+            <h2 className="text-xl font-bold mb-3">6. Children&rsquo;s Privacy</h2>
             <p className="text-sm leading-relaxed">
               Our application is designed for general audiences. We do not knowingly collect personal information from children under 13. If we become aware that we have collected such information, we will take steps to delete it.
             </p>

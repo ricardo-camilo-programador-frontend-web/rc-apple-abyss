@@ -8,7 +8,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-bold mb-2">Last Updated: {new Date().toLocaleDateString()}</h2>
             <p className="leading-relaxed">
-              By using Apple of the Infinite Abyss ("the Application"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Application.
+              By using Apple of the Infinite Abyss (&ldquo;the Application&rdquo;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Application.
             </p>
           </section>
 
@@ -80,7 +80,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-bold mb-3">8. Disclaimers</h2>
             <p className="text-sm leading-relaxed mb-2">
-              THE APPLICATION IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+              THE APPLICATION IS PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED.
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm">
               <li>We make no warranties about the accuracy, reliability, or completeness of the Application</li>

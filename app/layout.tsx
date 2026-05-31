@@ -1,6 +1,8 @@
 import type {Metadata} from 'next';
 import './globals.css'; // Global styles
 import Script from 'next/script';
+import { ToastProvider } from '@/components/Toast';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export const metadata: Metadata = {
   title: 'Apple of the Infinite Abyss',
@@ -47,7 +49,11 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
         </Script>
       </head>
       <body suppressHydrationWarning className="bg-stone-100 text-stone-900 font-sans">
-        {children}
+        <ToastProvider>
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </ToastProvider>
         <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {

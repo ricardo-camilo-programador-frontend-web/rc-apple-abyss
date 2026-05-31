@@ -1,79 +1,91 @@
-[![CI](https://github.com/ricardo-camilo-programador-frontend-web/apple-of-the-infinite-abyss/actions/workflows/ci.yml/badge.svg)](https://github.com/ricardo-camilo-programador-frontend-web/apple-of-the-infinite-abyss/actions)
-# 🍎 Apple of the Infinite Abyss
+[![CI](https://github.com/ricardo-camilo-programador-frontend-web/rc-apple-abyss/actions/workflows/ci.yml/badge.svg)](https://github.com/ricardo-camilo-programador-frontend-web/rc-apple-abyss/actions)
+[![Deploy](https://img.shields.io/badge/deploy-netlify-00C7B7?logo=netlify)](https://click-on-the-malus-domestica-ide.netlify.app/)
+
+# Apple of the Infinite Abyss
 
 <div align="center">
 
-**Aplicacao AI Studio com Gemini API**
+**A minimalist incremental idle game where you eat apples with help of worms.**
 
-[Demo](https://of-the-infinite-abyss.netlify.app/) • [Portfolio](https://persona-nextjs-chronicles-part-2.netlify.app/)
+[Live Demo](https://click-on-the-malus-domestica-ide.netlify.app/)
 
 </div>
 
-## 📋 Sobre
+---
 
-Aplicacao desenvolvida com AI Studio e Gemini API para geracao de conteudo inteligente.
+## Overview
 
-## 🚀 Tecnologias
+Apple of the Infinite Abyss is an idle/incremental game built with Next.js where the core mechanic revolves around eating apples with the help of worms. The game features persistent progression, upgrade systems, and multiple apple varieties.
 
-| Tecnologia | Versao | Uso |
-|------------|--------|-----|
-| Next.js | 15.x | Framework React |
-| React | 19.x | UI Library |
-| TypeScript | 5.x | Linguagem |
-| TailwindCSS | 4.x | Estilizacao |
-| Gemini API | - | AI Integration |
+## Tech Stack
 
-## 🏃 Quick Start
+- **Next.js 15** — App Router, SSR/SSG
+- **React 19** — UI Library
+- **TypeScript 5** — Type Safety
+- **TailwindCSS 4** — Styling
+- **Gemini API** — AI-generated content (apple descriptions, lore)
+
+## Getting Started
 
 ```bash
-# Clonar repositorio
-git clone https://github.com/ricardo-camilo-programador-frontend-web/apple-of-the-infinite-abyss.git
+# Clone the repository
+git clone https://github.com/ricardo-camilo-programador-frontend-web/rc-apple-abyss.git
 
-# Instalar dependencias
-npm install
+# Install dependencies
+pnpm install
 
-# Configurar ambiente
+# Set up environment
 cp .env.example .env.local
-# Adicionar GEMINI_API_KEY no .env.local
+# Add GEMINI_API_KEY in .env.local
 
-# Rodar desenvolvimento
-npm run dev
+# Start development server
+pnpm dev
 ```
 
-## 📁 Estrutura
+## Project Structure
 
 ```
-apple-of-the-infinite-abyss/
+rc-apple-abyss/
 ├── app/                    # Next.js App Router
-├── components/             # Componentes React
-├── hooks/                  # Custom Hooks
-├── lib/                    # Utilitarios
-├── docs/                   # Documentacao
-│   └── github-workflow/    # Padroes GitHub
-└── .github/                # Templates e CI/CD
+│   ├── apple-varieties/    # Apple varieties catalog
+│   ├── privacy/            # Privacy policy
+│   └── terms/              # Terms of service
+├── components/             # React components
+│   ├── Game.tsx            # Core game component
+│   ├── ErrorBoundary.tsx   # Error handling boundary
+│   └── Toast.tsx           # Notification system
+├── hooks/                  # Custom hooks
+│   └── use-retry.ts        # Retry logic with exponential backoff
+├── lib/                    # Utilities
+├── docs/                   # Documentation
+└── .github/                # CI/CD workflows
 ```
 
-## 📚 Documentacao
+## Features
 
-- [Workflow GitHub](./docs/github-workflow/README.md)
-- [Padroes de Qualidade](./docs/github-workflow/CODE_QUALITY.md)
-- [Padroes de Commit](./docs/github-workflow/COMMIT-PATTERN.md)
+- **Idle Gameplay** — Progress continues even when you are away
+- **Apple Varieties** — Discover and collect different apple types
+- **Worm Helpers** — Recruit worms to boost your apple consumption
+- **Upgrade System** — Spend resources on permanent upgrades
+- **AI Content** — Gemini-powered descriptions and lore
+- **Error Handling** — Robust error boundaries with recovery UI
+- **Toast Notifications** — User-friendly feedback system
 
-## 📜 Scripts
+## Scripts
 
-| Comando | Descricao |
-|---------|-----------|
-| `npm run dev` | Servidor desenvolvimento |
-| `npm run build` | Build producao |
-| `npm run start` | Servidor producao |
-| `npm run lint` | Verificacao de codigo |
+```bash
+pnpm dev      # Start development server
+pnpm build    # Build for production
+pnpm start    # Start production server
+pnpm lint     # Run ESLint
+```
 
-## 👤 Autor
+## Author
 
 **Ricardo Camilo**
-- Portfolio: [persona-nextjs-chronicles-part-2.netlify.app](https://persona-nextjs-chronicles-part-2.netlify.app/)
 - GitHub: [@ricardo-camilo-programador-frontend-web](https://github.com/ricardo-camilo-programador-frontend-web)
+- Portfolio: [rc-portfolio](https://persona-nextjs-chronicles-part-2.netlify.app/)
 
-## 📄 Licenca
+## License
 
 MIT License

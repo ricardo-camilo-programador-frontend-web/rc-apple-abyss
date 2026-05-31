@@ -48,20 +48,46 @@ export function useRetry<T>(
         return result;
       } catch (err) {
         const caughtError = err instanceof Error ? err : new Error(String(err));
-        
+
         if (retryCount < maxRetries) {
           const currentDelay = backoff ? delay * Math.pow(2, retryCount) : delay;
-          
+
           setRetryCount((prev) => {
             const newCount = prev + 1;
             onRetry?.(newCount, caughtError);
             return newCount;
           });
 
+          // Use asyncFn directly instead of recursive execute reference
+          // to avoid react-hooks/immutability circular reference error
           return new Promise((resolve) => {
             timeoutRef.current = setTimeout(async () => {
-              const result = await execute(...args);
-              resolve(result);
+              let retryResult: T | null = null;
+              let lastError: Error | null = caughtError;
+              const remainingRetries = maxRetries - retryCount - 1;
+
+              for (let i = 0; i <= remainingRetries; i++) {
+                try {
+                  retryResult = await asyncFn(...args);
+                  setRetryCount(0);
+                  setLoading(false);
+                  resolve(retryResult);
+                  return;
+                } catch (retryErr) {
+                  lastError = retryErr instanceof Error ? retryErr : new Error(String(retryErr));
+                  onRetry?.(retryCount + i + 2, lastError);
+
+                  if (i < remainingRetries) {
+                    const nextDelay = backoff ? delay * Math.pow(2, retryCount + i + 1) : delay;
+                    await new Promise<void>((r) => setTimeout(r, nextDelay));
+                  }
+                }
+              }
+
+              setError(lastError);
+              setLoading(false);
+              onMaxRetriesReached?.(lastError);
+              resolve(null);
             }, currentDelay);
           });
         } else {

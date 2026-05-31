@@ -1,12 +1,12 @@
 'use client';
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
-  fallback?: ReactNode;
+  fallback?: ReactNode | ((error: Error, reset: () => void) => ReactNode);
   onReset?: () => void;
 }
 
@@ -28,8 +28,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     };
   }
 
-  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
-    return { hasError: true, error };
+  static getDerivedStateFromError(error: unknown): Partial<ErrorBoundaryState> {
+    const normalized = error instanceof Error ? error : new Error(String(error));
+    return { hasError: true, error: normalized };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -38,10 +39,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       errorCount: prev.errorCount + 1,
     }));
 
-    // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
-    }
+    // Log error in all environments
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
 
     // Could send to error tracking service here
     // Example: Sentry.captureException(error, { extra: errorInfo });
@@ -52,6 +51,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       hasError: false,
       error: null,
       errorInfo: null,
+      errorCount: 0,
     });
     this.props.onReset?.();
   };
@@ -69,6 +69,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     const { children, fallback } = this.props;
 
     if (hasError) {
+      // Render prop pattern: fallback can be a function receiving error and reset
+      if (typeof fallback === 'function') {
+        return fallback(error!, this.handleReset);
+      }
+
       if (fallback) {
         return fallback;
       }

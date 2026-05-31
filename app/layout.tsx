@@ -49,11 +49,11 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
         </Script>
       </head>
       <body suppressHydrationWarning className="bg-stone-100 text-stone-900 font-sans">
-        <ErrorBoundary>
-          <ToastProvider>
+        <ToastProvider>
+          <ErrorBoundary>
             {children}
-          </ToastProvider>
-        </ErrorBoundary>
+          </ErrorBoundary>
+        </ToastProvider>
         <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {

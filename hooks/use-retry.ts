@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 interface UseRetryOptions {
   maxRetries?: number;
@@ -10,8 +10,8 @@ interface UseRetryOptions {
   onMaxRetriesReached?: (error: Error) => void;
 }
 
-interface UseRetryReturn<T> {
-  execute: (...args: any[]) => Promise<T | null>;
+interface UseRetryReturn<T, A extends unknown[]> {
+  execute: (...args: A) => Promise<T | null>;
   loading: boolean;
   error: Error | null;
   retryCount: number;
@@ -19,10 +19,10 @@ interface UseRetryReturn<T> {
   canRetry: boolean;
 }
 
-export function useRetry<T>(
-  asyncFn: (...args: any[]) => Promise<T>,
+export function useRetry<T, A extends unknown[] = unknown[]>(
+  asyncFn: (...args: A) => Promise<T>,
   options: UseRetryOptions = {}
-): UseRetryReturn<T> {
+): UseRetryReturn<T, A> {
   const {
     maxRetries = 3,
     delay = 1000,
@@ -34,77 +34,98 @@ export function useRetry<T>(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Refs for mutable values read inside async callbacks to avoid stale closures
+  const asyncFnRef = useRef(asyncFn);
+  const onRetryRef = useRef(onRetry);
+  const onMaxRetriesRef = useRef(onMaxRetriesReached);
+  const mountedRef = useRef(true);
+  const abortRef = useRef(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync refs outside render (React 19 rule)
+  useEffect(() => { asyncFnRef.current = asyncFn; });
+  useEffect(() => { onRetryRef.current = onRetry; });
+  useEffect(() => { onMaxRetriesRef.current = onMaxRetriesReached; });
+
+  // Cleanup on unmount
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      abortRef.current = true;
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const execute = useCallback(
-    async (...args: any[]): Promise<T | null> => {
+    async (...args: A): Promise<T | null> => {
+      // Guard against concurrent calls
+      if (loading) return null;
+
       setLoading(true);
       setError(null);
 
       try {
-        const result = await asyncFn(...args);
+        const result = await asyncFnRef.current(...args);
+        if (!mountedRef.current) return null;
         setRetryCount(0);
         setLoading(false);
         return result;
       } catch (err) {
         const caughtError = err instanceof Error ? err : new Error(String(err));
 
-        if (retryCount < maxRetries) {
-          const currentDelay = backoff ? delay * Math.pow(2, retryCount) : delay;
+        if (!mountedRef.current) return null;
 
-          setRetryCount((prev) => {
-            const newCount = prev + 1;
-            onRetry?.(newCount, caughtError);
-            return newCount;
-          });
+        let lastError = caughtError;
 
-          // Use asyncFn directly instead of recursive execute reference
-          // to avoid react-hooks/immutability circular reference error
-          return new Promise((resolve) => {
-            timeoutRef.current = setTimeout(async () => {
-              let retryResult: T | null = null;
-              let lastError: Error | null = caughtError;
-              const remainingRetries = maxRetries - retryCount - 1;
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          if (abortRef.current || !mountedRef.current) return null;
 
-              for (let i = 0; i <= remainingRetries; i++) {
-                try {
-                  retryResult = await asyncFn(...args);
-                  setRetryCount(0);
-                  setLoading(false);
-                  resolve(retryResult);
-                  return;
-                } catch (retryErr) {
-                  lastError = retryErr instanceof Error ? retryErr : new Error(String(retryErr));
-                  onRetry?.(retryCount + i + 2, lastError);
+          try {
+            const result = await asyncFnRef.current(...args);
+            if (!mountedRef.current) return null;
+            setRetryCount(0);
+            setLoading(false);
+            return result;
+          } catch (retryErr) {
+            lastError = retryErr instanceof Error ? retryErr : new Error(String(retryErr));
 
-                  if (i < remainingRetries) {
-                    const nextDelay = backoff ? delay * Math.pow(2, retryCount + i + 1) : delay;
-                    await new Promise<void>((r) => setTimeout(r, nextDelay));
-                  }
-                }
-              }
+            if (attempt < maxRetries && !abortRef.current && mountedRef.current) {
+              const newCount = attempt + 1;
+              setRetryCount(newCount);
+              onRetryRef.current?.(newCount, lastError);
 
-              setError(lastError);
-              setLoading(false);
-              onMaxRetriesReached?.(lastError);
-              resolve(null);
-            }, currentDelay);
-          });
-        } else {
-          setError(caughtError);
-          setLoading(false);
-          onMaxRetriesReached?.(caughtError);
-          return null;
+              const currentDelay = backoff
+                ? delay * Math.pow(2, attempt)
+                : delay;
+
+              await new Promise<void>((resolve) => {
+                timeoutRef.current = setTimeout(resolve, currentDelay);
+              });
+            }
+          }
         }
+
+        if (!mountedRef.current) return null;
+        setError(lastError);
+        setLoading(false);
+        onMaxRetriesRef.current?.(lastError);
+        return null;
       }
     },
-    [asyncFn, retryCount, maxRetries, delay, backoff, onRetry, onMaxRetriesReached]
+    [loading, maxRetries, delay, backoff]
   );
 
   const reset = useCallback(() => {
-    if (timeoutRef.current) {
+    if (timeoutRef.current !== null) {
       clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
+    abortRef.current = true;
     setLoading(false);
     setError(null);
     setRetryCount(0);
@@ -120,10 +141,16 @@ export function useRetry<T>(
   };
 }
 
-// Utility function for retrying async operations
+// Utility function for retrying async operations (narrowed options)
+interface RetryAsyncOptions {
+  maxRetries?: number;
+  delay?: number;
+  backoff?: boolean;
+}
+
 export async function retryAsync<T>(
   fn: () => Promise<T>,
-  options: UseRetryOptions = {}
+  options: RetryAsyncOptions = {}
 ): Promise<T> {
   const { maxRetries = 3, delay = 1000, backoff = true } = options;
   let lastError: Error | null = null;
@@ -133,7 +160,7 @@ export async function retryAsync<T>(
       return await fn();
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      
+
       if (attempt < maxRetries) {
         const currentDelay = backoff ? delay * Math.pow(2, attempt) : delay;
         await new Promise((resolve) => setTimeout(resolve, currentDelay));
@@ -147,17 +174,25 @@ export async function retryAsync<T>(
 // Hook for network requests with retry
 export function useNetworkRetry<T>(
   url: string,
-  options: RequestInit & UseRetryOptions = {}
+  options: Omit<RequestInit, 'signal'> & UseRetryOptions = {}
 ) {
   const { maxRetries = 3, delay = 1000, backoff = true, ...fetchOptions } = options;
 
+  // Use ref to avoid re-creating fetchData every render
+  const fetchOptionsRef = useRef(fetchOptions);
+  const urlRef = useRef(url);
+
+  // Sync refs outside render
+  useEffect(() => { fetchOptionsRef.current = fetchOptions; });
+  useEffect(() => { urlRef.current = url; });
+
   const fetchData = useCallback(async () => {
-    const response = await fetch(url, fetchOptions);
+    const response = await fetch(urlRef.current, fetchOptionsRef.current);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     return response.json() as Promise<T>;
-  }, [url, fetchOptions]);
+  }, []);
 
   return useRetry(fetchData, { maxRetries, delay, backoff });
 }

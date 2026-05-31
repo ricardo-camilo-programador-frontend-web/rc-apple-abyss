@@ -1,6 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  type ReactNode,
+} from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
@@ -46,14 +54,33 @@ interface ToastProviderProps {
 
 export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  // Track timeouts for cleanup on unmount and manual dismiss
+  const timeoutRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const mountedRef = useRef(true);
+
+  // Cleanup all timeouts on unmount
+  useEffect(() => {
+    mountedRef.current = true;
+    const currentTimeouts = timeoutRefs.current;
+    return () => {
+      mountedRef.current = false;
+      currentTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+      currentTimeouts.clear();
+    };
+  }, []);
 
   const removeToast = useCallback((id: string) => {
+    const timeout = timeoutRefs.current.get(id);
+    if (timeout !== undefined) {
+      clearTimeout(timeout);
+      timeoutRefs.current.delete(id);
+    }
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
   const addToast = useCallback(
     (toast: Omit<Toast, 'id'>) => {
-      const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const id = `toast-${crypto.randomUUID()}`;
       const newToast: Toast = {
         ...toast,
         id,
@@ -66,9 +93,10 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
       });
 
       if (newToast.duration && newToast.duration > 0) {
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
           removeToast(id);
         }, newToast.duration);
+        timeoutRefs.current.set(id, timeout);
       }
 
       return id;
@@ -77,6 +105,8 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
   );
 
   const clearToasts = useCallback(() => {
+    timeoutRefs.current.forEach((timeoutId) => clearTimeout(timeoutId));
+    timeoutRefs.current.clear();
     setToasts([]);
   }, []);
 
@@ -136,6 +166,14 @@ function ToastContainer({ toasts, removeToast }: ToastContainerProps) {
   );
 }
 
+// Action button color mapping by toast type
+const actionColors: Record<ToastType, string> = {
+  success: 'text-emerald-500 hover:text-emerald-600',
+  error: 'text-red-500 hover:text-red-600',
+  warning: 'text-amber-500 hover:text-amber-600',
+  info: 'text-blue-500 hover:text-blue-600',
+};
+
 interface ToastItemProps {
   toast: Toast;
   onClose: () => void;
@@ -158,6 +196,7 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
 
   const Icon = icons[toast.type];
   const color = colors[toast.type];
+  const actionColor = actionColors[toast.type];
 
   return (
     <motion.div
@@ -183,7 +222,7 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
                 toast.action!.onClick();
                 onClose();
               }}
-              className="text-xs font-bold text-red-500 hover:text-red-600 mt-2 transition-colors"
+              className={`text-xs font-bold ${actionColor} mt-2 transition-colors`}
             >
               {toast.action.label}
             </button>
@@ -199,19 +238,4 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
       </div>
     </motion.div>
   );
-}
-
-// Standalone toast for use outside React tree
-let toastFunction: ((toast: Omit<Toast, 'id'>) => string) | null = null;
-
-export function setToastFunction(fn: (toast: Omit<Toast, 'id'>) => string) {
-  toastFunction = fn;
-}
-
-export function toast(toast: Omit<Toast, 'id'>) {
-  if (!toastFunction) {
-    console.warn('Toast system not initialized. Wrap your app with ToastProvider.');
-    return '';
-  }
-  return toastFunction(toast);
 }

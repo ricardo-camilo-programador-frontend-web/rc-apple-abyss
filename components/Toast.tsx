@@ -80,6 +80,9 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
 
   const addToast = useCallback(
     (toast: Omit<Toast, 'id'>) => {
+      // Guard against post-unmount invocation
+      if (!mountedRef.current) return '';
+
       const id = `toast-${crypto.randomUUID()}`;
       const newToast: Toast = {
         ...toast,
@@ -89,6 +92,17 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
 
       setToasts((prev) => {
         const updated = [...prev, newToast];
+        // Clear timeouts for evicted toasts
+        if (updated.length > maxToasts) {
+          const evicted = updated.slice(0, updated.length - maxToasts);
+          for (const t of evicted) {
+            const evictedTimeout = timeoutRefs.current.get(t.id);
+            if (evictedTimeout !== undefined) {
+              clearTimeout(evictedTimeout);
+              timeoutRefs.current.delete(t.id);
+            }
+          }
+        }
         return updated.slice(-maxToasts);
       });
 

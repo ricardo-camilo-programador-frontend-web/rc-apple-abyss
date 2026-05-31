@@ -64,17 +64,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     window.location.href = '/';
   };
 
-  render() {
+  override render() {
     const { hasError, error, errorCount } = this.state;
     const { children, fallback } = this.props;
 
     if (hasError) {
       // Render prop pattern: fallback can be a function receiving error and reset
       if (typeof fallback === 'function') {
-        return fallback(error!, this.handleReset);
-      }
-
-      if (fallback) {
+        try {
+          const result = fallback(error!, this.handleReset);
+          if (result !== undefined) return result as React.ReactElement;
+        } catch (fallbackError) {
+          // If custom fallback throws, fall through to default UI
+          console.error('ErrorBoundary fallback threw:', fallbackError);
+        }
+      } else if (fallback) {
         return fallback;
       }
 
@@ -164,11 +168,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 export function useErrorBoundary() {
   const [, setError] = React.useState<Error | null>(null);
 
-  const showBoundary = (error: Error) => {
+  const showBoundary = React.useCallback((error: Error) => {
     setError(() => {
       throw error;
     });
-  };
+  }, []);
 
   return { showBoundary };
 }

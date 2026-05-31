@@ -19,17 +19,23 @@ interface UseRetryReturn<T, A extends unknown[]> {
   canRetry: boolean;
 }
 
+// Maximum backoff cap to prevent unbounded delays (e.g., 30s)
+const MAX_BACKOFF_MS = 30_000;
+
 export function useRetry<T, A extends unknown[] = unknown[]>(
   asyncFn: (...args: A) => Promise<T>,
   options: UseRetryOptions = {}
 ): UseRetryReturn<T, A> {
   const {
     maxRetries = 3,
-    delay = 1000,
+    delay: rawDelay = 1000,
     backoff = true,
     onRetry,
     onMaxRetriesReached,
   } = options;
+
+  // Clamp delay to non-negative
+  const delay = Math.max(0, rawDelay);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -43,6 +49,9 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
   const abortRef = useRef(false);
   const loadingRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resolveDelayRef = useRef<(() => void) | null>(null);
+  // Generation counter to invalidate old operations after reset()
+  const generationRef = useRef(0);
 
   // Sync refs outside render (React 19 rule)
   useEffect(() => { asyncFnRef.current = asyncFn; });
@@ -52,6 +61,8 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
   // Cleanup on unmount
   useEffect(() => {
     mountedRef.current = true;
+    abortRef.current = false;
+    loadingRef.current = false;
     return () => {
       mountedRef.current = false;
       abortRef.current = true;
@@ -59,6 +70,9 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
+      // Resolve any pending delay promise to prevent dangling async
+      resolveDelayRef.current?.();
+      resolveDelayRef.current = null;
     };
   }, []);
 
@@ -68,60 +82,95 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
       if (loadingRef.current) return null;
       loadingRef.current = true;
 
+      // Reset abort flag and bump generation for fresh start
+      abortRef.current = false;
+      const currentGeneration = ++generationRef.current;
+
       setLoading(true);
       setError(null);
 
+      // Helper: check if this operation is still valid
+      const isStale = () =>
+        !mountedRef.current || abortRef.current || generationRef.current !== currentGeneration;
+
+      // Helper: clean up loading state safely
+      const cleanup = () => {
+        loadingRef.current = false;
+        if (!isStale()) {
+          setLoading(false);
+        }
+      };
+
       try {
         const result = await asyncFnRef.current(...args);
-        if (!mountedRef.current) return null;
-        loadingRef.current = false;
+        if (isStale()) return null;
+        cleanup();
         setRetryCount(0);
-        setLoading(false);
         return result;
       } catch (err) {
         const caughtError = err instanceof Error ? err : new Error(String(err));
 
-        if (!mountedRef.current) return null;
+        if (isStale()) {
+          cleanup();
+          return null;
+        }
 
         let lastError = caughtError;
 
-        // Retry loop: maxRetries attempts (not maxRetries+1)
+        // Retry loop: maxRetries additional attempts (total = 1 initial + maxRetries)
         for (let attempt = 0; attempt < maxRetries; attempt++) {
-          if (abortRef.current || !mountedRef.current) {
-            loadingRef.current = false;
+          if (isStale()) {
+            cleanup();
+            return null;
+          }
+
+          // Wait with backoff before retrying (skip delay on first retry iteration if desired)
+          const currentDelay = backoff
+            ? Math.min(delay * Math.pow(2, attempt), MAX_BACKOFF_MS)
+            : delay;
+
+          if (currentDelay > 0) {
+            await new Promise<void>((resolve) => {
+              resolveDelayRef.current = resolve;
+              timeoutRef.current = setTimeout(() => {
+                resolveDelayRef.current = null;
+                resolve();
+              }, currentDelay);
+            });
+          }
+
+          if (isStale()) {
+            cleanup();
             return null;
           }
 
           try {
             const result = await asyncFnRef.current(...args);
-            if (!mountedRef.current) return null;
-            loadingRef.current = false;
+            if (isStale()) {
+              cleanup();
+              return null;
+            }
+            cleanup();
             setRetryCount(0);
-            setLoading(false);
             return result;
           } catch (retryErr) {
             lastError = retryErr instanceof Error ? retryErr : new Error(String(retryErr));
 
-            if (attempt < maxRetries - 1 && !abortRef.current && mountedRef.current) {
-              const newCount = attempt + 1;
-              setRetryCount(newCount);
-              onRetryRef.current?.(newCount, lastError);
-
-              const currentDelay = backoff
-                ? delay * Math.pow(2, attempt)
-                : delay;
-
-              await new Promise<void>((resolve) => {
-                timeoutRef.current = setTimeout(resolve, currentDelay);
-              });
-            }
+            const newCount = attempt + 1;
+            setRetryCount(newCount);
+            onRetryRef.current?.(newCount, lastError);
           }
         }
 
-        if (!mountedRef.current) return null;
-        loadingRef.current = false;
+        // All retries exhausted
+        if (isStale()) {
+          cleanup();
+          return null;
+        }
+        cleanup();
         setError(lastError);
-        setLoading(false);
+        // Set retryCount to maxRetries so canRetry correctly reports false
+        setRetryCount(maxRetries);
         onMaxRetriesRef.current?.(lastError);
         return null;
       }
@@ -130,11 +179,18 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
   );
 
   const reset = useCallback(() => {
+    // Clear any pending timeout
     if (timeoutRef.current !== null) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    abortRef.current = true;
+    // Resolve any pending delay promise to prevent dangling async
+    resolveDelayRef.current?.();
+    resolveDelayRef.current = null;
+    // Reset abort flag so retries work after reset
+    abortRef.current = false;
+    // Bump generation to invalidate any in-flight operation
+    generationRef.current++;
     loadingRef.current = false;
     setLoading(false);
     setError(null);
@@ -162,9 +218,11 @@ export async function retryAsync<T>(
   fn: () => Promise<T>,
   options: RetryAsyncOptions = {}
 ): Promise<T> {
-  const { maxRetries = 3, delay = 1000, backoff = true } = options;
+  const { maxRetries = 3, delay: rawDelay = 1000, backoff = true } = options;
+  const delay = Math.max(0, rawDelay);
   let lastError: Error | null = null;
 
+  // Total attempts = 1 initial + maxRetries retries
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
@@ -172,7 +230,9 @@ export async function retryAsync<T>(
       lastError = err instanceof Error ? err : new Error(String(err));
 
       if (attempt < maxRetries) {
-        const currentDelay = backoff ? delay * Math.pow(2, attempt) : delay;
+        const currentDelay = backoff
+          ? Math.min(delay * Math.pow(2, attempt), MAX_BACKOFF_MS)
+          : delay;
         await new Promise((resolve) => setTimeout(resolve, currentDelay));
       }
     }

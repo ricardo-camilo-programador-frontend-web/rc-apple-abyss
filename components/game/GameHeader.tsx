@@ -3,7 +3,7 @@
 import React from 'react';
 import { GameState } from '@/lib/game/types';
 import { GameEngine } from '@/lib/game/engine';
-import { Coins, Trophy, Sparkles, History, Zap, Sun, Moon, Settings } from 'lucide-react';
+import { Coins, Trophy, Sparkles, History, Zap, Moon, Settings } from 'lucide-react';
 
 interface GameHeaderProps {
   state: GameState;
@@ -14,7 +14,6 @@ interface GameHeaderProps {
   onToggleTheme: () => void;
   onShowSettings: () => void;
   onShowHelp: (help: { title: string; content: string }) => void;
-  resolvedTheme: string;
 }
 
 export default function GameHeader({
@@ -26,7 +25,6 @@ export default function GameHeader({
   onToggleTheme,
   onShowSettings,
   onShowHelp,
-  resolvedTheme,
 }: GameHeaderProps) {
   return (
     <header className="bg-white/80 backdrop-blur-sm border-b border-stone-200/50 p-2 md:p-3 flex justify-between items-center z-10 flex-wrap gap-2 sticky top-0">
@@ -57,7 +55,7 @@ export default function GameHeader({
           <Zap className="w-5 h-5 text-stone-500" />
         </button>
         <button onClick={onToggleTheme} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Toggle theme">
-          {resolvedTheme === 'dark' ? <Sun className="w-5 h-5 text-stone-500" /> : <Moon className="w-5 h-5 text-stone-500" />}
+          <Moon className="w-5 h-5 text-stone-500" />
         </button>
         <button onClick={onShowSettings} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Settings">
           <Settings className="w-5 h-5 text-stone-500" />

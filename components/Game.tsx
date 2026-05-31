@@ -39,7 +39,7 @@ export default function Game() {
   const [showStatsPanelModal, setShowStatsPanelModal] = useState(false);
   const [showHelp, setShowHelp] = useState<{ title: string; content: string } | null>(null);
   const [offlineResult, setOfflineResult] = useState<{ apples: number; gold: number } | null>(
-    () => (engine.getState() as any).lastOfflineResult || null
+    null
   );
   const [clickEffects, setClickEffects] = useState<
     { id: number; x: number; y: number; value: number }[]
@@ -142,7 +142,7 @@ export default function Game() {
   };
 
   const handleToggleTheme = () => {
-    // Theme toggle placeholder — no ThemeProvider in project
+    // Theme toggle — will be implemented when dark mode branch is merged
   };
 
   if (!isMounted || !state || !engine)
@@ -165,7 +165,6 @@ export default function Game() {
         onToggleTheme={handleToggleTheme}
         onShowSettings={() => setShowSettings(true)}
         onShowHelp={help => setShowHelp(help)}
-        resolvedTheme="light"
       />
 
       <div className="flex-1 flex flex-row overflow-hidden">
@@ -293,13 +292,7 @@ export default function Game() {
 
       <Modal isOpen={showStatsPanelModal} onClose={() => setShowStatsPanelModal(false)} title={t('stats')}>
         <div className="max-h-[60vh] overflow-y-auto pr-2">
-          <AscensionSidebar
-            state={state}
-            engine={engine}
-            t={t}
-            onAscend={handleAscend}
-            className="flex flex-col gap-4"
-          />
+          <StatsModal isOpen={true} state={state} t={t} onClose={() => setShowStatsPanelModal(false)} />
         </div>
       </Modal>
     </div>

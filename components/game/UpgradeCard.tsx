@@ -14,6 +14,7 @@ interface UpgradeCardProps {
   currentDPS: number;
   nextDPS: number;
   onBuy: () => void;
+  t: (key: string, params?: any) => string;
 }
 
 export default function UpgradeCard({ 
@@ -23,7 +24,8 @@ export default function UpgradeCard({
   canAfford, 
   currentDPS, 
   nextDPS,
-  onBuy 
+  onBuy,
+  t 
 }: UpgradeCardProps) {
   const Icon = WORM_ICONS[upgrade.id] || Bug;
   
@@ -47,7 +49,7 @@ export default function UpgradeCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold text-sm truncate">{upgrade.nameKey.replace('upgrade_', '').replace(/_/g, ' ')}</span>
+            <span className="font-semibold text-sm truncate">{t(upgrade.nameKey)}</span>
             <span className="text-xs font-mono bg-stone-100 px-2 py-0.5 rounded-md shrink-0">
               Lv.{count}
             </span>

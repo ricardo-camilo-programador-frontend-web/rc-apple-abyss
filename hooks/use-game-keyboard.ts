@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { GameEngine } from '@/lib/game/engine';
-import { GameState } from '@/lib/game/types';
 
-export function useGameKeyboard(engine: GameEngine, onStateUpdate: (state: GameState) => void) {
+export function useGameKeyboard(engine: GameEngine, onStateUpdate: () => void) {
   const lastClickUpgradeTime = useRef(0);
 
   useEffect(() => {
@@ -12,7 +11,7 @@ export function useGameKeyboard(engine: GameEngine, onStateUpdate: (state: GameS
         if (now - lastClickUpgradeTime.current < 150) return;
         lastClickUpgradeTime.current = now;
         if (engine.buyClickUpgrade()) {
-          onStateUpdate({ ...engine.getState() });
+          onStateUpdate();
         }
       }
     };

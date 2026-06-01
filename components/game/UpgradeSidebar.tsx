@@ -48,7 +48,7 @@ export default function UpgradeSidebar({
           disabled={state.gold < engine.getClickUpgradeCost()}
           whileHover={state.gold >= engine.getClickUpgradeCost() ? { scale: 1.01, y: -2 } : {}}
           whileTap={state.gold >= engine.getClickUpgradeCost() ? { scale: 0.98 } : {}}
-          className={`w-full p-3 rounded-xl text-left transition-all duration-200 ${
+          className={`relative w-full p-3 rounded-xl text-left transition-all duration-200 ${
             state.gold >= engine.getClickUpgradeCost()
               ? 'bg-white hover:shadow-lg border border-yellow-200 cursor-pointer' 
               : 'bg-stone-50/50 border border-stone-100/50 opacity-50 cursor-not-allowed'
@@ -106,6 +106,7 @@ export default function UpgradeSidebar({
                 currentDPS={currentDPS}
                 nextDPS={nextDPS}
                 onBuy={() => onBuyUpgrade(upgrade.id)}
+                t={t}
               />
             );
           })}

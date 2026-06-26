@@ -1,12 +1,17 @@
+import Link from 'next/link';
+
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-stone-100 p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-stone-900 mb-6">Privacy Policy</h1>
+    <div className="min-h-screen bg-stone-100 dark:bg-stone-900 p-8">
+      <div className="max-w-3xl mx-auto bg-white dark:bg-stone-800 rounded-2xl shadow-lg p-8">
+        <Link href="/" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 text-sm mb-4 inline-block">
+          ← Back to Game
+        </Link>
+        <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100 mb-6">Privacy Policy</h1>
         
-        <div className="space-y-6 text-stone-700">
+        <div className="space-y-6 text-stone-700 dark:text-stone-300">
           <section>
-            <h2 className="text-xl font-bold mb-2">Last Updated: {new Date().toLocaleDateString()}</h2>
+            <h2 className="text-xl font-bold mb-2">Last Updated: June 2026</h2>
             <p className="leading-relaxed">
               Apple of the Infinite Abyss (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our web application.
             </p>
@@ -117,7 +122,7 @@ export default function PrivacyPolicy() {
               href="https://github.com/ricardo-camilo-programador-frontend-web"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 text-sm"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 text-sm"
             >
               https://github.com/ricardo-camilo-programador-frontend-web
             </a>

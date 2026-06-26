@@ -8,6 +8,7 @@ import AdsterraAd from '@/components/AdsterraAd';
 import AdSenseAd from '@/components/AdSenseAd';
 import { AdFormat } from '@/lib/ads/adsterra';
 import Modal from '@/components/Modal';
+import { analytics } from '@/lib/analytics';
 
 // Extracted layout components
 import GameHeader from '@/components/game/GameHeader';
@@ -108,11 +109,13 @@ export default function Game() {
       )
     ) {
       engine.ascend();
+      analytics.ascension(state.luckyWorms, state.highestStage);
     }
   };
 
   const handleActivateSkill = () => {
     engine.activateSkill('golden_harvest');
+    analytics.skillActivation('golden_harvest');
     handleStateUpdate();
   };
 
@@ -215,8 +218,12 @@ export default function Game() {
       <div className="w-full h-[90px] bg-stone-200/30 flex items-center justify-center border-t border-stone-200/50">
         <AdSenseAd slot="horizontal-footer" format="auto" className="w-full h-full max-w-4xl" />
       </div>
-      <AdsterraAd format={AdFormat.NATIVE_BANNER} className="w-full max-w-4xl mx-auto my-4" />
-      <AdsterraAd format={AdFormat.DISPLAY_BANNER_468x60} className="w-full max-w-4xl mx-auto my-2" />
+
+      {/* Mobile ad density reduction — hide on small screens */}
+      <div className="hidden md:block">
+        <AdsterraAd format={AdFormat.NATIVE_BANNER} className="w-full max-w-4xl mx-auto my-4" />
+        <AdsterraAd format={AdFormat.DISPLAY_BANNER_468x60} className="w-full max-w-4xl mx-auto my-2" />
+      </div>
 
       {/* Help modal */}
       <Modal isOpen={!!showHelp} onClose={() => setShowHelp(null)} title={showHelp?.title || ''}>

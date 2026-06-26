@@ -1,6 +1,34 @@
 import { Language, LocalizationData, WormUpgrade, LuckyWormsConfig, StatisticsData, HelpContent, HelpTopicId } from './types';
 
- 
+/**
+ * Centralized game configuration constants.
+ * All magic numbers should live here for easy tuning and testing.
+ */
+export const GAME_CONFIG = {
+  /** Initial apple HP at stage 1 */
+  INITIAL_HP: 50,
+  /** HP growth factor per stage: HP = INITIAL_HP * HP_GROWTH^(stage-1) */
+  HP_GROWTH: 1.5,
+  /** Stage required to unlock ascension */
+  ASCENSION_STAGE: 50,
+  /** Auto-save interval in milliseconds */
+  AUTOSAVE_INTERVAL_MS: 10_000,
+  /** Click power base damage (before upgrades) */
+  CLICK_BASE_DAMAGE: 1,
+  /** Click upgrade base cost */
+  CLICK_UPGRADE_BASE_COST: 20,
+  /** Click upgrade cost growth factor */
+  CLICK_UPGRADE_COST_GROWTH: 1.15,
+  /** Golden Harvest skill duration in seconds */
+  SKILL_DURATION_S: 20,
+  /** Golden Harvest cooldown in seconds */
+  SKILL_COOLDOWN_S: 120,
+  /** Golden Harvest click gold multiplier */
+  SKILL_CLICK_GOLD_MULTIPLIER: 5,
+  /** Golden Harvest idle gold multiplier */
+  SKILL_IDLE_GOLD_MULTIPLIER: 2.5,
+} as const;
+
 export const LUCKY_WORMS_CONFIG: LuckyWormsConfig = {
   goldBonusPerWorm: 0.05,
   damageBonusPerWorm: 0.10,
@@ -19,9 +47,9 @@ export const INITIAL_STATISTICS: StatisticsData = {
 export const INITIAL_STATE = {
   gold: 0,
   stage: 1,
-  appleHP: 50,
-  maxAppleHP: 50,
-  clickDamage: 1,
+  appleHP: GAME_CONFIG.INITIAL_HP,
+  maxAppleHP: GAME_CONFIG.INITIAL_HP,
+  clickDamage: GAME_CONFIG.CLICK_BASE_DAMAGE,
   clickLevel: 0,
   totalClicks: 0,
   totalApplesEaten: 0,
@@ -453,5 +481,56 @@ export const LOCALIZATION: LocalizationData = {
   apple_variety_sweetango: { en: 'SweeTango' },
   apple_variety_sweetango_desc: { en: 'A cross between Honeycrisp and Zestar, developed in Minnesota in 2009.' },
   apple_variety_winter_banana: { en: 'Winter Banana' },
-  apple_variety_winter_banana_desc: { en: 'Discovered in Indiana in 1876, named for its distinct banana-like aroma.' }
+  apple_variety_winter_banana_desc: { en: 'Discovered in Indiana in 1876, named for its distinct banana-like aroma.' },
+
+  /* === UI strings for Game.tsx (English with fallback) === */
+  ascend_now: {
+    en: 'Ascend Now!', zh: '现在飞升！', hi: 'अभी आरोहण करें！', es: '¡Ascender Ahora!', fr: 'Ascender Maintenant!',
+    ar: 'اصعد الآن!', bn: 'এখনই আরোহণ করুন!', pt: 'Ascender Agora!', ru: 'Вознестись!', ur: 'ابھی عروج حاصل کریں!',
+    id: 'Naik Sekarang!', de: 'Jetzt aufsteigen!', ja: '今すぐ昇天！', sw: 'Panda Sasa!', mr: 'आता आरोहण करा!',
+    te: 'ఇప్పుడే ఆరోహణ!', tr: 'Şimdi Yüksel!', ta: 'இப்போது ஏறுக!', vi: 'Thăng hoa ngay!', ko: '지금 승천!'
+  },
+  reach_stage: {
+    en: 'Reach Stage ', zh: '达到关卡 ', hi: 'तक पहुँचें ', es: 'Llegar a Etapa ', fr: 'Atteindre Étape ',
+    ar: 'صل إلى المرحلة ', bn: 'পর্যায়ে পৌঁছান ', pt: 'Alcance o Estágio ', ru: 'Достигните Этапа ', ur: 'مرحلہ تک پہنچیں ',
+    id: 'Capai Tahap ', de: 'Erreiche Stufe ', ja: 'ステージに到達 ', sw: 'Fika Hatua ', mr: 'टप्पा गाठा ',
+    te: 'దశకు చేరుకోండి ', tr: 'Aşamaya Ulaş ', ta: 'நிலையை அடைக ', vi: 'Đạt giai đoạn ', ko: '스테이지 도달 '
+  },
+  theme: { en: 'Theme' },
+  theme_light: { en: 'Light' },
+  theme_dark: { en: 'Dark' },
+  theme_system: { en: 'System' },
+  skills: { en: 'Skills' },
+  apple_hp: { en: 'Apple HP' },
+  click_power: { en: 'Click Power' },
+  click_dmg: { en: 'Click Dmg' },
+  idle_dps_label: { en: 'Idle DPS' },
+  worms_count: { en: 'Worms' },
+  lucky_label: { en: 'Lucky' },
+  eaten_label: { en: 'Eaten' },
+  economy: { en: 'Economy' },
+  combat: { en: 'Combat' },
+  progression: { en: 'Progression' },
+  total_clicks: { en: 'Total Clicks' },
+  apples_eaten: { en: 'Apples Eaten' },
+  lucky_worms_count: { en: 'Lucky Worms' },
+  gold_bonus: { en: 'Gold Bonus' },
+  golden_harvest_desc: { en: 'x5 Click Gold, x2.5 Idle Gold for 20s' },
+  ascension_reset_desc: { en: 'Reset for permanent bonuses' },
+  progress_to_stage: { en: 'Progress to Stage 50' },
+  lucky_worms_bonus: { en: 'Lucky Worms: +5% gold each' },
+  basic_worms: { en: 'Basic Worms' },
+  advanced_worms: { en: 'Advanced Worms' },
+  special_worms: { en: 'Special Worms' },
+  legendary_worms: { en: 'Legendary Worms' },
+  quick_buy_hint: { en: '[C] quick buy' },
+  active_label: { en: 'Active' },
+  statistics: { en: 'Statistics' },
+  loading: { en: 'Loading...' },
+  save_copied: { en: 'Save copied to clipboard!' },
+  save_imported: { en: 'Save imported successfully!' },
+  invalid_save: { en: 'Invalid save string or corrupted data.' },
+  enter_save: { en: 'Please enter a save string.' },
+  reset_confirm: { en: 'Are you sure you want to completely reset your game? This cannot be undone!' },
+  copy_save: { en: 'Copy your save string:' }
 };

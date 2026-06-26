@@ -58,6 +58,7 @@ export interface GameState {
   luckyWorms: number;
   highestStage: number;
   lastSaveTimestamp: number;
+  lastOfflineResult?: { apples: number; gold: number };
   worms: Record<string, number>;
   skills: Record<string, SkillState>;
   statistics: StatisticsData;

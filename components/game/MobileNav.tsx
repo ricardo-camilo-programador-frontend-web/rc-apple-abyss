@@ -17,8 +17,8 @@ export default function MobileNav({
   onShowStats,
 }: MobileNavProps) {
   return (
-    <nav className="lg:hidden bg-white/80 backdrop-blur-sm border-t border-stone-200/50 flex justify-around p-3 z-10">
-      <button onClick={onShowUpgrades} className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-stone-100 transition-colors">
+    <nav className="lg:hidden bg-white/80 dark:bg-stone-800/80 backdrop-blur-sm border-t border-stone-200/50 dark:border-stone-700/50 flex justify-around p-3 z-10">
+      <button onClick={onShowUpgrades} className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors">
         <TrendingUp className="w-5 h-5 text-stone-600" />
         <span className="text-[10px] font-bold uppercase text-stone-500">{t('upgrades')}</span>
       </button>

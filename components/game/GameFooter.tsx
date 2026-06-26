@@ -10,7 +10,7 @@ interface GameFooterProps {
 
 export default function GameFooter({ t }: GameFooterProps) {
   return (
-    <footer className="bg-white/80 backdrop-blur-sm border-t border-stone-200/50 p-3 md:p-4 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs text-stone-400 z-10 gap-3 md:gap-2">
+    <footer className="bg-white/80 dark:bg-stone-800/80 backdrop-blur-sm border-t border-stone-200/50 dark:border-stone-700/50 p-3 md:p-4 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs text-stone-400 dark:text-stone-500 z-10 gap-3 md:gap-2">
       <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
         <span className="font-medium">Apple of the Infinite Abyss</span>
         <a 

@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { GameState } from '@/lib/game/types';
-import { Coins, Trophy, Sparkles, History, Zap, Settings } from 'lucide-react';
+import { Coins, Trophy, Sparkles, History, Zap, Settings, Sun, Moon } from 'lucide-react';
+import { useTheme } from '@/components/ThemeProvider';
 
 interface GameHeaderProps {
   state: GameState;
@@ -21,8 +22,10 @@ export default function GameHeader({
   onShowSettings,
   onShowHelp,
 }: GameHeaderProps) {
+  const { resolvedTheme, setTheme } = useTheme();
+
   return (
-    <header className="bg-white/80 backdrop-blur-sm border-b border-stone-200/50 p-2 md:p-3 flex justify-between items-center z-10 flex-wrap gap-2 sticky top-0">
+    <header className="bg-white/80 dark:bg-stone-800/80 backdrop-blur-sm border-b border-stone-200/50 dark:border-stone-700/50 p-2 md:p-3 flex justify-between items-center z-10 flex-wrap gap-2 sticky top-0">
       <div className="flex items-center gap-3 md:gap-6 flex-wrap">
         <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-100">
           <Coins className="text-yellow-500 w-4 h-4 md:w-5 md:h-5" />
@@ -43,13 +46,16 @@ export default function GameHeader({
         </button>
       </div>
       <div className="flex items-center gap-1">
-        <button onClick={onShowStats} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Statistics">
+        <button onClick={onShowStats} className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-xl transition-colors" title="Statistics" aria-label="Statistics">
           <History className="w-5 h-5 text-stone-500" />
         </button>
-        <button onClick={onShowSkills} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Skills">
+        <button onClick={onShowSkills} className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-xl transition-colors" title="Skills" aria-label="Skills">
           <Zap className="w-5 h-5 text-stone-500" />
         </button>
-        <button onClick={onShowSettings} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Settings">
+        <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-xl transition-colors" title="Toggle theme" aria-label="Toggle theme">
+          {resolvedTheme === 'dark' ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-stone-500" />}
+        </button>
+        <button onClick={onShowSettings} className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-xl transition-colors" title="Settings" aria-label="Settings">
           <Settings className="w-5 h-5 text-stone-500" />
         </button>
       </div>

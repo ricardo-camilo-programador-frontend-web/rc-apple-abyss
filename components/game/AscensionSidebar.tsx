@@ -27,7 +27,7 @@ export default function AscensionSidebar({
   const pendingWorms = engine.getPendingLuckyWorms();
 
   return (
-    <aside className={className ?? "hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-l border-stone-200/50 p-4 flex-col gap-4 overflow-y-auto"}>
+    <aside className={className ?? "hidden lg:flex w-80 bg-white/50 dark:bg-stone-800/50 backdrop-blur-sm border-l border-stone-200/50 dark:border-stone-700/50 p-4 flex-col gap-4 overflow-y-auto"}>
       <div>
         <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">{t('ascension')}</h2>
         <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-4 border border-violet-100">

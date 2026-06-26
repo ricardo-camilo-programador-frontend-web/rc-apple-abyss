@@ -33,7 +33,7 @@ export default function UpgradeSidebar({
   }));
 
   return (
-    <aside className={className ?? "hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-r border-stone-200/50 overflow-y-auto p-4 flex-col gap-2"}>
+    <aside className={className ?? "hidden lg:flex w-80 bg-white/50 dark:bg-stone-800/50 backdrop-blur-sm border-r border-stone-200/50 dark:border-stone-700/50 overflow-y-auto p-4 flex-col gap-2"}>
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400">{t('upgrades')}</h2>
         <span className="text-[10px] text-stone-400 font-mono">[C] quick buy</span>
@@ -50,8 +50,8 @@ export default function UpgradeSidebar({
           whileTap={state.gold >= engine.getClickUpgradeCost() ? { scale: 0.98 } : {}}
           className={`relative w-full p-3 rounded-xl text-left transition-all duration-200 ${
             state.gold >= engine.getClickUpgradeCost()
-              ? 'bg-white hover:shadow-lg border border-yellow-200 cursor-pointer' 
-              : 'bg-stone-50/50 border border-stone-100/50 opacity-50 cursor-not-allowed'
+              ? 'bg-white dark:bg-stone-800 hover:shadow-lg border border-yellow-200 dark:border-yellow-700 cursor-pointer' 
+              : 'bg-stone-50/50 dark:bg-stone-800/50 border border-stone-100/50 dark:border-stone-700/50 opacity-50 cursor-not-allowed'
           }`}
         >
           <div className="flex items-center gap-3">
@@ -76,7 +76,7 @@ export default function UpgradeSidebar({
               </div>
             </div>
           </div>
-          <div className="absolute bottom-1 right-1 text-[8px] text-stone-300 font-bold uppercase">[C]</div>
+          <div className="absolute bottom-1 right-1 text-[8px] text-stone-300 dark:text-stone-600 font-bold uppercase">[C]</div>
         </motion.button>
       </CollapsibleSection>
 

@@ -21,7 +21,7 @@ export default function SkillsModal({ isOpen, engine, t, onClose }: SkillsModalP
             engine.activateSkill('golden_harvest');
             onClose();
           }}
-          className="w-full p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-200 rounded-2xl flex items-center justify-between hover:border-yellow-300 transition-all"
+          className="w-full p-4 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-2 border-yellow-200 dark:border-yellow-800 rounded-2xl flex items-center justify-between hover:border-yellow-300 dark:hover:border-yellow-700 transition-all"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">

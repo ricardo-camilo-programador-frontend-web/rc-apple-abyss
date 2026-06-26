@@ -94,17 +94,17 @@ export default function AppleArea({
         </div>
 
         <div className="mt-8 space-y-4">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-stone-100">
+          <div className="bg-white/80 dark:bg-stone-800/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-stone-100 dark:border-stone-700">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Heart className="w-4 h-4 text-red-500" />
-                <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Apple HP</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Apple HP</span>
               </div>
-              <span className="font-mono text-sm font-bold text-stone-700">
+              <span className="font-mono text-sm font-bold text-stone-700 dark:text-stone-300">
                 {Math.ceil(state.appleHP).toLocaleString()} / {state.maxAppleHP.toLocaleString()}
               </span>
             </div>
-            <div className="h-3 bg-stone-100 rounded-full overflow-hidden">
+            <div className="h-3 bg-stone-100 dark:bg-stone-700 rounded-full overflow-hidden">
               <motion.div 
                 className="h-full bg-gradient-to-r from-red-500 via-red-400 to-orange-400 rounded-full"
                 initial={false}
@@ -123,8 +123,8 @@ export default function AppleArea({
               state.skills.golden_harvest.isActive
                 ? 'bg-gradient-to-r from-yellow-400 to-amber-400 text-white shadow-lg shadow-yellow-200/50'
                 : state.skills.golden_harvest.cooldownRemaining > 0
-                ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 text-yellow-700 hover:border-yellow-400 shadow-lg shadow-yellow-100/50'
+                ? 'bg-stone-100 dark:bg-stone-700 text-stone-400 dark:text-stone-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-2 border-yellow-300 dark:border-yellow-700 text-yellow-700 dark:text-yellow-400 hover:border-yellow-400 dark:hover:border-yellow-600 shadow-lg shadow-yellow-100/50'
             }`}
           >
             <Zap className={`w-5 h-5 ${state.skills.golden_harvest.isActive ? 'animate-bounce' : ''}`} />

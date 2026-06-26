@@ -24,15 +24,15 @@ Object.defineProperty(globalThis, 'localStorage', {
 
 // Mock AudioSystem
 vi.mock('@/lib/game/audio', () => ({
-  AudioSystem: vi.fn().mockImplementation(() => ({
-    playClick: vi.fn(),
-    playBreak: vi.fn(),
-    playUpgrade: vi.fn(),
-    playAscension: vi.fn(),
-    setMuted: vi.fn(),
-    setVolume: vi.fn(),
-    destroy: vi.fn(),
-  })),
+  AudioSystem: class MockAudioSystem {
+    playClick = vi.fn();
+    playBreak = vi.fn();
+    playUpgrade = vi.fn();
+    playAscension = vi.fn();
+    setMuted = vi.fn();
+    setVolume = vi.fn();
+    destroy = vi.fn();
+  },
 }));
 
 // Mock crypto.subtle for SHA-256 in save system

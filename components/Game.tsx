@@ -119,8 +119,8 @@ export default function Game() {
     handleStateUpdate();
   };
 
-  const handleExportSave = () => {
-    const saveStr = engine.exportSave();
+  const handleExportSave = async () => {
+    const saveStr = await engine.exportSave();
     navigator.clipboard
       .writeText(saveStr)
       .then(() => {
@@ -131,8 +131,9 @@ export default function Game() {
       });
   };
 
-  const handleImportSave = (str: string) => {
-    if (engine.importSave(str.trim())) {
+  const handleImportSave = async (str: string) => {
+    const success = await engine.importSave(str.trim());
+    if (success) {
       handleStateUpdate();
       setShowSettings(false);
     }

@@ -56,10 +56,10 @@ const toastIcons: Record<ToastType, React.ElementType> = {
 };
 
 const toastColors: Record<ToastType, { bg: string; border: string; icon: string }> = {
-  success: { bg: 'from-green-50 to-emerald-50', border: 'border-green-200', icon: 'text-green-500' },
-  error: { bg: 'from-red-50 to-rose-50', border: 'border-red-200', icon: 'text-red-500' },
-  warning: { bg: 'from-yellow-50 to-amber-50', border: 'border-yellow-200', icon: 'text-yellow-500' },
-  info: { bg: 'from-blue-50 to-indigo-50', border: 'border-blue-200', icon: 'text-blue-500' },
+  success: { bg: 'from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30', border: 'border-green-200 dark:border-green-800', icon: 'text-green-500' },
+  error: { bg: 'from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30', border: 'border-red-200 dark:border-red-800', icon: 'text-red-500' },
+  warning: { bg: 'from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30', border: 'border-yellow-200 dark:border-yellow-800', icon: 'text-yellow-500' },
+  info: { bg: 'from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30', border: 'border-blue-200 dark:border-blue-800', icon: 'text-blue-500' },
 };
 
 const actionColors: Record<ToastType, string> = {
@@ -238,9 +238,9 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-stone-900 text-sm">{toast.title}</p>
+          <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm">{toast.title}</p>
           {toast.message && (
-            <p className="text-stone-600 text-xs mt-1 leading-relaxed">{toast.message}</p>
+            <p className="text-stone-600 dark:text-stone-300 text-xs mt-1 leading-relaxed">{toast.message}</p>
           )}
           {toast.action && (
             <button
@@ -260,7 +260,7 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
 
         <button
           onClick={onClose}
-          className="shrink-0 text-stone-400 hover:text-stone-600 transition-colors"
+          className="shrink-0 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
           aria-label="Close notification"
         >
           <X className="w-4 h-4" />

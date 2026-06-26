@@ -1,4 +1,5 @@
 import { GameState } from './types';
+import { GAME_CONFIG } from './constants';
 
 export interface OfflineProgressResult {
   applesEaten: number;
@@ -53,8 +54,8 @@ const DEFAULT_OFFLINE_CONFIG: OfflineConfig = {
   maxReasonableGoldMultiplier: 1e15,
   maxReasonableGoldAmount: 1e15,
   appleHP: {
-    baseHP: 50,
-    growthFactor: 1.5,
+    baseHP: GAME_CONFIG.INITIAL_HP,
+    growthFactor: GAME_CONFIG.HP_GROWTH,
   },
 };
 
@@ -138,7 +139,7 @@ export class OfflineProgressSystem {
     const { startStage, startAppleHP, startMaxAppleHP, totalDamage, goldMultiplier, offlineSeconds } = data;
 
     if (totalDamage <= 0) {
-      return this.createEmptyResult(offlineSeconds);
+      return this.createEmptyResult(offlineSeconds, startStage, startAppleHP, startMaxAppleHP);
     }
 
     const maxIterations = Math.min(
@@ -192,15 +193,15 @@ export class OfflineProgressSystem {
     };
   }
 
-  private createEmptyResult(offlineSeconds: number): OfflineProgressResult {
+  private createEmptyResult(offlineSeconds: number, startStage: number, startAppleHP: number, startMaxAppleHP: number): OfflineProgressResult {
     return {
       applesEaten: 0,
       goldGained: 0,
       offlineSeconds,
       stagesAdvanced: 0,
-      finalStage: 1,
-      finalAppleHP: 50,
-      finalMaxAppleHP: 50,
+      finalStage: startStage,
+      finalAppleHP: startAppleHP,
+      finalMaxAppleHP: startMaxAppleHP,
       antiCheatFlags: [],
     };
   }

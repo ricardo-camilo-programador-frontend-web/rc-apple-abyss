@@ -1,4 +1,5 @@
 import { GameState, SkillState } from './types';
+import { GAME_CONFIG } from './constants';
 
 export class SkillSystem {
   private state: GameState;
@@ -42,10 +43,10 @@ export class SkillSystem {
   }
 
   public getGoldMultiplierClick(): number {
-    return this.isSkillActive('golden_harvest') ? 5 : 1;
+    return this.isSkillActive('golden_harvest') ? GAME_CONFIG.SKILL_CLICK_GOLD_MULTIPLIER : 1;
   }
 
   public getGoldMultiplierIdle(): number {
-    return this.isSkillActive('golden_harvest') ? 2.5 : 1;
+    return this.isSkillActive('golden_harvest') ? GAME_CONFIG.SKILL_IDLE_GOLD_MULTIPLIER : 1;
   }
 }

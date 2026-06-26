@@ -18,6 +18,7 @@ export default function AdSenseAd({ slot, className = '', format = 'auto', respo
     // Only run on client and if not already loaded
     if (typeof window === 'undefined' || isLoaded.current) return;
 
+    let retryCount = 0;
     const loadAd = () => {
       if (!containerRef.current) return;
 
@@ -27,7 +28,11 @@ export default function AdSenseAd({ slot, className = '', format = 'auto', respo
       const insRect = insElement ? insElement.getBoundingClientRect() : { width: 0, height: 0 };
 
       if (rect.width === 0 || insRect.width === 0) {
-        // Retry after a delay if dimensions are not yet available
+        retryCount++;
+        if (retryCount > 10) {
+          setHasError(true);
+          return;
+        }
         setTimeout(loadAd, 500);
         return;
       }
@@ -65,11 +70,15 @@ export default function AdSenseAd({ slot, className = '', format = 'auto', respo
   }, []);
 
   if (hasError) {
-      return null;
+      return (
+        <div className={`ad-fallback min-h-[90px] ${className}`} aria-hidden="true">
+          Advertisement
+        </div>
+      );
   }
 
   return (
-    <div className={`adsense-container ${className}`} ref={containerRef}>
+    <div className={`adsense-container min-h-[90px] ${className}`} ref={containerRef}>
       <ins 
         className="adsbygoogle"
         style={{ display: 'block' }}

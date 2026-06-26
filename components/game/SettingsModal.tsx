@@ -14,6 +14,7 @@ import {
   Upload,
   RefreshCw,
 } from 'lucide-react';
+import { analytics } from '@/lib/analytics';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -54,15 +55,16 @@ export default function SettingsModal({
 
   const changeLanguage = (lang: Language) => {
     engine.setLanguage(lang);
+    analytics.languageChanged(lang);
     onStateUpdate();
   };
 
-  const handleImportSave = () => {
+  const handleImportSave = async () => {
     if (!importString.trim()) {
       setImportError('Please enter a save string.');
       return;
     }
-    const success = engine.importSave(importString.trim());
+    const success = await engine.importSave(importString.trim());
     if (success) {
       onImportSave(importString.trim());
       setImportString('');
@@ -153,6 +155,7 @@ export default function SettingsModal({
                     <button
                       key={lang}
                       onClick={() => changeLanguage(lang)}
+                      aria-label={`Switch language to ${lang}`}
                       className={`p-2 rounded-lg text-xs font-medium border transition-all ${
                         state.settings.language === lang
                           ? 'bg-red-500 text-white border-red-600 shadow-md'

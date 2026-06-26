@@ -1,9 +1,12 @@
 import { GameState, Language } from './types';
-import { INITIAL_STATE, WORM_UPGRADES, CLICK_UPGRADE, LUCKY_WORMS_CONFIG } from './constants';
+import { INITIAL_STATE, WORM_UPGRADES, CLICK_UPGRADE, LUCKY_WORMS_CONFIG, GAME_CONFIG } from './constants';
 import { AudioSystem } from './audio';
 import { LocalizationSystem } from './localization';
 import { SkillSystem } from './skills';
 import { OfflineProgressSystem, OfflineProgressResult } from './offline';
+
+/** Max deltaTime in seconds — prevents massive damage spikes when tab returns from background */
+const MAX_DELTA_TIME_S = 5;
 
 export class GameEngine {
   private state: GameState;
@@ -13,6 +16,8 @@ export class GameEngine {
   private offlineSystem: OfflineProgressSystem;
   private lastTick: number = Date.now();
   private saveInterval: ReturnType<typeof setInterval> | null = null;
+  private beforeUnloadHandler: (() => void) | null = null;
+  private saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly SAVE_KEY = 'apple_clicker_save';
 
@@ -27,13 +32,13 @@ export class GameEngine {
       getTotalDPS: () => this.getTotalDPS(),
       getGoldMultiplier: () => this.getGoldMultiplier(),
     });
-    
+
     this.calculateOfflineProgress();
     this.startAutoSave();
   }
 
   private loadGame(): GameState {
-    if (typeof window === 'undefined') return INITIAL_STATE;
+    if (typeof window === 'undefined') return this.mergeWithInitialState({});
     const saved = localStorage.getItem(this.SAVE_KEY);
     if (saved) {
       try {
@@ -43,16 +48,30 @@ export class GameEngine {
         console.error('Failed to parse save', e);
       }
     }
-    return INITIAL_STATE;
+    return this.mergeWithInitialState({});
   }
 
   private mergeWithInitialState(parsed: Partial<GameState>): GameState {
-    return { 
-      ...INITIAL_STATE, 
-      ...parsed, 
+    const mergedSkills: Record<string, { isActive: boolean; remainingDuration: number; cooldownRemaining: number }> = {};
+    const initialSkills = INITIAL_STATE.skills as Record<string, { isActive: boolean; remainingDuration: number; cooldownRemaining: number }>;
+    const parsedSkills = (parsed.skills || {}) as Record<string, { isActive: boolean; remainingDuration: number; cooldownRemaining: number }>;
+    const allSkillIds = new Set([
+      ...Object.keys(initialSkills),
+      ...Object.keys(parsedSkills),
+    ]);
+    for (const id of allSkillIds) {
+      const initial = initialSkills[id] || { isActive: false, remainingDuration: 0, cooldownRemaining: 0 };
+      const saved = parsedSkills[id];
+      mergedSkills[id] = saved ? { ...initial, ...saved } : { ...initial };
+    }
+
+    return {
+      ...INITIAL_STATE,
+      ...parsed,
       worms: { ...INITIAL_STATE.worms, ...(parsed.worms || {}) },
-      skills: { ...INITIAL_STATE.skills, ...(parsed.skills || {}) },
-      settings: { ...INITIAL_STATE.settings, ...(parsed.settings || {}) } 
+      skills: mergedSkills,
+      statistics: { ...INITIAL_STATE.statistics, ...(parsed.statistics || {}) },
+      settings: { ...INITIAL_STATE.settings, ...(parsed.settings || {}) },
     };
   }
 
@@ -62,10 +81,20 @@ export class GameEngine {
     localStorage.setItem(this.SAVE_KEY, JSON.stringify(this.state));
   }
 
+  /**
+   * Debounced save — prevents excessive localStorage writes when settings change rapidly
+   * (e.g., volume slider drag fires dozens of calls per second).
+   */
+  private debouncedSave(): void {
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(() => this.saveGame(), 500);
+  }
+
   private startAutoSave(): void {
-    this.saveInterval = setInterval(() => this.saveGame(), 10000);
+    this.saveInterval = setInterval(() => this.saveGame(), GAME_CONFIG.AUTOSAVE_INTERVAL_MS);
     if (typeof window !== 'undefined') {
-      window.addEventListener('beforeunload', () => this.saveGame());
+      this.beforeUnloadHandler = () => this.saveGame();
+      window.addEventListener('beforeunload', this.beforeUnloadHandler);
     }
   }
 
@@ -73,7 +102,7 @@ export class GameEngine {
     const result = this.offlineSystem.calculate();
     if (result) {
       this.offlineSystem.applyToState(result);
-      (this.state as any).lastOfflineResult = {
+      this.state.lastOfflineResult = {
         apples: result.applesEaten,
         gold: result.goldGained,
       };
@@ -82,8 +111,13 @@ export class GameEngine {
 
   public tick(): void {
     const now = Date.now();
-    const deltaTime = (now - this.lastTick) / 1000;
+    let deltaTime = (now - this.lastTick) / 1000;
     this.lastTick = now;
+
+    // Clamp deltaTime to prevent massive damage spikes from backgrounded tabs
+    if (deltaTime > MAX_DELTA_TIME_S) {
+      deltaTime = MAX_DELTA_TIME_S;
+    }
 
     this.skills.update(deltaTime);
 
@@ -97,18 +131,45 @@ export class GameEngine {
     const damage = this.getClickDamage();
     this.applyDamage(damage, true);
     this.state.totalClicks++;
+    this.state.statistics.totalClicks = this.state.totalClicks;
     this.audio.playClick();
   }
 
-  private applyDamage(damage: number, isClick: boolean): void {
-    this.state.appleHP -= damage;
-    this.state.gold += damage * this.getGoldMultiplier();
+  /**
+   * Apply damage to the apple. Handles multi-kill (overflow damage)
+   * to prevent gold loss at high DPS relative to apple HP.
+   */
+  private applyDamage(damage: number, _isClick: boolean): void {
+    let remainingDamage = damage;
 
-    if (this.state.appleHP <= 0) {
-      this.audio.playBreak();
-      this.state.totalApplesEaten++;
-      this.advanceStage();
-      this.state.appleHP = this.state.maxAppleHP;
+    while (remainingDamage > 0) {
+      // Guard against zero/negative HP edge cases (floating-point, save corruption)
+      if (this.state.appleHP <= 0) {
+        this.advanceStage();
+        this.state.appleHP = this.state.maxAppleHP;
+        continue;
+      }
+
+      if (this.state.appleHP > remainingDamage) {
+        const goldGained = remainingDamage * this.getGoldMultiplier();
+        this.state.appleHP -= remainingDamage;
+        this.state.gold += goldGained;
+        this.state.statistics.totalGoldEarned += goldGained;
+        remainingDamage = 0;
+      } else {
+        // Apple is destroyed — use exactly the damage needed
+        const damageToKill = this.state.appleHP;
+        const goldGained = damageToKill * this.getGoldMultiplier();
+        this.state.gold += goldGained;
+        this.state.statistics.totalGoldEarned += goldGained;
+        remainingDamage -= damageToKill;
+
+        this.audio.playBreak();
+        this.state.totalApplesEaten++;
+        this.state.statistics.totalApplesEaten = this.state.totalApplesEaten;
+        this.advanceStage();
+        this.state.appleHP = this.state.maxAppleHP;
+      }
     }
   }
 
@@ -116,16 +177,17 @@ export class GameEngine {
     this.state.stage++;
     if (this.state.stage > this.state.highestStage) {
       this.state.highestStage = this.state.stage;
+      this.state.statistics.highestStage = this.state.highestStage;
     }
     this.state.maxAppleHP = this.calculateMaxAppleHP(this.state.stage);
   }
 
   private calculateMaxAppleHP(stage: number): number {
-    return Math.floor(50 * Math.pow(1.5, stage - 1));
+    return Math.floor(GAME_CONFIG.INITIAL_HP * Math.pow(GAME_CONFIG.HP_GROWTH, stage - 1));
   }
 
   public getClickDamage(): number {
-    const baseDamage = 1 * Math.pow(CLICK_UPGRADE.damageGrowth, this.state.clickLevel);
+    const baseDamage = GAME_CONFIG.CLICK_BASE_DAMAGE * Math.pow(CLICK_UPGRADE.damageGrowth, this.state.clickLevel);
     const luckyWormBonus = 1 + (this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm);
     const skillMultiplier = this.skills.getGoldMultiplierClick();
     return baseDamage * luckyWormBonus * skillMultiplier;
@@ -171,7 +233,7 @@ export class GameEngine {
   }
 
   public getClickUpgradeCost(): number {
-    return Math.floor(20 * Math.pow(1.15, this.state.clickLevel));
+    return Math.floor(GAME_CONFIG.CLICK_UPGRADE_BASE_COST * Math.pow(GAME_CONFIG.CLICK_UPGRADE_COST_GROWTH, this.state.clickLevel));
   }
 
   public buyClickUpgrade(): boolean {
@@ -187,11 +249,11 @@ export class GameEngine {
   }
 
   public canAscend(): boolean {
-    return this.state.stage >= 50;
+    return this.state.stage >= GAME_CONFIG.ASCENSION_STAGE;
   }
 
   public getPendingLuckyWorms(): number {
-    if (this.state.stage < 50) return 0;
+    if (this.state.stage < GAME_CONFIG.ASCENSION_STAGE) return 0;
     return Math.floor(Math.sqrt(this.state.highestStage));
   }
 
@@ -200,14 +262,16 @@ export class GameEngine {
 
     const worms = this.getPendingLuckyWorms();
     this.state.luckyWorms += worms;
-    
+    this.state.statistics.luckyWormsCollected = this.state.luckyWorms;
+    this.state.statistics.totalAscensions++;
+
     this.state.gold = 0;
     this.state.stage = 1;
-    this.state.appleHP = 50;
-    this.state.maxAppleHP = 50;
+    this.state.appleHP = GAME_CONFIG.INITIAL_HP;
+    this.state.maxAppleHP = GAME_CONFIG.INITIAL_HP;
     this.state.clickLevel = 0;
     this.state.worms = { ...INITIAL_STATE.worms };
-    
+
     this.audio.playAscension();
     this.saveGame();
   }
@@ -215,24 +279,25 @@ export class GameEngine {
   public setMuted(muted: boolean): void {
     this.state.settings.muted = muted;
     this.audio.setMuted(muted);
-    this.saveGame();
+    this.debouncedSave();
   }
 
   public setVolume(volume: number): void {
     this.state.settings.volume = volume;
     this.audio.setVolume(volume);
-    this.saveGame();
+    this.debouncedSave();
   }
 
   public setLanguage(lang: Language): void {
     this.state.settings.language = lang;
     this.localization.setLanguage(lang);
-    this.saveGame();
+    this.debouncedSave();
   }
 
   public activateSkill(skillId: string): void {
     if (skillId === 'golden_harvest') {
-      this.skills.activateSkill(skillId, 20, 120);
+      this.skills.activateSkill(skillId, GAME_CONFIG.SKILL_DURATION_S, GAME_CONFIG.SKILL_COOLDOWN_S);
+      this.state.statistics.goldenHarvestActivations++;
       this.audio.playUpgrade();
     }
   }
@@ -253,36 +318,36 @@ export class GameEngine {
     return this.skills;
   }
 
-  public exportSave(): string {
+  /**
+   * Export save as base64-encoded JSON with SHA-256 integrity hash.
+   * Note: This is integrity-verified encoding, NOT encryption.
+   * For true encryption, use AES-GCM via WebCrypto API.
+   */
+  public async exportSave(): Promise<string> {
     const dataStr = JSON.stringify(this.state);
-    let checksum = 0;
-    for (let i = 0; i < dataStr.length; i++) {
-      checksum = ((checksum << 5) - checksum) + dataStr.charCodeAt(i);
-      checksum |= 0;
-    }
-    return btoa(JSON.stringify({ data: this.state, hash: checksum }));
+    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(dataStr));
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return btoa(JSON.stringify({ data: this.state, hash: hashHex }));
   }
 
-  public importSave(saveStr: string): boolean {
+  public async importSave(saveStr: string): Promise<boolean> {
     try {
       const decoded = atob(saveStr);
       const saveObj = JSON.parse(decoded);
-      
-      if (!saveObj.data || saveObj.hash === undefined) return false;
-      
+
+      if (!saveObj.data || typeof saveObj.hash !== 'string') return false;
+
       const dataStr = JSON.stringify(saveObj.data);
-      let checksum = 0;
-      for (let i = 0; i < dataStr.length; i++) {
-        checksum = ((checksum << 5) - checksum) + dataStr.charCodeAt(i);
-        checksum |= 0;
-      }
-      
-      if (checksum !== saveObj.hash) return false;
-      
-      const data = saveObj.data;
-      if (!this.validateSaveData(data)) return false;
-      
-      this.state = this.mergeWithInitialState(data);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(dataStr));
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const expectedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      if (expectedHash !== saveObj.hash) return false;
+
+      if (!this.validateSaveData(saveObj.data)) return false;
+
+      this.state = this.mergeWithInitialState(saveObj.data);
       this.saveGame();
       return true;
     } catch {
@@ -290,15 +355,54 @@ export class GameEngine {
     }
   }
 
-  private validateSaveData(data: any): boolean {
-    if (typeof data.gold !== 'number' || data.gold < 0 || data.gold > 1e100) return false;
-    if (typeof data.stage !== 'number' || data.stage < 1 || data.stage > 1000000) return false;
-    if (typeof data.totalClicks !== 'number' || data.totalClicks < 0) return false;
+  private validateSaveData(data: unknown): boolean {
+    if (typeof data !== 'object' || data === null) return false;
+
+    // Check for prototype pollution vectors
+    const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
+    for (const key of dangerousKeys) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) return false;
+    }
+
+    const isFiniteNum = (v: unknown, min: number, max: number): boolean =>
+      typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
+
+    const d = data as Record<string, unknown>;
+
+    if (!isFiniteNum(d['gold'], 0, 1e100)) return false;
+    if (!isFiniteNum(d['stage'], 1, 1000000)) return false;
+    if (!isFiniteNum(d['totalClicks'], 0, Infinity)) return false;
+    if (!isFiniteNum(d['appleHP'], 0, 1e100)) return false;
+    if (!isFiniteNum(d['maxAppleHP'], 1, 1e100)) return false;
+    if (!isFiniteNum(d['clickLevel'], 0, 1000000)) return false;
+    if (!isFiniteNum(d['luckyWorms'], 0, 1e15)) return false;
+    if (!isFiniteNum(d['highestStage'], 1, 1000000)) return false;
+
     return true;
   }
 
   public resetGame(): void {
-    this.state = { ...INITIAL_STATE, settings: this.state.settings };
+    this.state = this.mergeWithInitialState({ settings: this.state.settings });
     this.saveGame();
+  }
+
+  /**
+   * Clean up intervals, event listeners, and audio resources.
+   * Call this when the engine is no longer needed (component unmount).
+   */
+  public destroy(): void {
+    if (this.saveInterval) {
+      clearInterval(this.saveInterval);
+      this.saveInterval = null;
+    }
+    if (this.saveTimer) {
+      clearTimeout(this.saveTimer);
+      this.saveTimer = null;
+    }
+    if (this.beforeUnloadHandler && typeof window !== 'undefined') {
+      window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+      this.beforeUnloadHandler = null;
+    }
+    this.audio.destroy();
   }
 }

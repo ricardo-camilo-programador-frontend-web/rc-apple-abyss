@@ -43,13 +43,13 @@ export default function GameHeader({
         </button>
       </div>
       <div className="flex items-center gap-1">
-        <button onClick={onShowStats} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Statistics">
+        <button onClick={onShowStats} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Statistics" aria-label="Statistics">
           <History className="w-5 h-5 text-stone-500" />
         </button>
-        <button onClick={onShowSkills} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Skills">
+        <button onClick={onShowSkills} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Skills" aria-label="Skills">
           <Zap className="w-5 h-5 text-stone-500" />
         </button>
-        <button onClick={onShowSettings} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Settings">
+        <button onClick={onShowSettings} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Settings" aria-label="Settings">
           <Settings className="w-5 h-5 text-stone-500" />
         </button>
       </div>

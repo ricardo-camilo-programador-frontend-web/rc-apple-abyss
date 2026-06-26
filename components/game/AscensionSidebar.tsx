@@ -74,7 +74,7 @@ export default function AscensionSidebar({
                 : 'bg-violet-100 text-violet-400 cursor-not-allowed'
             }`}
           >
-            {canAscend ? 'Ascend Now!' : `Reach Stage 50`}
+            {canAscend ? t('ascend_now') || 'Ascend Now!' : (t('reach_stage') || 'Reach Stage ') + '50'}
           </button>
 
           <div className="mt-2 text-[10px] text-violet-500 text-center">

@@ -3,6 +3,7 @@ import './globals.css'; // Global styles
 import Script from 'next/script';
 import { ToastProvider } from '@/components/Toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 export const metadata: Metadata = {
   title: 'Apple of the Infinite Abyss',
@@ -25,8 +26,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            try {
+              var theme = localStorage.getItem('theme') || 'system';
+              var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+              if (theme === 'dark' || (theme === 'system' && prefersDark)) {
+                document.documentElement.classList.add('dark');
+              }
+            } catch(e) {}
+          })();
+        ` }} />
         <script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6735039970151788"
@@ -48,12 +60,14 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
           `}
         </Script>
       </head>
-      <body suppressHydrationWarning className="bg-stone-100 text-stone-900 font-sans">
-        <ToastProvider>
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-        </ToastProvider>
+      <body suppressHydrationWarning className="bg-stone-100 dark:bg-stone-900 text-stone-900 dark:text-stone-100 font-sans">
+        <ThemeProvider>
+          <ToastProvider>
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </ToastProvider>
+        </ThemeProvider>
         <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {

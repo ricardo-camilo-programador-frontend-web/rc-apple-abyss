@@ -24,12 +24,12 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
-            className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
+            className="bg-white dark:bg-stone-800 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-stone-100 flex justify-between items-center">
+            <div className="p-6 border-b border-stone-100 dark:border-stone-700 flex justify-between items-center">
               <h2 className="font-bold text-lg">{title}</h2>
-              <button onClick={onClose} className="text-stone-400 hover:text-stone-600">
+              <button onClick={onClose} className="text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300">
                 <X className="w-6 h-6" />
               </button>
             </div>

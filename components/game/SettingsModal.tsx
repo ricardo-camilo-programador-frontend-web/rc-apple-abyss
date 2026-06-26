@@ -105,7 +105,7 @@ export default function SettingsModal({
                 <Settings className="w-5 h-5" />
                 {t('settings')}
               </h2>
-              <button onClick={onClose} className="text-stone-400 hover:text-stone-600">
+              <button onClick={onClose} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200">
                 <ChevronRight className="w-6 h-6" />
               </button>
             </div>
@@ -219,7 +219,7 @@ export default function SettingsModal({
                       value={importString}
                       onChange={e => setImportString(e.target.value)}
                       placeholder="Paste save string..."
-                      className="flex-1 p-3 bg-stone-50 dark:bg-stone-700 border border-stone-200 dark:border-stone-600 rounded-xl text-sm focus:outline-none focus:border-red-300 dark:text-stone-200"
+                      className="flex-1 p-3 bg-stone-50 dark:bg-stone-700 border border-stone-200 dark:border-stone-600 rounded-xl text-sm focus:outline-none focus:border-red-300 dark:text-stone-200 dark:placeholder:text-stone-500"
                     />
                     <button
                       onClick={handleImportSave}
@@ -235,7 +235,7 @@ export default function SettingsModal({
 
                   <button
                     onClick={handleResetGame}
-                    className="flex items-center justify-center gap-2 p-3 mt-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors font-medium text-sm border border-red-100"
+                    className="flex items-center justify-center gap-2 p-3 mt-2 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-xl transition-colors font-medium text-sm border border-red-100 dark:border-red-800/50"
                   >
                     <RefreshCw className="w-4 h-4" />
                     Hard Reset

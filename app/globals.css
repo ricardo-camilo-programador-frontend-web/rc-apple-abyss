@@ -2,7 +2,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
-  * {
+  body {
     @apply transition-colors duration-200;
   }
 
@@ -24,14 +24,14 @@
     @apply bg-red-600;
   }
 
-  /* Firefox — uses CSS variables for consistency with Tailwind palette */
+  /* Firefox */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #f87171 #f5f5f4;
+    scrollbar-color: var(--color-red-400) var(--color-stone-100);
   }
 
   .dark * {
-    scrollbar-color: #f87171 #292524;
+    scrollbar-color: var(--color-red-400) var(--color-stone-800);
   }
 }
 

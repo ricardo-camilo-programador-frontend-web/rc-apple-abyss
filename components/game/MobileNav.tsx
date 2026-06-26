@@ -19,16 +19,16 @@ export default function MobileNav({
   return (
     <nav className="lg:hidden bg-white/80 dark:bg-stone-800/80 backdrop-blur-sm border-t border-stone-200/50 dark:border-stone-700/50 flex justify-around p-3 z-10">
       <button onClick={onShowUpgrades} className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors">
-        <TrendingUp className="w-5 h-5 text-stone-600" />
-        <span className="text-[10px] font-bold uppercase text-stone-500">{t('upgrades')}</span>
+        <TrendingUp className="w-5 h-5 text-stone-600 dark:text-stone-300" />
+        <span className="text-[10px] font-bold uppercase text-stone-500 dark:text-stone-400">{t('upgrades')}</span>
       </button>
-      <button onClick={onShowAscension} className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-violet-50 transition-colors">
-        <Sparkles className="w-5 h-5 text-violet-600" />
-        <span className="text-[10px] font-bold uppercase text-violet-600">{t('ascension')}</span>
+      <button onClick={onShowAscension} className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors">
+        <Sparkles className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+        <span className="text-[10px] font-bold uppercase text-violet-600 dark:text-violet-400">{t('ascension')}</span>
       </button>
-      <button onClick={onShowStats} className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors">
-        <BarChart2 className="w-5 h-5 text-blue-600" />
-        <span className="text-[10px] font-bold uppercase text-blue-600">{t('stats')}</span>
+      <button onClick={onShowStats} className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
+        <BarChart2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <span className="text-[10px] font-bold uppercase text-blue-600 dark:text-blue-400">{t('stats')}</span>
       </button>
     </nav>
   );

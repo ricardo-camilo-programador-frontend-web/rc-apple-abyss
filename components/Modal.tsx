@@ -28,7 +28,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
             onClick={e => e.stopPropagation()}
           >
             <div className="p-6 border-b border-stone-100 dark:border-stone-700 flex justify-between items-center">
-              <h2 className="font-bold text-lg">{title}</h2>
+              <h2 className="font-bold text-lg text-stone-900 dark:text-stone-100">{title}</h2>
               <button onClick={onClose} className="text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300">
                 <X className="w-6 h-6" />
               </button>

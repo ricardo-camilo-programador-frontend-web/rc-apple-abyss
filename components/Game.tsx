@@ -143,7 +143,7 @@ export default function Game() {
 
   if (!isMounted || !state || !engine)
     return (
-      <div className="flex items-center justify-center h-screen bg-stone-50 dark:bg-stone-900">Loading...</div>
+      <div className="flex items-center justify-center h-screen bg-stone-50 dark:bg-stone-900 text-stone-900 dark:text-stone-100">Loading...</div>
     );
 
   return (
@@ -220,7 +220,7 @@ export default function Game() {
 
       {/* Help modal */}
       <Modal isOpen={!!showHelp} onClose={() => setShowHelp(null)} title={showHelp?.title || ''}>
-        <p className="text-stone-600 text-sm leading-relaxed">{showHelp?.content}</p>
+        <p className="text-stone-600 dark:text-stone-300 text-sm leading-relaxed">{showHelp?.content}</p>
       </Modal>
 
       {/* Skills modal */}

@@ -30,7 +30,7 @@ export class LocalizationSystem {
     let text = entry[this.currentLanguage] || entry['en'];
     
     Object.entries(params).forEach(([k, v]) => {
-      text = text.replace(`{${k}}`, String(v));
+      text = text.replaceAll(`{${k}}`, String(v));
     });
     
     return text;

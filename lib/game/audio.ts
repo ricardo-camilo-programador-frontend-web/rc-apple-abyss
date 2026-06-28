@@ -10,7 +10,10 @@ export class AudioSystem {
 
   private initContext() {
     if (!this.context) {
-      this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const Ctor = window.AudioContext
+        || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Ctor) return;
+      this.context = new Ctor();
     }
     if (this.context.state === 'suspended') {
       this.context.resume();
@@ -22,7 +25,18 @@ export class AudioSystem {
   }
 
   setVolume(volume: number) {
-    this.volume = volume;
+    this.volume = Math.max(0, Math.min(1, volume));
+  }
+
+  /**
+   * Close the AudioContext to free browser resources.
+   * Browsers limit the number of concurrent AudioContexts (~6).
+   */
+  destroy() {
+    if (this.context) {
+      this.context.close().catch(() => {});
+      this.context = null;
+    }
   }
 
   playClick() {

@@ -83,10 +83,34 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle other requests (Cache First, fallback to network)
+  // Handle navigation requests (HTML pages) — stale-while-revalidate
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        const networkFetch = fetch(event.request).then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        }).catch(() => cached);
+        return cached || networkFetch;
+      })
+    );
+    return;
+  }
+
+  // Handle other requests (stale-while-revalidate, fallback to network)
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+      const networkFetch = fetch(event.request).then((res) => {
+        if (res && res.status === 200 && res.type === 'basic') {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return res;
+      }).catch(() => response);
+      return response || networkFetch;
     })
   );
 });

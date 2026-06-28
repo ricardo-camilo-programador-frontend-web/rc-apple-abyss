@@ -59,7 +59,7 @@ export default function AppleArea({
                     <img
                       key={src}
                       src={src}
-                      alt="Apple"
+                      alt="Apple — click to deal damage"
                       className="apple-sprite"
                       loading="eager"
                       decoding="async"

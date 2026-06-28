@@ -86,7 +86,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-red-50 to-stone-50 dark:from-stone-900 dark:via-red-950 dark:to-stone-900 p-4"
+          className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-red-50 to-stone-50 dark:from-stone-900 dark:via-red-950/30 dark:to-stone-900 p-4"
         >
           <div className="max-w-md w-full bg-white dark:bg-stone-800 rounded-3xl shadow-2xl overflow-hidden">
             <div className="bg-gradient-to-r from-red-500 to-rose-500 p-6 text-center">
@@ -104,7 +104,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
             <div className="p-6 space-y-4">
               {process.env.NODE_ENV === 'development' && error && (
-                <div className="bg-stone-50 dark:bg-stone-700 rounded-xl p-4 border border-stone-200 dark:border-stone-600">
+                <div className="bg-stone-50 dark:bg-stone-900 dark:border-stone-700 rounded-xl p-4 border border-stone-200">
                   <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400 mb-2">
                     <Bug className="w-4 h-4" />
                     <span className="text-xs font-bold uppercase">Error Details</span>
@@ -116,8 +116,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               )}
 
               {errorCount >= 3 && (
-                <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <div className="bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-800 border border-yellow-200 rounded-xl p-4">
+                  <p className="text-sm text-yellow-800">
                     Multiple errors detected. Try refreshing the page or clearing your browser data.
                   </p>
                 </div>
@@ -138,7 +138,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                   onClick={this.handleReload}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 w-full py-3 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 rounded-xl font-medium transition-all"
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 dark:bg-stone-700 dark:hover:bg-stone-600 dark:text-stone-200 rounded-xl font-medium transition-all"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Reload Page
@@ -148,7 +148,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                   onClick={this.handleGoHome}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 w-full py-3 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 rounded-xl font-medium transition-all"
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 dark:bg-stone-700 dark:hover:bg-stone-600 dark:text-stone-200 rounded-xl font-medium transition-all"
                 >
                   <Home className="w-4 h-4" />
                   Go to Home

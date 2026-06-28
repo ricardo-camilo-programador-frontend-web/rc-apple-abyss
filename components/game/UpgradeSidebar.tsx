@@ -71,8 +71,8 @@ export default function UpgradeSidebar({
                   <span>{Math.floor(engine.getClickUpgradeCost()).toLocaleString()}</span>
                 </div>
                 <div className="text-[10px] text-stone-500 dark:text-stone-400">
-                                    Dmg: {engine.getClickDamage().toFixed(1)}
-                                  </div>
+                  Dmg: {engine.getClickDamage().toFixed(1)}
+                </div>
               </div>
             </div>
           </div>

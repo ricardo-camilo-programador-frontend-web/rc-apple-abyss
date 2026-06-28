@@ -77,7 +77,7 @@ export default function AscensionSidebar({
             {canAscend ? 'Ascend Now!' : `Reach Stage 50`}
           </button>
 
-          <div className="mt-2 text-[10px] text-violet-500 dark:text-violet-500 text-center">
+          <div className="mt-2 text-[10px] text-violet-500 dark:text-violet-400 text-center">
             Lucky Worms: +5% gold each
           </div>
         </div>

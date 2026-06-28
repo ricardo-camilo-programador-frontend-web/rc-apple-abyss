@@ -105,7 +105,7 @@ export default function SettingsModal({
                 <Settings className="w-5 h-5" />
                 {t('settings')}
               </h2>
-              <button onClick={onClose} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200">
+              <button onClick={onClose} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200" aria-label="Close">
                 <ChevronRight className="w-6 h-6" />
               </button>
             </div>
@@ -185,13 +185,14 @@ export default function SettingsModal({
                     <button
                       key={value}
                       onClick={() => setTheme(value)}
+                      aria-pressed={theme === value}
                       className={`p-2 rounded-lg text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ${
                         theme === value
                           ? 'bg-red-500 text-white border-red-600 shadow-md'
                           : 'bg-stone-50 dark:bg-stone-700 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-600'
                       }`}
                     >
-                      <Icon className="w-3 h-3" />
+                      <Icon className="w-3 h-3" aria-hidden="true" />
                       {label}
                     </button>
                   ))}

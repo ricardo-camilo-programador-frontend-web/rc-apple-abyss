@@ -52,7 +52,7 @@ export default function GameHeader({
         <button onClick={onShowSkills} className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-xl transition-colors" title="Skills" aria-label="Skills">
           <Zap className="w-5 h-5 text-stone-500 dark:text-stone-400" />
         </button>
-        <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-xl transition-colors" title="Toggle theme" aria-label="Toggle theme">
+        <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-xl transition-colors" title="Toggle theme" aria-label="Toggle theme" aria-pressed={resolvedTheme === 'dark'}>
           {resolvedTheme === 'dark' ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-stone-500" />}
         </button>
         <button onClick={onShowSettings} className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-xl transition-colors" title="Settings" aria-label="Settings">

@@ -82,7 +82,8 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const issue_number = context.payload.pull_request.number;
-            const { risk, size, total, added, removed, files } = ${{ toJSON(steps.metrics.outputs) }};
+            const metrics = ${{ toJSON(steps.metrics.outputs) }};
+            const { risk, size, total, added, removed, files } = metrics;
 
             const current = await github.rest.issues.listLabelsOnIssue({
               owner, repo, issue_number, per_page: 100
@@ -92,7 +93,7 @@ jobs:
             const remove = [];
             for (const name of names) {
               if (/^risk:(low|medium|high)$/.test(name) && name !== `risk:${risk}`) remove.push(name);
-              if (/^size\/(XS|S|M|L|XL)$/.test(name) && name !== `size:${size}`) remove.push(name);
+              if (/^size\/(XS|S|M|L|XL)$/.test(name) && name !== `size/${size}`) remove.push(name);
             }
             for (const name of [...new Set(remove)]) {
               await github.rest.issues.removeLabel({ owner, repo, issue_number, name }).catch(() => {});

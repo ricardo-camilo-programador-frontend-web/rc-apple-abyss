@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Apple of the Infinite Abyss",
   "short_name": "Infinite Apple",
-  "description": "A minimalist incremental idle game where you eat apples.",
+  "description": "A minimalist incremental idle game where you eat apples with help of worms. Features goals, daily rewards, and skill activation.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",

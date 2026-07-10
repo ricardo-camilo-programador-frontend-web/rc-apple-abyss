@@ -375,4 +375,195 @@ describe('GameEngine', () => {
       expect(() => engine.destroy()).not.toThrow();
     });
   });
+
+  /* ─── Journey / Goals ─── */
+
+  describe('Goal Commands', () => {
+    it('should return empty array when no goals are completable', () => {
+      const completed = engine.checkAndAwardGoals();
+      expect(completed).toEqual([]);
+    });
+
+    it('should detect and award first_apple goal after eating one apple', () => {
+      // Simulate eating one apple by setting state directly
+      engine.getState().totalApplesEaten = 1;
+      const completed = engine.checkAndAwardGoals();
+      expect(completed).toContain('first_apple');
+    });
+
+    it('should grant gold reward for first_apple goal', () => {
+      engine.getState().totalApplesEaten = 1;
+      const goldBefore = engine.getState().gold;
+      engine.checkAndAwardGoals();
+      const goldAfter = engine.getState().gold;
+      expect(goldAfter).toBeGreaterThan(goldBefore);
+    });
+
+    it('should not award the same goal twice', () => {
+      engine.getState().totalApplesEaten = 1;
+      engine.checkAndAwardGoals();
+      engine.getState().totalApplesEaten = 10; // Still qualifies
+      const completed = engine.checkAndAwardGoals();
+      expect(completed).not.toContain('first_apple');
+    });
+
+    it('should detect multiple newly completed goals at once', () => {
+      engine.getState().totalApplesEaten = 100;
+      engine.getState().highestStage = 10;
+      engine.getState().statistics.totalAscensions = 1;
+      const completed = engine.checkAndAwardGoals();
+      expect(completed.length).toBeGreaterThanOrEqual(3);
+      expect(completed).toContain('first_apple');
+      expect(completed).toContain('ten_apples');
+      expect(completed).toContain('hundred_apples');
+      expect(completed).toContain('stage_ten');
+      expect(completed).toContain('first_ascension');
+    });
+
+    it('should return all goal progress', () => {
+      engine.getState().totalApplesEaten = 5;
+      const progress = engine.getAllGoalProgress();
+      expect(progress.length).toBeGreaterThan(0);
+      const firstApple = progress.find(p => p.goalId === 'first_apple');
+      expect(firstApple).toBeDefined();
+      expect(firstApple!.currentValue).toBe(5);
+    });
+
+    it('should return specific goal progress by id', () => {
+      engine.getState().totalApplesEaten = 3;
+      const progress = engine.getGoalProgressById('ten_apples');
+      expect(progress).toBeDefined();
+      expect(progress!.currentValue).toBe(3);
+      expect(progress!.isCompleted).toBe(false);
+    });
+
+    it('should return undefined for unknown goal id', () => {
+      expect(engine.getGoalProgressById('nonexistent')).toBeUndefined();
+    });
+  });
+
+  /* ─── Daily Reward ─── */
+
+  describe('Daily Reward Commands', () => {
+    it('should allow claim on fresh state', () => {
+      expect(engine.canClaimDailyReward()).toBe(true);
+    });
+
+    it('should claim reward and return streak day 1', () => {
+      const streakDay = engine.claimDailyReward();
+      expect(streakDay).toBe(1);
+    });
+
+    it('should add gold on claim', () => {
+      const goldBefore = engine.getState().gold;
+      engine.claimDailyReward();
+      const goldAfter = engine.getState().gold;
+      expect(goldAfter).toBeGreaterThan(goldBefore);
+    });
+
+    it('should not allow double claim on same day', () => {
+      engine.claimDailyReward();
+      expect(engine.canClaimDailyReward()).toBe(false);
+      const secondClaim = engine.claimDailyReward();
+      expect(secondClaim).toBe(0);
+    });
+
+    it('should return 0 for time until next when claim is available', () => {
+      const time = engine.getTimeUntilNextDailyReward();
+      expect(time).toBe(0);
+    });
+
+    it('should return positive time after claiming', () => {
+      engine.claimDailyReward();
+      const time = engine.getTimeUntilNextDailyReward();
+      expect(time).toBeGreaterThan(0);
+    });
+  });
+
+  /* ─── Onboarding ─── */
+
+  describe('Onboarding Commands', () => {
+    it('should show onboarding on fresh state', () => {
+      expect(engine.shouldShowOnboarding()).toBe(true);
+    });
+
+    it('should mark step as completed', () => {
+      engine.completeOnboardingStep(0);
+      const onboardingState = engine.getOnboardingState();
+      expect(onboardingState.completedStep).toBe(0);
+      expect(onboardingState.hasSeenOnboarding).toBe(true);
+    });
+
+    it('should not regress completedStep', () => {
+      engine.completeOnboardingStep(2);
+      engine.completeOnboardingStep(1);
+      expect(engine.getOnboardingState().completedStep).toBe(2);
+    });
+
+    it('should complete onboarding fully', () => {
+      engine.completeOnboarding();
+      expect(engine.shouldShowOnboarding()).toBe(false);
+      expect(engine.getOnboardingState().wasSkipped).toBe(false);
+    });
+
+    it('should skip onboarding', () => {
+      engine.skipOnboarding();
+      expect(engine.shouldShowOnboarding()).toBe(false);
+      expect(engine.getOnboardingState().wasSkipped).toBe(true);
+    });
+
+    it('should reset onboarding', () => {
+      engine.completeOnboarding();
+      engine.resetOnboarding();
+      expect(engine.shouldShowOnboarding()).toBe(true);
+      expect(engine.getOnboardingState().completedStep).toBe(-1);
+    });
+  });
+
+  /* ─── Save Migration ─── */
+
+  describe('Journey State Migration', () => {
+    it('should have journey state on fresh engine', () => {
+      const state = engine.getState();
+      expect(state.journey).toBeDefined();
+      expect(state.journey!.completedGoals).toEqual([]);
+      expect(state.journey!.onboarding.hasSeenOnboarding).toBe(false);
+      expect(state.journey!.dailyReward.lastClaimDate).toBeNull();
+      expect(state.journey!.dailyReward.streak).toBe(0);
+    });
+
+    it('should migrate old save without journey field', async () => {
+      // Create engine, set some state, export
+      engine.getState().gold = 500;
+      engine.getState().stage = 5;
+      const save = await engine.exportSave();
+
+      // Import into fresh engine (simulates old save)
+      mockStorage = {};
+      const engine2 = new GameEngine();
+      const result = await engine2.importSave(save);
+
+      expect(result).toBe(true);
+      expect(engine2.getState().gold).toBe(500);
+      expect(engine2.getState().journey).toBeDefined();
+      expect(engine2.getState().journey!.completedGoals).toEqual([]);
+      expect(engine2.getState().journey!.onboarding.hasSeenOnboarding).toBe(false);
+    });
+
+    it('should preserve journey state across save/load', async () => {
+      engine.getState().totalApplesEaten = 1;
+      engine.checkAndAwardGoals(); // awards first_apple
+      engine.claimDailyReward();
+      engine.completeOnboardingStep(2);
+      const save = await engine.exportSave();
+
+      mockStorage = {};
+      const engine2 = new GameEngine();
+      await engine2.importSave(save);
+
+      expect(engine2.getState().journey!.onboarding.completedStep).toBe(2);
+      expect(engine2.getState().journey!.dailyReward.lastClaimDate).not.toBeNull();
+      expect(engine2.getState().journey!.completedGoals.length).toBeGreaterThan(0);
+    });
+  });
 });

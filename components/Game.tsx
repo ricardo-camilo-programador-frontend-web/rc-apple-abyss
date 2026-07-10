@@ -23,6 +23,8 @@ import SettingsModal from '@/components/game/SettingsModal';
 import OfflineModal from '@/components/game/OfflineModal';
 import SkillsModal from '@/components/game/SkillsModal';
 import StatsModal from '@/components/game/StatsModal';
+import OnboardingModal from '@/components/game/OnboardingModal';
+import JourneyModal from '@/components/game/JourneyModal';
 
 // Extracted hooks
 import { useGameLoop } from '@/hooks/use-game-loop';
@@ -38,6 +40,8 @@ export default function Game() {
   const [showUpgradesModal, setShowUpgradesModal] = useState(false);
   const [showAscensionModal, setShowAscensionModal] = useState(false);
   const [showStatsPanelModal, setShowStatsPanelModal] = useState(false);
+  const [showJourney, setShowJourney] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [showHelp, setShowHelp] = useState<{ title: string; content: string } | null>(null);
   const [offlineResult, setOfflineResult] = useState<{ apples: number; gold: number } | null>(
     null
@@ -46,6 +50,7 @@ export default function Game() {
     { id: number; x: number; y: number; value: number }[]
   >([]);
   const [isShaking, setIsShaking] = useState(false);
+  const [canClaimDailyReward, setCanClaimDailyReward] = useState(false);
   const [particleOffsets] = useState(() =>
     Array.from({ length: 10 }).map(() => ({
       x: (Math.random() - 0.5) * 300,
@@ -68,11 +73,34 @@ export default function Game() {
 
   const handleStateUpdate = useCallback(() => {
     setState({ ...engine.getState() });
+    setCanClaimDailyReward(engine.canClaimDailyReward());
   }, [engine]);
 
   // Game loop and keyboard hooks
   useGameLoop(engine, handleStateUpdate);
   useGameKeyboard(engine, handleStateUpdate);
+
+  // Show onboarding on first mount for new players
+  useEffect(() => {
+    if (isMounted && engine.shouldShowOnboarding()) {
+      setShowOnboarding(true);
+    }
+  }, [isMounted, engine]);
+
+  // Periodic goal checking — runs after each state update cycle
+  useEffect(() => {
+    if (!isMounted) return;
+    const interval = setInterval(() => {
+      const newCompleted = engine.checkAndAwardGoals();
+      if (newCompleted.length > 0) {
+        handleStateUpdate();
+        for (const goalId of newCompleted) {
+          analytics.goalCompleted(goalId);
+        }
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isMounted, engine, handleStateUpdate]);
 
   // --- Event handlers ---
   const handleClick = (e: React.MouseEvent) => {
@@ -163,6 +191,8 @@ export default function Game() {
         onShowSkills={() => setShowSkills(true)}
         onShowSettings={() => setShowSettings(true)}
         onShowHelp={help => setShowHelp(help)}
+        onShowJourney={() => setShowJourney(true)}
+        canClaimDailyReward={canClaimDailyReward}
       />
 
       <div className="flex-1 flex flex-row overflow-hidden">
@@ -211,6 +241,8 @@ export default function Game() {
         onShowUpgrades={() => setShowUpgradesModal(true)}
         onShowAscension={() => setShowAscensionModal(true)}
         onShowStats={() => setShowStatsPanelModal(true)}
+        onShowJourney={() => setShowJourney(true)}
+        canClaimDailyReward={canClaimDailyReward}
       />
 
       <GameFooter t={t} />
@@ -252,6 +284,22 @@ export default function Game() {
 
       {/* Offline earnings modal */}
       <OfflineModal result={offlineResult} t={t} onDismiss={() => setOfflineResult(null)} />
+
+      {/* Onboarding modal */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        engine={engine}
+        t={t}
+        onClose={() => setShowOnboarding(false)}
+      />
+
+      {/* Journey modal */}
+      <JourneyModal
+        isOpen={showJourney}
+        engine={engine}
+        t={t}
+        onClose={() => setShowJourney(false)}
+      />
 
       {/* Click effects overlay */}
       <AnimatePresence>

@@ -130,9 +130,9 @@ export interface DailyRewardState {
 
 export interface JourneyState {
   /** IDs of completed goals */
-  readonly completedGoals: string[];
+  completedGoals: string[];
   /** Onboarding state */
-  readonly onboarding: OnboardingState;
+  onboarding: OnboardingState;
   /** Daily reward state */
-  readonly dailyReward: DailyRewardState;
+  dailyReward: DailyRewardState;
 }

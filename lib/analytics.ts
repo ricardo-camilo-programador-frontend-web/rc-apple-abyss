@@ -57,4 +57,22 @@ export const analytics = {
   themeChanged: (theme: string) => {
     trackEvent('theme_changed', { theme });
   },
+
+  /* ─── Journey / Product Analytics ─── */
+
+  goalCompleted: (goalId: string) => {
+    trackEvent('goal_completed', { goalId });
+  },
+  dailyRewardClaimed: (streakDay: number, goldReward: number) => {
+    trackEvent('daily_reward_claimed', { streakDay, goldReward });
+  },
+  onboardingCompleted: (wasSkipped: boolean) => {
+    trackEvent('onboarding_completed', { wasSkipped });
+  },
+  onboardingStepViewed: (stepIndex: number) => {
+    trackEvent('onboarding_step_viewed', { stepIndex });
+  },
+  journeyViewed: () => {
+    trackEvent('journey_viewed');
+  },
 };

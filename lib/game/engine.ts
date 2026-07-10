@@ -1,10 +1,10 @@
-import { GameState, Language, JourneyState, OnboardingState, DailyRewardState } from './types';
+import { GameState, Language, JourneyState, OnboardingState, DailyRewardState, GoalProgress } from './types';
 import { INITIAL_STATE, WORM_UPGRADES, CLICK_UPGRADE, LUCKY_WORMS_CONFIG, GAME_CONFIG, INITIAL_JOURNEY_STATE } from './constants';
 import { AudioSystem } from './audio';
 import { LocalizationSystem } from './localization';
 import { SkillSystem } from './skills';
 import { OfflineProgressSystem, OfflineProgressResult } from './offline';
-import { findNewlyCompletedGoals, calculateAllGoalProgress, getGoalDefinition, GoalProgress } from './goals';
+import { findNewlyCompletedGoals, calculateAllGoalProgress, getGoalDefinition } from './goals';
 import { canClaimDailyReward, calculateClaimResult, calculateDailyGoldReward, sanitizeDailyRewardState } from './daily-reward';
 
 /** Max deltaTime in seconds — prevents massive damage spikes when tab returns from background */

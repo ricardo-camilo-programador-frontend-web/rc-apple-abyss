@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { GameState } from '@/lib/game/types';
-import { Coins, Trophy, Sparkles, History, Zap, Settings } from 'lucide-react';
+import { Coins, Trophy, Sparkles, History, Zap, Settings, Map } from 'lucide-react';
 
 interface GameHeaderProps {
   state: GameState;
@@ -11,6 +11,8 @@ interface GameHeaderProps {
   onShowSkills: () => void;
   onShowSettings: () => void;
   onShowHelp: (help: { title: string; content: string }) => void;
+  onShowJourney: () => void;
+  canClaimDailyReward: boolean;
 }
 
 export default function GameHeader({
@@ -20,6 +22,8 @@ export default function GameHeader({
   onShowSkills,
   onShowSettings,
   onShowHelp,
+  onShowJourney,
+  canClaimDailyReward,
 }: GameHeaderProps) {
   return (
     <header className="bg-white/80 backdrop-blur-sm border-b border-stone-200/50 p-2 md:p-3 flex justify-between items-center z-10 flex-wrap gap-2 sticky top-0">
@@ -43,6 +47,17 @@ export default function GameHeader({
         </button>
       </div>
       <div className="flex items-center gap-1">
+        <button
+          onClick={onShowJourney}
+          className={`p-2 rounded-xl transition-colors relative ${canClaimDailyReward ? 'hover:bg-amber-100 text-amber-600' : 'hover:bg-stone-100 text-stone-500'}`}
+          title="Journey"
+          aria-label="Journey"
+        >
+          <Map className="w-5 h-5" />
+          {canClaimDailyReward && (
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse" />
+          )}
+        </button>
         <button onClick={onShowStats} className="p-2 hover:bg-stone-100 rounded-xl transition-colors" title="Statistics" aria-label="Statistics">
           <History className="w-5 h-5 text-stone-500" />
         </button>

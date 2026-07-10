@@ -1,4 +1,4 @@
-import { Language, LocalizationData, WormUpgrade, LuckyWormsConfig, StatisticsData, HelpContent, HelpTopicId } from './types';
+import { Language, LocalizationData, WormUpgrade, LuckyWormsConfig, StatisticsData, HelpContent, HelpTopicId, JourneyState } from './types';
 
 /**
  * Centralized game configuration constants.
@@ -77,6 +77,7 @@ export const INITIAL_STATE = {
     },
   },
   statistics: { ...INITIAL_STATISTICS },
+  journey: { ...INITIAL_JOURNEY_STATE },
   settings: {
     language: 'en' as Language,
     muted: false,
@@ -151,6 +152,37 @@ export const CLICK_UPGRADE = {
   baseDamage: 1,
   costGrowth: 1.15,
   damageGrowth: 1.35
+};
+
+/* ─── Daily Reward Constants ─── */
+
+export const DAILY_REWARD_CONFIG = {
+  /** Maximum consecutive day streak before it resets to day 1 */
+  MAX_STREAK: 7,
+  /** Minimum gold reward (day 1) for brand-new players */
+  MIN_GOLD_REWARD: 5,
+  /** Gold reward per streak day: MIN + stageMultiplier × streakDay */
+  GOLD_PER_STREAK_DAY: 3,
+  /** Stage multiplier: reward scales mildly with current stage */
+  STAGE_MULTIPLIER: 1,
+  /** Minimum stage used as multiplier floor (ensures new players get useful reward) */
+  MIN_STAGE_FOR_MULTIPLIER: 1,
+} as const;
+
+/* ─── Journey Initial State ─── */
+
+export const INITIAL_JOURNEY_STATE: JourneyState = {
+  completedGoals: [],
+  onboarding: {
+    hasSeenOnboarding: false,
+    completedStep: -1,
+    wasSkipped: false,
+  },
+  dailyReward: {
+    lastClaimDate: null,
+    streak: 0,
+    nextClaimAvailableAt: 0,
+  },
 };
 
 export const LOCALIZATION: LocalizationData = {

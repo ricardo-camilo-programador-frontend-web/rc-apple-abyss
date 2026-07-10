@@ -44,6 +44,32 @@ export const INITIAL_STATISTICS: StatisticsData = {
   goldenHarvestActivations: 0,
 }
 
+/* ─── Daily Reward Constants ─── */
+
+export const DAILY_REWARD_CONFIG = {
+  MAX_STREAK: 7,
+  MIN_GOLD_REWARD: 5,
+  GOLD_PER_STREAK_DAY: 3,
+  STAGE_MULTIPLIER: 1,
+  MIN_STAGE_FOR_MULTIPLIER: 1,
+} as const;
+
+/* ─── Journey Initial State ─── */
+
+export const INITIAL_JOURNEY_STATE: JourneyState = {
+  completedGoals: [],
+  onboarding: {
+    hasSeenOnboarding: false,
+    completedStep: -1,
+    wasSkipped: false,
+  },
+  dailyReward: {
+    lastClaimDate: null,
+    streak: 0,
+    nextClaimAvailableAt: 0,
+  },
+};
+
 export const INITIAL_STATE = {
   gold: 0,
   stage: 1,
@@ -152,37 +178,6 @@ export const CLICK_UPGRADE = {
   baseDamage: 1,
   costGrowth: 1.15,
   damageGrowth: 1.35
-};
-
-/* ─── Daily Reward Constants ─── */
-
-export const DAILY_REWARD_CONFIG = {
-  /** Maximum consecutive day streak before it resets to day 1 */
-  MAX_STREAK: 7,
-  /** Minimum gold reward (day 1) for brand-new players */
-  MIN_GOLD_REWARD: 5,
-  /** Gold reward per streak day: MIN + stageMultiplier × streakDay */
-  GOLD_PER_STREAK_DAY: 3,
-  /** Stage multiplier: reward scales mildly with current stage */
-  STAGE_MULTIPLIER: 1,
-  /** Minimum stage used as multiplier floor (ensures new players get useful reward) */
-  MIN_STAGE_FOR_MULTIPLIER: 1,
-} as const;
-
-/* ─── Journey Initial State ─── */
-
-export const INITIAL_JOURNEY_STATE: JourneyState = {
-  completedGoals: [],
-  onboarding: {
-    hasSeenOnboarding: false,
-    completedStep: -1,
-    wasSkipped: false,
-  },
-  dailyReward: {
-    lastClaimDate: null,
-    streak: 0,
-    nextClaimAvailableAt: 0,
-  },
 };
 
 export const LOCALIZATION: LocalizationData = {

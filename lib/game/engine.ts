@@ -1,9 +1,11 @@
-import { GameState, Language } from './types';
-import { INITIAL_STATE, WORM_UPGRADES, CLICK_UPGRADE, LUCKY_WORMS_CONFIG, GAME_CONFIG } from './constants';
+import { GameState, Language, JourneyState, OnboardingState, DailyRewardState } from './types';
+import { INITIAL_STATE, WORM_UPGRADES, CLICK_UPGRADE, LUCKY_WORMS_CONFIG, GAME_CONFIG, INITIAL_JOURNEY_STATE } from './constants';
 import { AudioSystem } from './audio';
 import { LocalizationSystem } from './localization';
 import { SkillSystem } from './skills';
 import { OfflineProgressSystem, OfflineProgressResult } from './offline';
+import { findNewlyCompletedGoals, calculateAllGoalProgress, getGoalDefinition, GoalProgress } from './goals';
+import { canClaimDailyReward, calculateClaimResult, calculateDailyGoldReward, sanitizeDailyRewardState } from './daily-reward';
 
 /** Max deltaTime in seconds — prevents massive damage spikes when tab returns from background */
 const MAX_DELTA_TIME_S = 5;
@@ -65,6 +67,9 @@ export class GameEngine {
       mergedSkills[id] = saved ? { ...initial, ...saved } : { ...initial };
     }
 
+    // Merge journey state with additive migration for old saves
+    const mergedJourney = this.mergeJourneyState(parsed.journey);
+
     return {
       ...INITIAL_STATE,
       ...parsed,
@@ -72,6 +77,43 @@ export class GameEngine {
       skills: mergedSkills,
       statistics: { ...INITIAL_STATE.statistics, ...(parsed.statistics || {}) },
       settings: { ...INITIAL_STATE.settings, ...(parsed.settings || {}) },
+      journey: mergedJourney,
+    };
+  }
+
+  /**
+   * Merge journey state from parsed save data.
+   * Old saves without journey field get default initial state (additive migration).
+   * Corrupted journey data is sanitized gracefully.
+   */
+  private mergeJourneyState(parsedJourney: JourneyState | undefined): JourneyState {
+    if (!parsedJourney) {
+      return { ...INITIAL_JOURNEY_STATE };
+    }
+
+    return {
+      completedGoals: Array.isArray(parsedJourney.completedGoals)
+        ? [...parsedJourney.completedGoals]
+        : [],
+      onboarding: this.mergeOnboardingState(parsedJourney.onboarding),
+      dailyReward: sanitizeDailyRewardState(parsedJourney.dailyReward),
+    };
+  }
+
+  private mergeOnboardingState(parsed: Partial<OnboardingState> | undefined): OnboardingState {
+    if (!parsed) {
+      return { ...INITIAL_JOURNEY_STATE.onboarding };
+    }
+    return {
+      hasSeenOnboarding: typeof parsed.hasSeenOnboarding === 'boolean'
+        ? parsed.hasSeenOnboarding
+        : false,
+      completedStep: typeof parsed.completedStep === 'number'
+        ? parsed.completedStep
+        : -1,
+      wasSkipped: typeof parsed.wasSkipped === 'boolean'
+        ? parsed.wasSkipped
+        : false,
     };
   }
 
@@ -384,6 +426,190 @@ export class GameEngine {
   public resetGame(): void {
     this.state = this.mergeWithInitialState({ settings: this.state.settings });
     this.saveGame();
+  }
+
+  /* ─── Journey / Goal Commands ─── */
+
+  /**
+   * Check for newly completed goals and award their rewards.
+   * Returns an array of newly completed goal ids.
+   * Each goal is awarded exactly once (idempotent).
+   */
+  public checkAndAwardGoals(): string[] {
+    const journeyState = this.ensureJourneyState();
+    const completedSet = new Set(journeyState.completedGoals);
+    const newlyCompleted = findNewlyCompletedGoals(this.state, journeyState.completedGoals);
+
+    const newCompletedIds: string[] = [];
+
+    for (const goal of newlyCompleted) {
+      if (completedSet.has(goal.id)) continue;
+
+      // Grant reward deterministically
+      if (goal.rewardType === 'gold') {
+        this.state.gold += goal.rewardAmount;
+        this.state.statistics.totalGoldEarned += goal.rewardAmount;
+      } else if (goal.rewardType === 'luckyWorms') {
+        this.state.luckyWorms += goal.rewardAmount;
+        this.state.statistics.luckyWormsCollected = this.state.luckyWorms;
+      }
+
+      completedSet.add(goal.id);
+      newCompletedIds.push(goal.id);
+    }
+
+    if (newCompletedIds.length > 0) {
+      journeyState.completedGoals = [...completedSet];
+      this.debouncedSave();
+    }
+
+    return newCompletedIds;
+  }
+
+  /**
+   * Get all goal progress (completed and pending).
+   */
+  public getAllGoalProgress(): GoalProgress[] {
+    const journeyState = this.ensureJourneyState();
+    return calculateAllGoalProgress(this.state, journeyState.completedGoals);
+  }
+
+  /**
+   * Get progress of a specific goal by id.
+   */
+  public getGoalProgressById(goalId: string): GoalProgress | undefined {
+    const allProgress = this.getAllGoalProgress();
+    return allProgress.find((progress) => progress.goalId === goalId);
+  }
+
+  /* ─── Daily Reward Commands ─── */
+
+  /**
+   * Check if a daily reward can be claimed right now.
+   */
+  public canClaimDailyReward(): boolean {
+    const journeyState = this.ensureJourneyState();
+    return canClaimDailyReward(journeyState.dailyReward);
+  }
+
+  /**
+   * Claim the daily reward if eligible.
+   * Returns the streak day (1-based) if claimed, or 0 if not eligible.
+   */
+  public claimDailyReward(): number {
+    const journeyState = this.ensureJourneyState();
+
+    if (!canClaimDailyReward(journeyState.dailyReward)) {
+      return 0;
+    }
+
+    const claimResult = calculateClaimResult(journeyState.dailyReward);
+    const goldReward = calculateDailyGoldReward(claimResult.streakDay, this.state.stage);
+
+    this.state.gold += goldReward;
+    this.state.statistics.totalGoldEarned += goldReward;
+    journeyState.dailyReward = claimResult.newState;
+
+    this.debouncedSave();
+    return claimResult.streakDay;
+  }
+
+  /**
+   * Get time until next daily reward claim (in ms).
+   * Returns 0 if available now.
+   */
+  public getTimeUntilNextDailyReward(): number {
+    const journeyState = this.ensureJourneyState();
+    const dailyRewardState = journeyState.dailyReward;
+    if (canClaimDailyReward(dailyRewardState)) {
+      return 0;
+    }
+    return Math.max(0, dailyRewardState.nextClaimAvailableAt - Date.now());
+  }
+
+  /* ─── Onboarding Commands ─── */
+
+  /**
+   * Mark a specific onboarding step as completed.
+   * Step index is 0-based.
+   */
+  public completeOnboardingStep(stepIndex: number): void {
+    const journeyState = this.ensureJourneyState();
+    if (stepIndex > journeyState.onboarding.completedStep) {
+      journeyState.onboarding = {
+        ...journeyState.onboarding,
+        hasSeenOnboarding: true,
+        completedStep: stepIndex,
+      };
+      this.debouncedSave();
+    }
+  }
+
+  /**
+   * Mark onboarding as completed (all steps done).
+   */
+  public completeOnboarding(): void {
+    const journeyState = this.ensureJourneyState();
+    journeyState.onboarding = {
+      hasSeenOnboarding: true,
+      completedStep: Number.MAX_SAFE_INTEGER,
+      wasSkipped: false,
+    };
+    this.debouncedSave();
+  }
+
+  /**
+   * Skip onboarding entirely.
+   */
+  public skipOnboarding(): void {
+    const journeyState = this.ensureJourneyState();
+    journeyState.onboarding = {
+      hasSeenOnboarding: true,
+      completedStep: -1,
+      wasSkipped: true,
+    };
+    this.debouncedSave();
+  }
+
+  /**
+   * Check if onboarding should be shown.
+   */
+  public shouldShowOnboarding(): boolean {
+    const journeyState = this.ensureJourneyState();
+    return !journeyState.onboarding.hasSeenOnboarding;
+  }
+
+  /**
+   * Get the onboarding state.
+   */
+  public getOnboardingState(): OnboardingState {
+    return this.ensureJourneyState().onboarding;
+  }
+
+  /**
+   * Reset onboarding so it can be shown again (from settings).
+   */
+  public resetOnboarding(): void {
+    const journeyState = this.ensureJourneyState();
+    journeyState.onboarding = {
+      hasSeenOnboarding: false,
+      completedStep: -1,
+      wasSkipped: false,
+    };
+    this.debouncedSave();
+  }
+
+  /* ─── Journey Helpers ─── */
+
+  /**
+   * Ensure journey state exists on the game state.
+   * Handles the case where old saves don't have it.
+   */
+  private ensureJourneyState(): JourneyState {
+    if (!this.state.journey) {
+      this.state.journey = { ...INITIAL_JOURNEY_STATE };
+    }
+    return this.state.journey;
   }
 
   /**

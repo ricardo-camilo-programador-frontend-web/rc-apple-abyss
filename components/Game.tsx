@@ -83,6 +83,7 @@ export default function Game() {
   // Show onboarding on first mount for new players
   useEffect(() => {
     if (isMounted && engine.shouldShowOnboarding()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time initialization from engine state
       setShowOnboarding(true);
     }
   }, [isMounted, engine]);

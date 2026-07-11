@@ -27,19 +27,20 @@ export default function JourneyModal({
   const [claimResult, setClaimResult] = React.useState<number | null>(null);
   const [timeUntilNext, setTimeUntilNext] = React.useState(0);
 
+  const refreshState = React.useCallback(() => {
+    setGoalProgress(engine.getAllGoalProgress());
+    setCanClaim(engine.canClaimDailyReward());
+    setTimeUntilNext(engine.getTimeUntilNextDailyReward());
+  }, [engine]);
+
   React.useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional initial refresh from engine state
       refreshState();
       const interval = setInterval(refreshState, 1000);
       return () => clearInterval(interval);
     }
-  }, [isOpen, engine]);
-
-  const refreshState = () => {
-    setGoalProgress(engine.getAllGoalProgress());
-    setCanClaim(engine.canClaimDailyReward());
-    setTimeUntilNext(engine.getTimeUntilNextDailyReward());
-  };
+  }, [isOpen, refreshState]);
 
   const handleClaimDailyReward = () => {
     const streakDay = engine.claimDailyReward();

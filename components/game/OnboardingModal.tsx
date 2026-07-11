@@ -26,7 +26,6 @@ export default function OnboardingModal({
   onClose,
 }: OnboardingModalProps) {
   const [currentStep, setCurrentStep] = React.useState(0);
-  const isFirstRender = React.useRef(true);
 
   // Sync currentStep with engine state on mount
   React.useEffect(() => {
@@ -34,6 +33,7 @@ export default function OnboardingModal({
       const onboardingState = engine.getOnboardingState();
       const nextStep = Math.max(0, onboardingState.completedStep + 1);
       if (nextStep < ONBOARDING_STEPS.length) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time initialization from engine state
         setCurrentStep(nextStep);
       } else {
         // Already completed — close

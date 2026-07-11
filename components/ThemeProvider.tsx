@@ -66,6 +66,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // localStorage not available
     }
 
+    // Initialize theme from localStorage — intentional one-time sync
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reading from external system (localStorage)
     setThemeState(savedTheme);
     const resolved = resolveTheme(savedTheme);
     setResolvedTheme(resolved);

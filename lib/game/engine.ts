@@ -7,6 +7,9 @@ import { OfflineProgressSystem, OfflineProgressResult } from './offline';
 import { findNewlyCompletedGoals, calculateAllGoalProgress, getGoalDefinition } from './goals';
 import { canClaimDailyReward, calculateClaimResult, calculateDailyGoldReward, sanitizeDailyRewardState } from './daily-reward';
 
+/** Number of onboarding steps (must match ONBOARDING_STEPS in OnboardingModal) */
+const ONBOARDING_TOTAL_STEPS = 3;
+
 /** Max deltaTime in seconds — prevents massive damage spikes when tab returns from background */
 const MAX_DELTA_TIME_S = 5;
 
@@ -573,10 +576,22 @@ export class GameEngine {
 
   /**
    * Check if onboarding should be shown.
+   * Returns true only when the player has never started onboarding
+   * or has partially completed it (not finished all steps and not skipped).
    */
   public shouldShowOnboarding(): boolean {
     const journeyState = this.ensureJourneyState();
-    return !journeyState.onboarding.hasSeenOnboarding;
+    const onboarding = journeyState.onboarding;
+    // Already fully completed or explicitly skipped — never show again
+    if (onboarding.wasSkipped || onboarding.completedStep >= ONBOARDING_TOTAL_STEPS - 1) {
+      return false;
+    }
+    // Never seen — always show
+    if (!onboarding.hasSeenOnboarding) {
+      return true;
+    }
+    // Partially completed — resume from next step
+    return onboarding.completedStep < ONBOARDING_TOTAL_STEPS - 1;
   }
 
   /**

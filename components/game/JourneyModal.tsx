@@ -6,6 +6,8 @@ import { GameEngine } from '@/lib/game/engine';
 import { GoalProgress } from '@/lib/game/types';
 import { DAILY_REWARD_CONFIG } from '@/lib/game/constants';
 import { getGoalDefinition } from '@/lib/game/goals';
+import { calculateDailyGoldReward } from '@/lib/game/daily-reward';
+import { analytics } from '@/lib/analytics';
 import { Coins, Sparkles, Gift, CheckCircle, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -45,6 +47,8 @@ export default function JourneyModal({
   const handleClaimDailyReward = () => {
     const streakDay = engine.claimDailyReward();
     if (streakDay > 0) {
+      const goldReward = calculateDailyGoldReward(streakDay, engine.getState().stage);
+      analytics.dailyRewardClaimed(streakDay, goldReward);
       setClaimResult(streakDay);
       refreshState();
       setTimeout(() => setClaimResult(null), 3000);

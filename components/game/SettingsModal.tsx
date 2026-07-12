@@ -1,21 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
-import { GameState, Language } from '@/lib/game/types';
-import { GameEngine } from '@/lib/game/engine';
-import { motion, AnimatePresence } from 'motion/react';
 import {
-  Settings,
-  Volume2,
-  VolumeX,
-  Languages,
   ChevronRight,
   Download,
-  Upload,
+  Languages,
   RefreshCw,
+  Settings,
+  Upload,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
-import { analytics } from '@/lib/analytics';
+import { AnimatePresence, motion } from 'motion/react';
+import React, { useState } from 'react';
 import ThemeToggle from '@/components/game/ThemeToggle';
+import { analytics } from '@/lib/analytics';
+import type { GameEngine } from '@/lib/game/engine';
+import type { GameState, Language } from '@/lib/game/types';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -29,9 +29,27 @@ interface SettingsModalProps {
   onExportSave: () => void;
 }
 
-const LANGUAGES: Language[] = [
-  'en', 'zh', 'hi', 'es', 'fr', 'ar', 'bn', 'pt', 'ru', 'ur',
-  'id', 'de', 'ja', 'sw', 'mr', 'te', 'tr', 'ta', 'vi', 'ko',
+const LANGUAGES: Array<Language> = [
+  'en',
+  'zh',
+  'hi',
+  'es',
+  'fr',
+  'ar',
+  'bn',
+  'pt',
+  'ru',
+  'ur',
+  'id',
+  'de',
+  'ja',
+  'sw',
+  'mr',
+  'te',
+  'tr',
+  'ta',
+  'vi',
+  'ko',
 ];
 
 export default function SettingsModal({
@@ -96,7 +114,7 @@ export default function SettingsModal({
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
             className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 border-b border-stone-100 flex justify-between items-center">
               <h2 className="font-bold text-lg flex items-center gap-2">
@@ -139,7 +157,7 @@ export default function SettingsModal({
                     max="1"
                     step="0.1"
                     value={state.settings.volume}
-                    onChange={e => {
+                    onChange={(e) => {
                       engine.setVolume(parseFloat(e.target.value));
                       onStateUpdate();
                     }}
@@ -155,7 +173,7 @@ export default function SettingsModal({
                   {t('settings_language')}
                 </label>
                 <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
-                  {LANGUAGES.map(lang => (
+                  {LANGUAGES.map((lang) => (
                     <button
                       key={lang}
                       onClick={() => changeLanguage(lang)}
@@ -191,7 +209,7 @@ export default function SettingsModal({
                     <input
                       type="text"
                       value={importString}
-                      onChange={e => setImportString(e.target.value)}
+                      onChange={(e) => setImportString(e.target.value)}
                       placeholder="Paste save string..."
                       className="flex-1 p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-red-300"
                     />
@@ -203,9 +221,7 @@ export default function SettingsModal({
                       <Upload className="w-4 h-4" />
                     </button>
                   </div>
-                  {importError && (
-                    <p className="text-xs text-red-500 font-medium">{importError}</p>
-                  )}
+                  {importError && <p className="text-xs text-red-500 font-medium">{importError}</p>}
 
                   <button
                     onClick={handleResetGame}

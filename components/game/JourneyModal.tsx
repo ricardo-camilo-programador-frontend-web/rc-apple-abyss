@@ -1,15 +1,15 @@
 'use client';
 
+import { CheckCircle, Clock, Coins, Gift, Sparkles } from 'lucide-react';
+import { motion } from 'motion/react';
 import React from 'react';
 import Modal from '@/components/Modal';
-import { GameEngine } from '@/lib/game/engine';
-import { GoalProgress } from '@/lib/game/types';
-import { DAILY_REWARD_CONFIG } from '@/lib/game/constants';
-import { getGoalDefinition } from '@/lib/game/goals';
-import { calculateDailyGoldReward } from '@/lib/game/daily-reward';
 import { analytics } from '@/lib/analytics';
-import { Coins, Sparkles, Gift, CheckCircle, Clock } from 'lucide-react';
-import { motion } from 'motion/react';
+import { DAILY_REWARD_CONFIG } from '@/lib/game/constants';
+import { calculateDailyGoldReward } from '@/lib/game/daily-reward';
+import type { GameEngine } from '@/lib/game/engine';
+import { getGoalDefinition } from '@/lib/game/goals';
+import type { GoalProgress } from '@/lib/game/types';
 
 interface JourneyModalProps {
   isOpen: boolean;
@@ -18,13 +18,8 @@ interface JourneyModalProps {
   onClose: () => void;
 }
 
-export default function JourneyModal({
-  isOpen,
-  engine,
-  t,
-  onClose,
-}: JourneyModalProps) {
-  const [goalProgress, setGoalProgress] = React.useState<GoalProgress[]>([]);
+export default function JourneyModal({ isOpen, engine, t, onClose }: JourneyModalProps) {
+  const [goalProgress, setGoalProgress] = React.useState<Array<GoalProgress>>([]);
   const [canClaim, setCanClaim] = React.useState(false);
   const [claimResult, setClaimResult] = React.useState<number | null>(null);
   const [timeUntilNext, setTimeUntilNext] = React.useState(0);
@@ -61,7 +56,7 @@ export default function JourneyModal({
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
 
-    const parts: string[] = [];
+    const parts: Array<string> = [];
     if (hours > 0) parts.push(`${hours}h`);
     if (minutes > 0) parts.push(`${minutes}m`);
     parts.push(`${seconds}s`);
@@ -72,7 +67,10 @@ export default function JourneyModal({
   const pendingGoals = goalProgress.filter((goalProgress) => !goalProgress.isCompleted);
 
   // Build streak day indicators
-  const streakDays = Array.from({ length: DAILY_REWARD_CONFIG.MAX_STREAK }, (_, index) => index + 1);
+  const streakDays = Array.from(
+    { length: DAILY_REWARD_CONFIG.MAX_STREAK },
+    (_, index) => index + 1,
+  );
   const currentStreak = engine.getState().journey?.dailyReward.streak ?? 0;
 
   return (

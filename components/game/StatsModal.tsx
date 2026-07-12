@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { GameState } from '@/lib/game/types';
 import Modal from '@/components/Modal';
+import type { GameState } from '@/lib/game/types';
 
 interface StatsModalProps {
   isOpen: boolean;
@@ -24,8 +24,7 @@ export default function StatsModal({ isOpen, state, t, onClose }: StatsModalProp
           <span className="font-mono font-bold">{state.totalApplesEaten}</span>
         </div>
         <div className="flex justify-between">
-          <span>Lucky Worms:</span>{' '}
-          <span className="font-mono font-bold">{state.luckyWorms}</span>
+          <span>Lucky Worms:</span> <span className="font-mono font-bold">{state.luckyWorms}</span>
         </div>
         <div className="flex justify-between">
           <span>Gold Bonus:</span>{' '}

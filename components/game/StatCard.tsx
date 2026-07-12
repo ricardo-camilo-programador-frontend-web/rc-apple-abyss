@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
 import { motion } from 'motion/react';
+import type React from 'react';
 
 interface StatCardProps {
   icon: React.ElementType;
@@ -11,12 +11,12 @@ interface StatCardProps {
   onClick?: () => void;
 }
 
-export default function StatCard({ 
-  icon: Icon, 
-  label, 
-  value, 
+export default function StatCard({
+  icon: Icon,
+  label,
+  value,
   color = 'stone',
-  onClick 
+  onClick,
 }: StatCardProps) {
   const colorClasses: Record<string, string> = {
     yellow: 'from-yellow-50 to-amber-50 text-yellow-600',
@@ -29,7 +29,7 @@ export default function StatCard({
   };
 
   return (
-    <motion.div 
+    <motion.div
       whileHover={{ scale: 1.02, y: -1 }}
       className={`p-3 bg-gradient-to-br ${colorClasses[color]} rounded-xl cursor-default ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
@@ -39,7 +39,9 @@ export default function StatCard({
           <Icon className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-medium uppercase tracking-wider opacity-70 truncate">{label}</div>
+          <div className="text-[10px] font-medium uppercase tracking-wider opacity-70 truncate">
+            {label}
+          </div>
           <div className="font-mono font-bold text-sm truncate">{value}</div>
         </div>
       </div>

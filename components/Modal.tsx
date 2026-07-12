@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import type React from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -24,26 +25,29 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      onClose();
-      return;
-    }
-    if (e.key === 'Tab' && dialogRef.current) {
-      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
         e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
+        onClose();
+        return;
       }
-    }
-  }, [onClose]);
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    },
+    [onClose],
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -85,10 +89,12 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
             className="bg-white dark:bg-stone-800 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 border-b border-stone-100 dark:border-stone-700 flex justify-between items-center">
-              <h2 id={titleId} className="font-bold text-lg text-stone-900 dark:text-stone-100">{title}</h2>
+              <h2 id={titleId} className="font-bold text-lg text-stone-900 dark:text-stone-100">
+                {title}
+              </h2>
               <button
                 onClick={onClose}
                 className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"

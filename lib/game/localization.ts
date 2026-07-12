@@ -1,5 +1,5 @@
-import { Language } from './types';
 import { LOCALIZATION } from './constants';
+import type { Language } from './types';
 
 export class LocalizationSystem {
   private currentLanguage: Language = 'en';
@@ -26,13 +26,13 @@ export class LocalizationSystem {
   t(key: string, params: Record<string, string | number> = {}): string {
     const entry = LOCALIZATION[key];
     if (!entry) return key;
-    
+
     let text = entry[this.currentLanguage] || entry['en'];
-    
+
     Object.entries(params).forEach(([k, v]) => {
       text = text.replaceAll(`{${k}}`, String(v));
     });
-    
+
     return text;
   }
 }

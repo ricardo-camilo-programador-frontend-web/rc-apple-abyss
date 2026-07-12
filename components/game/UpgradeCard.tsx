@@ -1,13 +1,13 @@
 'use client';
 
-import React from 'react';
+import { Bug, Coins } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Coins, Bug } from 'lucide-react';
-import { WORM_UPGRADES } from '@/lib/game/constants';
+import React from 'react';
+import type { WORM_UPGRADES } from '@/lib/game/constants';
 import { WORM_ICONS } from '@/lib/game/worm-catalog';
 
 interface UpgradeCardProps {
-  upgrade: typeof WORM_UPGRADES[number];
+  upgrade: (typeof WORM_UPGRADES)[number];
   count: number;
   cost: number;
   canAfford: boolean;
@@ -17,18 +17,18 @@ interface UpgradeCardProps {
   t: (key: string, params?: any) => string;
 }
 
-export default function UpgradeCard({ 
-  upgrade, 
-  count, 
-  cost, 
-  canAfford, 
-  currentDPS, 
+export default function UpgradeCard({
+  upgrade,
+  count,
+  cost,
+  canAfford,
+  currentDPS,
   nextDPS,
   onBuy,
-  t 
+  t,
 }: UpgradeCardProps) {
   const Icon = WORM_ICONS[upgrade.id] || Bug;
-  
+
   return (
     <motion.button
       onClick={onBuy}
@@ -36,15 +36,17 @@ export default function UpgradeCard({
       whileHover={canAfford ? { scale: 1.01, y: -2 } : {}}
       whileTap={canAfford ? { scale: 0.98 } : {}}
       className={`w-full p-3 rounded-xl text-left transition-all duration-200 ${
-        canAfford 
-          ? 'bg-white hover:shadow-lg border border-stone-100 hover:border-stone-200 cursor-pointer' 
+        canAfford
+          ? 'bg-white hover:shadow-lg border border-stone-100 hover:border-stone-200 cursor-pointer'
           : 'bg-stone-50/50 border border-stone-100/50 opacity-50 cursor-not-allowed'
       }`}
     >
       <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-          canAfford ? 'bg-gradient-to-br from-stone-100 to-stone-50' : 'bg-stone-100'
-        }`}>
+        <div
+          className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+            canAfford ? 'bg-gradient-to-br from-stone-100 to-stone-50' : 'bg-stone-100'
+          }`}
+        >
           <Icon className={`w-5 h-5 ${canAfford ? 'text-stone-600' : 'text-stone-400'}`} />
         </div>
         <div className="flex-1 min-w-0">

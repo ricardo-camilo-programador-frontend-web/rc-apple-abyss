@@ -1,11 +1,30 @@
-import { GameState, Language, JourneyState, OnboardingState, DailyRewardState, GoalProgress } from './types';
-import { INITIAL_STATE, WORM_UPGRADES, CLICK_UPGRADE, LUCKY_WORMS_CONFIG, GAME_CONFIG, INITIAL_JOURNEY_STATE } from './constants';
 import { AudioSystem } from './audio';
+import {
+  CLICK_UPGRADE,
+  GAME_CONFIG,
+  INITIAL_JOURNEY_STATE,
+  INITIAL_STATE,
+  LUCKY_WORMS_CONFIG,
+  WORM_UPGRADES,
+} from './constants';
+import {
+  calculateClaimResult,
+  calculateDailyGoldReward,
+  canClaimDailyReward,
+  sanitizeDailyRewardState,
+} from './daily-reward';
+import { calculateAllGoalProgress, findNewlyCompletedGoals, getGoalDefinition } from './goals';
 import { LocalizationSystem } from './localization';
+import { OfflineProgressResult, OfflineProgressSystem } from './offline';
 import { SkillSystem } from './skills';
-import { OfflineProgressSystem, OfflineProgressResult } from './offline';
-import { findNewlyCompletedGoals, calculateAllGoalProgress, getGoalDefinition } from './goals';
-import { canClaimDailyReward, calculateClaimResult, calculateDailyGoldReward, sanitizeDailyRewardState } from './daily-reward';
+import {
+  DailyRewardState,
+  type GameState,
+  type GoalProgress,
+  type JourneyState,
+  type Language,
+  type OnboardingState,
+} from './types';
 
 /** Number of onboarding steps (must match ONBOARDING_STEPS in OnboardingModal) */
 const ONBOARDING_TOTAL_STEPS = 3;
@@ -31,12 +50,15 @@ export class GameEngine {
     this.audio = new AudioSystem(this.state.settings.muted, this.state.settings.volume);
     this.localization = new LocalizationSystem(this.state.settings.language);
     this.skills = new SkillSystem(this.state);
-    this.offlineSystem = new OfflineProgressSystem({}, {
-      getCurrentState: () => this.state,
-      getWormDPS: (id) => this.getWormDPS(id),
-      getTotalDPS: () => this.getTotalDPS(),
-      getGoldMultiplier: () => this.getGoldMultiplier(),
-    });
+    this.offlineSystem = new OfflineProgressSystem(
+      {},
+      {
+        getCurrentState: () => this.state,
+        getWormDPS: (id) => this.getWormDPS(id),
+        getTotalDPS: () => this.getTotalDPS(),
+        getGoldMultiplier: () => this.getGoldMultiplier(),
+      },
+    );
 
     this.calculateOfflineProgress();
     this.startAutoSave();
@@ -57,15 +79,25 @@ export class GameEngine {
   }
 
   private mergeWithInitialState(parsed: Partial<GameState>): GameState {
-    const mergedSkills: Record<string, { isActive: boolean; remainingDuration: number; cooldownRemaining: number }> = {};
-    const initialSkills = INITIAL_STATE.skills as Record<string, { isActive: boolean; remainingDuration: number; cooldownRemaining: number }>;
-    const parsedSkills = (parsed.skills || {}) as Record<string, { isActive: boolean; remainingDuration: number; cooldownRemaining: number }>;
-    const allSkillIds = new Set([
-      ...Object.keys(initialSkills),
-      ...Object.keys(parsedSkills),
-    ]);
+    const mergedSkills: Record<
+      string,
+      { isActive: boolean; remainingDuration: number; cooldownRemaining: number }
+    > = {};
+    const initialSkills = INITIAL_STATE.skills as Record<
+      string,
+      { isActive: boolean; remainingDuration: number; cooldownRemaining: number }
+    >;
+    const parsedSkills = (parsed.skills || {}) as Record<
+      string,
+      { isActive: boolean; remainingDuration: number; cooldownRemaining: number }
+    >;
+    const allSkillIds = new Set([...Object.keys(initialSkills), ...Object.keys(parsedSkills)]);
     for (const id of allSkillIds) {
-      const initial = initialSkills[id] || { isActive: false, remainingDuration: 0, cooldownRemaining: 0 };
+      const initial = initialSkills[id] || {
+        isActive: false,
+        remainingDuration: 0,
+        cooldownRemaining: 0,
+      };
       const saved = parsedSkills[id];
       mergedSkills[id] = saved ? { ...initial, ...saved } : { ...initial };
     }
@@ -108,15 +140,10 @@ export class GameEngine {
       return { ...INITIAL_JOURNEY_STATE.onboarding };
     }
     return {
-      hasSeenOnboarding: typeof parsed.hasSeenOnboarding === 'boolean'
-        ? parsed.hasSeenOnboarding
-        : false,
-      completedStep: typeof parsed.completedStep === 'number'
-        ? parsed.completedStep
-        : -1,
-      wasSkipped: typeof parsed.wasSkipped === 'boolean'
-        ? parsed.wasSkipped
-        : false,
+      hasSeenOnboarding:
+        typeof parsed.hasSeenOnboarding === 'boolean' ? parsed.hasSeenOnboarding : false,
+      completedStep: typeof parsed.completedStep === 'number' ? parsed.completedStep : -1,
+      wasSkipped: typeof parsed.wasSkipped === 'boolean' ? parsed.wasSkipped : false,
     };
   }
 
@@ -232,14 +259,15 @@ export class GameEngine {
   }
 
   public getClickDamage(): number {
-    const baseDamage = GAME_CONFIG.CLICK_BASE_DAMAGE * Math.pow(CLICK_UPGRADE.damageGrowth, this.state.clickLevel);
-    const luckyWormBonus = 1 + (this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm);
+    const baseDamage =
+      GAME_CONFIG.CLICK_BASE_DAMAGE * Math.pow(CLICK_UPGRADE.damageGrowth, this.state.clickLevel);
+    const luckyWormBonus = 1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm;
     const skillMultiplier = this.skills.getGoldMultiplierClick();
     return baseDamage * luckyWormBonus * skillMultiplier;
   }
 
   public getWormDPS(id: string): number {
-    const upgrade = WORM_UPGRADES.find(u => u.id === id);
+    const upgrade = WORM_UPGRADES.find((u) => u.id === id);
     if (!upgrade) return 0;
     const count = this.state.worms[id] || 0;
     if (count === 0) return 0;
@@ -251,17 +279,17 @@ export class GameEngine {
     for (const upgrade of WORM_UPGRADES) {
       totalDPS += this.getWormDPS(upgrade.id);
     }
-    const luckyWormBonus = 1 + (this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm);
+    const luckyWormBonus = 1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm;
     const skillMultiplier = this.skills.getGoldMultiplierIdle();
     return totalDPS * luckyWormBonus * skillMultiplier;
   }
 
   public getGoldMultiplier(): number {
-    return 1 + (this.state.luckyWorms * LUCKY_WORMS_CONFIG.goldBonusPerWorm);
+    return 1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.goldBonusPerWorm;
   }
 
   public getUpgradeCost(upgradeId: string): number {
-    const upgrade = WORM_UPGRADES.find(u => u.id === upgradeId);
+    const upgrade = WORM_UPGRADES.find((u) => u.id === upgradeId);
     if (!upgrade) return 0;
     const count = this.state.worms[upgradeId] || 0;
     return Math.floor(upgrade.baseCost * Math.pow(upgrade.costGrowth, count));
@@ -278,7 +306,10 @@ export class GameEngine {
   }
 
   public getClickUpgradeCost(): number {
-    return Math.floor(GAME_CONFIG.CLICK_UPGRADE_BASE_COST * Math.pow(GAME_CONFIG.CLICK_UPGRADE_COST_GROWTH, this.state.clickLevel));
+    return Math.floor(
+      GAME_CONFIG.CLICK_UPGRADE_BASE_COST *
+        Math.pow(GAME_CONFIG.CLICK_UPGRADE_COST_GROWTH, this.state.clickLevel),
+    );
   }
 
   public buyClickUpgrade(): boolean {
@@ -341,7 +372,11 @@ export class GameEngine {
 
   public activateSkill(skillId: string): void {
     if (skillId === 'golden_harvest') {
-      this.skills.activateSkill(skillId, GAME_CONFIG.SKILL_DURATION_S, GAME_CONFIG.SKILL_COOLDOWN_S);
+      this.skills.activateSkill(
+        skillId,
+        GAME_CONFIG.SKILL_DURATION_S,
+        GAME_CONFIG.SKILL_COOLDOWN_S,
+      );
       this.state.statistics.goldenHarvestActivations++;
       this.audio.playUpgrade();
     }
@@ -372,7 +407,7 @@ export class GameEngine {
     const dataStr = JSON.stringify(this.state);
     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(dataStr));
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
     return btoa(JSON.stringify({ data: this.state, hash: hashHex }));
   }
 
@@ -386,7 +421,7 @@ export class GameEngine {
       const dataStr = JSON.stringify(saveObj.data);
       const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(dataStr));
       const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const expectedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      const expectedHash = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 
       if (expectedHash !== saveObj.hash) return false;
 
@@ -438,12 +473,12 @@ export class GameEngine {
    * Returns an array of newly completed goal ids.
    * Each goal is awarded exactly once (idempotent).
    */
-  public checkAndAwardGoals(): string[] {
+  public checkAndAwardGoals(): Array<string> {
     const journeyState = this.ensureJourneyState();
     const completedSet = new Set(journeyState.completedGoals);
     const newlyCompleted = findNewlyCompletedGoals(this.state, journeyState.completedGoals);
 
-    const newCompletedIds: string[] = [];
+    const newCompletedIds: Array<string> = [];
 
     for (const goal of newlyCompleted) {
       if (completedSet.has(goal.id)) continue;
@@ -472,7 +507,7 @@ export class GameEngine {
   /**
    * Get all goal progress (completed and pending).
    */
-  public getAllGoalProgress(): GoalProgress[] {
+  public getAllGoalProgress(): Array<GoalProgress> {
     const journeyState = this.ensureJourneyState();
     return calculateAllGoalProgress(this.state, journeyState.completedGoals);
   }

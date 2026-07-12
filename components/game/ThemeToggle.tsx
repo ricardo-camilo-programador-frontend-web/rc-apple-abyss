@@ -1,10 +1,10 @@
 'use client';
 
+import { Monitor, Moon, Sun } from 'lucide-react';
 import React from 'react';
-import { Sun, Moon, Monitor } from 'lucide-react';
-import { useTheme, type Theme } from '@/components/ThemeProvider';
+import { type Theme, useTheme } from '@/components/ThemeProvider';
 
-const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
+const THEME_OPTIONS: Array<{ value: Theme; label: string; icon: typeof Sun }> = [
   { value: 'light', label: 'Light', icon: Sun },
   { value: 'dark', label: 'Dark', icon: Moon },
   { value: 'system', label: 'System', icon: Monitor },

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
-import { GameEngine } from '@/lib/game/engine';
+import { useCallback, useRef, useState } from 'react';
 import { analytics } from '@/lib/analytics';
+import type { GameEngine } from '@/lib/game/engine';
 
 interface UseGameOrchestrationReturn {
   state: ReturnType<GameEngine['getState']>;
@@ -46,9 +46,7 @@ interface UseGameOrchestrationReturn {
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-export function useGameOrchestration(
-  engine: GameEngine
-): UseGameOrchestrationReturn {
+export function useGameOrchestration(engine: GameEngine): UseGameOrchestrationReturn {
   const [state, setState] = useState(() => engine.getState());
   const [isMounted, setIsMounted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -62,7 +60,7 @@ export function useGameOrchestration(
   const [showHelp, setShowHelp] = useState<{ title: string; content: string } | null>(null);
   const [offlineResult, setOfflineResult] = useState<{ apples: number; gold: number } | null>(null);
   const [clickEffects, setClickEffects] = useState<
-    { id: number; x: number; y: number; value: number }[]
+    Array<{ id: number; x: number; y: number; value: number }>
   >([]);
   const [isShaking, setIsShaking] = useState(false);
   const [canClaimDailyReward, setCanClaimDailyReward] = useState(false);
@@ -71,13 +69,14 @@ export function useGameOrchestration(
       x: (Math.random() - 0.5) * 300,
       y: (Math.random() - 0.5) * 300,
       delay: Math.random() * 1.5,
-    }))
+    })),
   );
   const clickIdCounter = useRef(0);
 
   const t = useCallback(
-    (key: string, params?: Record<string, string | number>) => engine.getLocalization().t(key, params),
-    [engine]
+    (key: string, params?: Record<string, string | number>) =>
+      engine.getLocalization().t(key, params),
+    [engine],
   );
 
   const handleStateUpdate = useCallback(() => {
@@ -97,19 +96,19 @@ export function useGameOrchestration(
         y: e.clientY,
         value: Math.floor(damage),
       };
-      setClickEffects(prev => [...prev, newEffect]);
+      setClickEffects((prev) => [...prev, newEffect]);
       setTimeout(() => {
-        setClickEffects(prev => prev.filter(eff => eff.id !== newEffect.id));
+        setClickEffects((prev) => prev.filter((eff) => eff.id !== newEffect.id));
       }, 1000);
     },
-    [engine]
+    [engine],
   );
 
   const handleBuyUpgrade = useCallback(
     (id: string) => {
       engine.buyUpgrade(id);
     },
-    [engine]
+    [engine],
   );
 
   const handleBuyClickUpgrade = useCallback(() => {
@@ -122,7 +121,7 @@ export function useGameOrchestration(
     if (
       confirm(
         t('ascend_confirm') ??
-          'Are you sure you want to ascend? You will lose all current progress but gain permanent bonuses.'
+          'Are you sure you want to ascend? You will lose all current progress but gain permanent bonuses.',
       )
     ) {
       engine.ascend();
@@ -156,7 +155,7 @@ export function useGameOrchestration(
         setShowSettings(false);
       }
     },
-    [engine, handleStateUpdate]
+    [engine, handleStateUpdate],
   );
 
   const handleResetGame = useCallback(() => {

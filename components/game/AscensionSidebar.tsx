@@ -1,11 +1,11 @@
 'use client';
 
-import React from 'react';
-import { GameState } from '@/lib/game/types';
-import { GameEngine } from '@/lib/game/engine';
-import StatCard from './StatCard';
-import { Coins, Trophy, MousePointer2, Sword, Users, Sparkles, History } from 'lucide-react';
+import { Coins, History, MousePointer2, Sparkles, Sword, Trophy, Users } from 'lucide-react';
 import { motion } from 'motion/react';
+import React from 'react';
+import type { GameEngine } from '@/lib/game/engine';
+import type { GameState } from '@/lib/game/types';
+import StatCard from './StatCard';
 
 interface AscensionSidebarProps {
   state: GameState;
@@ -27,9 +27,16 @@ export default function AscensionSidebar({
   const pendingWorms = engine.getPendingLuckyWorms();
 
   return (
-    <aside className={className ?? "hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-l border-stone-200/50 p-4 flex-col gap-4 overflow-y-auto"}>
+    <aside
+      className={
+        className ??
+        'hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-l border-stone-200/50 p-4 flex-col gap-4 overflow-y-auto'
+      }
+    >
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">{t('ascension')}</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">
+          {t('ascension')}
+        </h2>
         <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-4 border border-violet-100">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
@@ -47,11 +54,11 @@ export default function AscensionSidebar({
               <span className="font-mono text-violet-900">{state.stage}/50</span>
             </div>
             <div className="h-2 bg-violet-100 rounded-full overflow-hidden">
-              <motion.div 
+              <motion.div
                 className="h-full bg-gradient-to-r from-violet-500 to-purple-500"
                 initial={false}
                 animate={{ width: `${progress}%` }}
-                transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
               />
             </div>
           </div>
@@ -74,7 +81,9 @@ export default function AscensionSidebar({
                 : 'bg-violet-100 text-violet-400 cursor-not-allowed'
             }`}
           >
-            {canAscend ? t('ascend_now') || 'Ascend Now!' : (t('reach_stage') || 'Reach Stage ') + '50'}
+            {canAscend
+              ? t('ascend_now') || 'Ascend Now!'
+              : (t('reach_stage') || 'Reach Stage ') + '50'}
           </button>
 
           <div className="mt-2 text-[10px] text-violet-500 text-center">
@@ -84,64 +93,67 @@ export default function AscensionSidebar({
       </div>
 
       <div className="flex-1">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">{t('stats')}</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">
+          {t('stats')}
+        </h2>
         <div className="space-y-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2">Economy</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2">
+              Economy
+            </div>
             <div className="grid grid-cols-2 gap-2">
-              <StatCard 
-                icon={Coins} 
-                label="Gold" 
-                value={Math.floor(state.gold).toLocaleString()} 
-                color="yellow" 
+              <StatCard
+                icon={Coins}
+                label="Gold"
+                value={Math.floor(state.gold).toLocaleString()}
+                color="yellow"
               />
-              <StatCard 
-                icon={Trophy} 
-                label="Stage" 
-                value={state.stage} 
-                color="orange" 
+              <StatCard icon={Trophy} label="Stage" value={state.stage} color="orange" />
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2">
+              Combat
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <StatCard
+                icon={MousePointer2}
+                label="Click Dmg"
+                value={engine.getClickDamage().toFixed(1)}
+                color="red"
+              />
+              <StatCard
+                icon={Sword}
+                label="Idle DPS"
+                value={engine.getTotalDPS().toFixed(1)}
+                color="blue"
               />
             </div>
           </div>
 
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2">Combat</div>
-            <div className="grid grid-cols-2 gap-2">
-              <StatCard 
-                icon={MousePointer2} 
-                label="Click Dmg" 
-                value={engine.getClickDamage().toFixed(1)} 
-                color="red" 
-              />
-              <StatCard 
-                icon={Sword} 
-                label="Idle DPS" 
-                value={engine.getTotalDPS().toFixed(1)} 
-                color="blue" 
-              />
+            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2">
+              Progression
             </div>
-          </div>
-
-          <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2">Progression</div>
             <div className="grid grid-cols-2 gap-2">
-              <StatCard 
-                icon={Users} 
-                label="Worms" 
-                value={Object.values(state.worms).reduce((a, b) => a + b, 0)} 
-                color="green" 
+              <StatCard
+                icon={Users}
+                label="Worms"
+                value={Object.values(state.worms).reduce((a, b) => a + b, 0)}
+                color="green"
               />
-              <StatCard 
-                icon={Sparkles} 
-                label="Lucky" 
-                value={`${state.luckyWorms} (+${state.luckyWorms * 5}%)`} 
-                color="purple" 
+              <StatCard
+                icon={Sparkles}
+                label="Lucky"
+                value={`${state.luckyWorms} (+${state.luckyWorms * 5}%)`}
+                color="purple"
               />
-              <StatCard 
-                icon={History} 
-                label="Eaten" 
-                value={state.totalApplesEaten.toLocaleString()} 
-                color="stone" 
+              <StatCard
+                icon={History}
+                label="Eaten"
+                value={state.totalApplesEaten.toLocaleString()}
+                color="stone"
               />
             </div>
           </div>

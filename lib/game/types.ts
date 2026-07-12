@@ -1,6 +1,24 @@
-export type Language = 
-  | 'en' | 'zh' | 'hi' | 'es' | 'fr' | 'ar' | 'bn' | 'pt' | 'ru' | 'ur' 
-  | 'id' | 'de' | 'ja' | 'sw' | 'mr' | 'te' | 'tr' | 'ta' | 'vi' | 'ko';
+export type Language =
+  | 'en'
+  | 'zh'
+  | 'hi'
+  | 'es'
+  | 'fr'
+  | 'ar'
+  | 'bn'
+  | 'pt'
+  | 'ru'
+  | 'ur'
+  | 'id'
+  | 'de'
+  | 'ja'
+  | 'sw'
+  | 'mr'
+  | 'te'
+  | 'tr'
+  | 'ta'
+  | 'vi'
+  | 'ko';
 
 export interface WormUpgrade {
   id: string;
@@ -38,7 +56,7 @@ export interface HelpContent {
   formula?: string;
 }
 
-export type HelpTopicId = 
+export type HelpTopicId =
   | 'lucky_worms'
   | 'golden_harvest'
   | 'ascension'
@@ -77,12 +95,7 @@ export interface LocalizationData {
 
 /* ─── Journey: Goals & Daily Reward ─── */
 
-export type GoalType =
-  | 'milestone'
-  | 'upgrade'
-  | 'ascension'
-  | 'collection'
-  | 'skill';
+export type GoalType = 'milestone' | 'upgrade' | 'ascension' | 'collection' | 'skill';
 
 export interface GoalDefinition {
   /** Stable identifier used for persistence and analytics */
@@ -130,7 +143,7 @@ export interface DailyRewardState {
 
 export interface JourneyState {
   /** IDs of completed goals */
-  completedGoals: string[];
+  completedGoals: Array<string>;
   /** Onboarding state */
   onboarding: OnboardingState;
   /** Daily reward state */

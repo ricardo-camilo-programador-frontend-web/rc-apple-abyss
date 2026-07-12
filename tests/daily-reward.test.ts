@@ -1,17 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { DAILY_REWARD_CONFIG } from '@/lib/game/constants';
 import {
-  getTodayDateString,
-  getTomorrowDateString,
-  getDateStartTimestamp,
-  isValidTimestamp,
-  canClaimDailyReward,
   calculateClaimResult,
   calculateDailyGoldReward,
+  canClaimDailyReward,
+  getDateStartTimestamp,
   getTimeUntilNextClaim,
+  getTodayDateString,
+  getTomorrowDateString,
+  isValidTimestamp,
   sanitizeDailyRewardState,
 } from '@/lib/game/daily-reward';
-import { DAILY_REWARD_CONFIG } from '@/lib/game/constants';
-import { DailyRewardState } from '@/lib/game/types';
+import type { DailyRewardState } from '@/lib/game/types';
 
 function createMockDailyRewardState(overrides: Partial<DailyRewardState> = {}): DailyRewardState {
   return {
@@ -184,7 +184,9 @@ describe('calculateClaimResult', () => {
 describe('calculateDailyGoldReward', () => {
   it('should return minimum reward for day 1 at stage 1', () => {
     const reward = calculateDailyGoldReward(1, 1);
-    expect(reward).toBe(DAILY_REWARD_CONFIG.MIN_GOLD_REWARD + DAILY_REWARD_CONFIG.GOLD_PER_STREAK_DAY * 1);
+    expect(reward).toBe(
+      DAILY_REWARD_CONFIG.MIN_GOLD_REWARD + DAILY_REWARD_CONFIG.GOLD_PER_STREAK_DAY * 1,
+    );
   });
 
   it('should increase reward with higher streak day', () => {
@@ -206,8 +208,14 @@ describe('calculateDailyGoldReward', () => {
 
   it('should scale correctly at max streak with high stage', () => {
     const reward = calculateDailyGoldReward(DAILY_REWARD_CONFIG.MAX_STREAK, 100);
-    const stageBonus = Math.max(100 - DAILY_REWARD_CONFIG.MIN_STAGE_FOR_MULTIPLIER, 0) * DAILY_REWARD_CONFIG.STAGE_MULTIPLIER;
-    expect(reward).toBe(DAILY_REWARD_CONFIG.MIN_GOLD_REWARD + DAILY_REWARD_CONFIG.GOLD_PER_STREAK_DAY * DAILY_REWARD_CONFIG.MAX_STREAK + stageBonus);
+    const stageBonus =
+      Math.max(100 - DAILY_REWARD_CONFIG.MIN_STAGE_FOR_MULTIPLIER, 0) *
+      DAILY_REWARD_CONFIG.STAGE_MULTIPLIER;
+    expect(reward).toBe(
+      DAILY_REWARD_CONFIG.MIN_GOLD_REWARD +
+        DAILY_REWARD_CONFIG.GOLD_PER_STREAK_DAY * DAILY_REWARD_CONFIG.MAX_STREAK +
+        stageBonus,
+    );
   });
 });
 

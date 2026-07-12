@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseRetryOptions {
   maxRetries?: number;
@@ -10,7 +10,7 @@ interface UseRetryOptions {
   onMaxRetriesReached?: (error: Error) => void;
 }
 
-interface UseRetryReturn<T, A extends unknown[]> {
+interface UseRetryReturn<T, A extends Array<unknown>> {
   execute: (...args: A) => Promise<T | null>;
   loading: boolean;
   error: Error | null;
@@ -22,9 +22,9 @@ interface UseRetryReturn<T, A extends unknown[]> {
 // Maximum backoff cap to prevent unbounded delays (e.g., 30s)
 const MAX_BACKOFF_MS = 30_000;
 
-export function useRetry<T, A extends unknown[] = unknown[]>(
+export function useRetry<T, A extends Array<unknown> = Array<unknown>>(
   asyncFn: (...args: A) => Promise<T>,
-  options: UseRetryOptions = {}
+  options: UseRetryOptions = {},
 ): UseRetryReturn<T, A> {
   const {
     maxRetries = 3,
@@ -54,9 +54,15 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
   const generationRef = useRef(0);
 
   // Sync refs outside render (React 19 rule)
-  useEffect(() => { asyncFnRef.current = asyncFn; });
-  useEffect(() => { onRetryRef.current = onRetry; });
-  useEffect(() => { onMaxRetriesRef.current = onMaxRetriesReached; });
+  useEffect(() => {
+    asyncFnRef.current = asyncFn;
+  });
+  useEffect(() => {
+    onRetryRef.current = onRetry;
+  });
+  useEffect(() => {
+    onMaxRetriesRef.current = onMaxRetriesReached;
+  });
 
   // Cleanup on unmount
   useEffect(() => {
@@ -178,7 +184,7 @@ export function useRetry<T, A extends unknown[] = unknown[]>(
         return null;
       }
     },
-    [maxRetries, delay, backoff]
+    [maxRetries, delay, backoff],
   );
 
   const reset = useCallback(() => {
@@ -219,7 +225,7 @@ interface RetryAsyncOptions {
 
 export async function retryAsync<T>(
   fn: () => Promise<T>,
-  options: RetryAsyncOptions = {}
+  options: RetryAsyncOptions = {},
 ): Promise<T> {
   const { maxRetries: rawMaxRetries = 3, delay: rawDelay = 1000, backoff = true } = options;
   const maxRetries = Math.max(0, Math.floor(rawMaxRetries));
@@ -248,17 +254,28 @@ export async function retryAsync<T>(
 // Hook for network requests with retry
 export function useNetworkRetry<T>(
   url: string,
-  options: Omit<RequestInit, 'signal'> & UseRetryOptions = {}
+  options: Omit<RequestInit, 'signal'> & UseRetryOptions = {},
 ) {
-  const { maxRetries = 3, delay = 1000, backoff = true, onRetry, onMaxRetriesReached, ...fetchOptions } = options;
+  const {
+    maxRetries = 3,
+    delay = 1000,
+    backoff = true,
+    onRetry,
+    onMaxRetriesReached,
+    ...fetchOptions
+  } = options;
 
   // Use ref to avoid re-creating fetchData every render
   const fetchOptionsRef = useRef(fetchOptions);
   const urlRef = useRef(url);
 
   // Sync refs outside render
-  useEffect(() => { fetchOptionsRef.current = fetchOptions; });
-  useEffect(() => { urlRef.current = url; });
+  useEffect(() => {
+    fetchOptionsRef.current = fetchOptions;
+  });
+  useEffect(() => {
+    urlRef.current = url;
+  });
 
   const fetchData = useCallback(async () => {
     const response = await fetch(urlRef.current, fetchOptionsRef.current);

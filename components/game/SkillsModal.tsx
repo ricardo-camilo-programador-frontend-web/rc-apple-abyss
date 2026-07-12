@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
-import { GameEngine } from '@/lib/game/engine';
-import Modal from '@/components/Modal';
 import { Sparkles } from 'lucide-react';
+import React from 'react';
+import Modal from '@/components/Modal';
+import type { GameEngine } from '@/lib/game/engine';
 
 interface SkillsModalProps {
   isOpen: boolean;

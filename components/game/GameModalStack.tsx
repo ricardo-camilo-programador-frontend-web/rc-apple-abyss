@@ -1,16 +1,16 @@
 'use client';
 
 import React from 'react';
-import Modal from '@/components/Modal';
-import { GameState } from '@/lib/game/types';
-import { GameEngine } from '@/lib/game/engine';
-import SettingsModal from '@/components/game/SettingsModal';
+import ClickEffects from '@/components/game/ClickEffects';
+import JourneyModal from '@/components/game/JourneyModal';
 import OfflineModal from '@/components/game/OfflineModal';
+import OnboardingModal from '@/components/game/OnboardingModal';
+import SettingsModal from '@/components/game/SettingsModal';
 import SkillsModal from '@/components/game/SkillsModal';
 import StatsModal from '@/components/game/StatsModal';
-import OnboardingModal from '@/components/game/OnboardingModal';
-import JourneyModal from '@/components/game/JourneyModal';
-import ClickEffects from '@/components/game/ClickEffects';
+import Modal from '@/components/Modal';
+import type { GameEngine } from '@/lib/game/engine';
+import type { GameState } from '@/lib/game/types';
 
 interface GameModalStackProps {
   state: GameState;
@@ -65,7 +65,9 @@ export default function GameModalStack({
     <>
       {/* Help modal */}
       <Modal isOpen={!!showHelp} onClose={onCloseHelp} title={showHelp?.title ?? ''}>
-        <p className="text-stone-600 dark:text-stone-300 text-sm leading-relaxed">{showHelp?.content}</p>
+        <p className="text-stone-600 dark:text-stone-300 text-sm leading-relaxed">
+          {showHelp?.content}
+        </p>
       </Modal>
 
       {/* Skills modal */}
@@ -91,20 +93,10 @@ export default function GameModalStack({
       <OfflineModal result={offlineResult} t={t} onDismiss={onDismissOffline} />
 
       {/* Onboarding modal */}
-      <OnboardingModal
-        isOpen={showOnboarding}
-        engine={engine}
-        t={t}
-        onClose={onCloseOnboarding}
-      />
+      <OnboardingModal isOpen={showOnboarding} engine={engine} t={t} onClose={onCloseOnboarding} />
 
       {/* Journey modal */}
-      <JourneyModal
-        isOpen={showJourney}
-        engine={engine}
-        t={t}
-        onClose={onCloseJourney}
-      />
+      <JourneyModal isOpen={showJourney} engine={engine} t={t} onClose={onCloseJourney} />
 
       {/* Click effects overlay */}
       <ClickEffects effects={clickEffects} />

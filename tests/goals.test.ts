@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
+  calculateAllGoalProgress,
+  findNewlyCompletedGoals,
   GOAL_DEFINITIONS,
   getGoalCurrentValue,
   getGoalDefinition,
-  calculateAllGoalProgress,
-  findNewlyCompletedGoals,
 } from '@/lib/game/goals';
-import { GameState } from '@/lib/game/types';
+import type { GameState } from '@/lib/game/types';
 
 function createMockGameState(overrides: Partial<GameState> = {}): GameState {
   return {

@@ -1,14 +1,14 @@
 'use client';
 
-import React from 'react';
-import { GameState } from '@/lib/game/types';
-import { GameEngine } from '@/lib/game/engine';
-import UpgradeCard from './UpgradeCard';
-import CollapsibleSection from './CollapsibleSection';
-import { WORM_CATEGORIES } from '@/lib/game/worm-catalog';
-import { WORM_UPGRADES } from '@/lib/game/constants';
 import { Coins, MousePointer2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import React from 'react';
+import { WORM_UPGRADES } from '@/lib/game/constants';
+import type { GameEngine } from '@/lib/game/engine';
+import type { GameState } from '@/lib/game/types';
+import { WORM_CATEGORIES } from '@/lib/game/worm-catalog';
+import CollapsibleSection from './CollapsibleSection';
+import UpgradeCard from './UpgradeCard';
 
 interface UpgradeSidebarProps {
   state: GameState;
@@ -29,20 +29,23 @@ export default function UpgradeSidebar({
 }: UpgradeSidebarProps) {
   const upgradesByCategory = Object.entries(WORM_CATEGORIES).map(([key, category]) => ({
     ...category,
-    upgrades: category.ids.map(id => WORM_UPGRADES.find(u => u.id === id)).filter(Boolean)
+    upgrades: category.ids.map((id) => WORM_UPGRADES.find((u) => u.id === id)).filter(Boolean),
   }));
 
   return (
-    <aside className={className ?? "hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-r border-stone-200/50 overflow-y-auto p-4 flex-col gap-2"}>
+    <aside
+      className={
+        className ??
+        'hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-r border-stone-200/50 overflow-y-auto p-4 flex-col gap-2'
+      }
+    >
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400">{t('upgrades')}</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400">
+          {t('upgrades')}
+        </h2>
         <span className="text-[10px] text-stone-400 font-mono">[C] quick buy</span>
       </div>
-      <CollapsibleSection 
-        title="Click Power" 
-        icon={MousePointer2} 
-        color="yellow"
-      >
+      <CollapsibleSection title="Click Power" icon={MousePointer2} color="yellow">
         <motion.button
           onClick={onBuyClickUpgrade}
           disabled={state.gold < engine.getClickUpgradeCost()}
@@ -50,7 +53,7 @@ export default function UpgradeSidebar({
           whileTap={state.gold >= engine.getClickUpgradeCost() ? { scale: 0.98 } : {}}
           className={`relative w-full p-3 rounded-xl text-left transition-all duration-200 ${
             state.gold >= engine.getClickUpgradeCost()
-              ? 'bg-white hover:shadow-lg border border-yellow-200 cursor-pointer' 
+              ? 'bg-white hover:shadow-lg border border-yellow-200 cursor-pointer'
               : 'bg-stone-50/50 border border-stone-100/50 opacity-50 cursor-not-allowed'
           }`}
         >
@@ -76,19 +79,21 @@ export default function UpgradeSidebar({
               </div>
             </div>
           </div>
-          <div className="absolute bottom-1 right-1 text-[8px] text-stone-300 font-bold uppercase">[C]</div>
+          <div className="absolute bottom-1 right-1 text-[8px] text-stone-300 font-bold uppercase">
+            [C]
+          </div>
         </motion.button>
       </CollapsibleSection>
 
-      {upgradesByCategory.map(category => (
-        <CollapsibleSection 
+      {upgradesByCategory.map((category) => (
+        <CollapsibleSection
           key={category.title}
-          title={category.title} 
-          icon={category.icon} 
+          title={category.title}
+          icon={category.icon}
           color={category.color}
           defaultOpen={category.title === 'Basic Worms'}
         >
-          {category.upgrades.map(upgrade => {
+          {category.upgrades.map((upgrade) => {
             if (!upgrade) return null;
             const cost = engine.getUpgradeCost(upgrade.id);
             const canAfford = state.gold >= cost;

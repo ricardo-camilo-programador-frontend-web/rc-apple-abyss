@@ -2,13 +2,13 @@
  * Pure goal definitions and progress calculation.
  * Goals are derived from GameState — no fragile parallel counters.
  */
-import { GameState, GoalDefinition, GoalProgress } from './types';
+import type { GameState, GoalDefinition, GoalProgress } from './types';
 
 /**
  * Complete catalog of game goals.
  * Each goal has a stable id used for persistence and analytics.
  */
-export const GOAL_DEFINITIONS: GoalDefinition[] = [
+export const GOAL_DEFINITIONS: Array<GoalDefinition> = [
   {
     id: 'first_apple',
     type: 'milestone',
@@ -103,7 +103,7 @@ export const GOAL_DEFINITIONS: GoalDefinition[] = [
 
 /** Lookup map for O(1) access by id */
 const GOAL_BY_ID: ReadonlyMap<string, GoalDefinition> = new Map(
-  GOAL_DEFINITIONS.map((definition) => [definition.id, definition])
+  GOAL_DEFINITIONS.map((definition) => [definition.id, definition]),
 );
 
 /**
@@ -158,8 +158,8 @@ export function getGoalDefinition(goalId: string): GoalDefinition | undefined {
  */
 export function calculateAllGoalProgress(
   state: GameState,
-  completedGoalIds: ReadonlyArray<string>
-): GoalProgress[] {
+  completedGoalIds: ReadonlyArray<string>,
+): Array<GoalProgress> {
   const completedSet = new Set(completedGoalIds);
 
   return GOAL_DEFINITIONS.map((definition) => {
@@ -180,8 +180,8 @@ export function calculateAllGoalProgress(
  */
 export function findNewlyCompletedGoals(
   state: GameState,
-  completedGoalIds: ReadonlyArray<string>
-): GoalDefinition[] {
+  completedGoalIds: ReadonlyArray<string>,
+): Array<GoalDefinition> {
   const completedSet = new Set(completedGoalIds);
 
   return GOAL_DEFINITIONS.filter((definition) => {

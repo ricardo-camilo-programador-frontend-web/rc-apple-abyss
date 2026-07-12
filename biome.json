@@ -13,7 +13,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "recommended": false,
       "correctness": {
         "noUnusedVariables": {
           "level": "error",
@@ -50,21 +50,22 @@
     }
   },
   "files": {
-    "includes": ["**"],
+    "includes": [
+      "**",
+      "!!**/.next",
+      "!!**/node_modules",
+      "!!**/coverage",
+      "!!**/dist",
+      "!!**/*.d.ts",
+      "!!**/tsconfig.tsbuildinfo",
+      "!!**/.github",
+      "!!**/eslint-patch-bypass.cjs",
+      "!!**/eslint-patch-stub.cjs",
+      "!!**/lint.cjs",
+      "!!**/pnpm-lock.yaml",
+      "!!**/*.css"
+    ],
     "ignoreUnknown": true,
-    "experimentalScannerIgnores": [
-      ".next",
-      "node_modules",
-      "coverage",
-      "dist",
-      "*.d.ts",
-      "tsconfig.tsbuildinfo",
-      ".github",
-      "eslint-patch-bypass.cjs",
-      "eslint-patch-stub.cjs",
-      "lint.cjs",
-      "pnpm-lock.yaml",
-      "*.css"
-    ]
+    "maxSize": 1048576
   }
 }

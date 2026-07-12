@@ -4,7 +4,7 @@
  * No side effects — all state transitions are returned as values.
  */
 import { DAILY_REWARD_CONFIG } from './constants';
-import { DailyRewardState } from './types';
+import type { DailyRewardState } from './types';
 
 /**
  * Get today's date as a YYYY-MM-DD string in local timezone.
@@ -57,7 +57,7 @@ export function isValidTimestamp(timestamp: number): boolean {
  */
 export function canClaimDailyReward(
   dailyRewardState: DailyRewardState,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): boolean {
   const todayString = getTodayDateString(now);
 
@@ -86,7 +86,7 @@ export function canClaimDailyReward(
  */
 export function calculateClaimResult(
   currentState: DailyRewardState,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): { newState: DailyRewardState; streakDay: number } {
   const todayString = getTodayDateString(now);
   const tomorrowString = getTomorrowDateString(now);
@@ -133,14 +133,15 @@ function getYesterdayDateString(now: number = Date.now()): string {
  * Formula: MIN_GOLD_REWARD + GOLD_PER_STREAK_DAY × streakDay + STAGE_MULTIPLIER × max(stage - MIN_STAGE_FOR_MULTIPLIER, 0)
  */
 export function calculateDailyGoldReward(streakDay: number, currentStage: number): number {
-  const stageBonus = Math.max(
-    currentStage - DAILY_REWARD_CONFIG.MIN_STAGE_FOR_MULTIPLIER,
-    0
-  ) * DAILY_REWARD_CONFIG.STAGE_MULTIPLIER;
+  const stageBonus =
+    Math.max(currentStage - DAILY_REWARD_CONFIG.MIN_STAGE_FOR_MULTIPLIER, 0) *
+    DAILY_REWARD_CONFIG.STAGE_MULTIPLIER;
 
-  return DAILY_REWARD_CONFIG.MIN_GOLD_REWARD
-    + DAILY_REWARD_CONFIG.GOLD_PER_STREAK_DAY * streakDay
-    + stageBonus;
+  return (
+    DAILY_REWARD_CONFIG.MIN_GOLD_REWARD +
+    DAILY_REWARD_CONFIG.GOLD_PER_STREAK_DAY * streakDay +
+    stageBonus
+  );
 }
 
 /**
@@ -149,7 +150,7 @@ export function calculateDailyGoldReward(streakDay: number, currentStage: number
  */
 export function getTimeUntilNextClaim(
   dailyRewardState: DailyRewardState,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): number {
   if (canClaimDailyReward(dailyRewardState, now)) {
     return 0;
@@ -162,7 +163,7 @@ export function getTimeUntilNextClaim(
  * Returns a safe default if the data is invalid.
  */
 export function sanitizeDailyRewardState(
-  loadedState: Partial<DailyRewardState> | undefined
+  loadedState: Partial<DailyRewardState> | undefined,
 ): DailyRewardState {
   if (!loadedState) {
     return {
@@ -174,11 +175,14 @@ export function sanitizeDailyRewardState(
 
   return {
     lastClaimDate: typeof loadedState.lastClaimDate === 'string' ? loadedState.lastClaimDate : null,
-    streak: typeof loadedState.streak === 'number' && Number.isFinite(loadedState.streak)
-      ? Math.max(0, Math.min(loadedState.streak, DAILY_REWARD_CONFIG.MAX_STREAK))
-      : 0,
-    nextClaimAvailableAt: typeof loadedState.nextClaimAvailableAt === 'number' && isValidTimestamp(loadedState.nextClaimAvailableAt)
-      ? loadedState.nextClaimAvailableAt
-      : 0,
+    streak:
+      typeof loadedState.streak === 'number' && Number.isFinite(loadedState.streak)
+        ? Math.max(0, Math.min(loadedState.streak, DAILY_REWARD_CONFIG.MAX_STREAK))
+        : 0,
+    nextClaimAvailableAt:
+      typeof loadedState.nextClaimAvailableAt === 'number' &&
+      isValidTimestamp(loadedState.nextClaimAvailableAt)
+        ? loadedState.nextClaimAvailableAt
+        : 0,
   };
 }

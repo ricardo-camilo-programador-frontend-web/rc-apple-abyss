@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import Modal from '@/components/Modal';
-import UpgradeSidebar from '@/components/game/UpgradeSidebar';
 import AscensionSidebar from '@/components/game/AscensionSidebar';
-import { GameState } from '@/lib/game/types';
-import { GameEngine } from '@/lib/game/engine';
+import UpgradeSidebar from '@/components/game/UpgradeSidebar';
+import Modal from '@/components/Modal';
+import type { GameEngine } from '@/lib/game/engine';
+import type { GameState } from '@/lib/game/types';
 
 interface MobileModalsProps {
   state: GameState;

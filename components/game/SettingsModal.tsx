@@ -15,6 +15,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { analytics } from '@/lib/analytics';
+import ThemeToggle from '@/components/game/ThemeToggle';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -108,6 +109,9 @@ export default function SettingsModal({
             </div>
 
             <div className="p-6 space-y-6">
+              {/* Theme section */}
+              <ThemeToggle />
+
               {/* Sound section */}
               <div className="space-y-3">
                 <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">

@@ -4,6 +4,8 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 
 type Theme = 'light' | 'dark' | 'system';
 
+export type { Theme };
+
 interface ThemeContextValue {
   theme: Theme;
   resolvedTheme: 'light' | 'dark';

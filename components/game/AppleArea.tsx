@@ -12,7 +12,7 @@ interface AppleAreaProps {
   engine: GameEngine;
   t: (key: string, params?: any) => string;
   isShaking: boolean;
-  particleOffsets: Array<{ x: number; y: number; delay: number }>;
+  particleOffsets: ReadonlyArray<{ x: number; y: number; delay: number }>;
   onAppleClick: (e: React.MouseEvent) => void;
   onActivateSkill: () => void;
 }

@@ -11,80 +11,72 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
-    name: Validar Linting e Formatacao
+  # ─── Secret Scan (Gitleaks) — parallel ───
+  secret-scan:
+    name: Secret Scan
     runs-on: self-hosted
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
         with:
-          path: ~/.local/share/pnpm/store
-          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Instalar dependencias
-        run: pnpm install --ignore-scripts
-
-      - name: Executar Lint
-        run: pnpm run lint
-
-  test:
-    name: Testes e Type-Check
+  # ─── Security Audit — parallel ───
+  security:
+    name: Security Audit
     runs-on: self-hosted
     timeout-minutes: 10
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
-          path: ~/.local/share/pnpm/store
-          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-
-      - name: Instalar dependencias
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Audit production dependencies
+        shell: bash
+        run: |
+          set -o pipefail
+          LOG_FILE="$(mktemp)"
+          pnpm audit --audit-level moderate --prod 2>&1 | tee "$LOG_FILE"
+          status=${PIPESTATUS[0]}
+          if [ "$status" -eq 0 ]; then exit 0; fi
+          if grep -q "ERR_PNPM_AUDIT_BAD_RESPONSE" "$LOG_FILE" && grep -Eq "responded with 5[0-9]{2}([^0-9]|$)" "$LOG_FILE"; then
+            echo "::warning::pnpm audit failed with 5xx — npm registry unavailable."
+            exit 0
+          fi
+          exit "$status"
 
-      - name: Executar Testes
-        run: pnpm run test
-
-      - name: Type-Check
-        run: pnpm run type-check
-
-  build:
-    name: Build do Projeto
+  # ─── Validate (lint + type-check + build + test) ───
+  validate:
+    name: Validate
     runs-on: self-hosted
     timeout-minutes: 15
-    env:
-      GEMINI_API_KEY: ""
-      APP_URL: ""
-      NEXT_PUBLIC_ADSTERRA_PUBLISHER_ID: ""
-      NEXT_PUBLIC_ENABLE_ADSTERRA: ""
+    needs: [secret-scan, security]
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
-          path: ~/.local/share/pnpm/store
-          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-
-      - name: Instalar dependencias
-        run: pnpm install --ignore-scripts
-
-      - name: Build do projeto
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Type check
+        run: pnpm run type-check
+      - name: Biome lint
+        run: pnpm run biome
+      - name: Build
         run: pnpm run build
-
+      - name: Tests
+        run: pnpm run test
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -92,68 +84,160 @@ jobs:
           path: .next/
           retention-days: 7
 
-  security:
-    name: Auditoria de Seguranca
+  # ─── Commit Lint (PR only) ───
+  commit-lint:
+    name: Commit Lint
     runs-on: self-hosted
-    timeout-minutes: 10
-    continue-on-error: true
+    timeout-minutes: 5
+    needs: [secret-scan, security]
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
         with:
-          path: ~/.local/share/pnpm/store
-          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-
-      - name: Instalar dependencias
-        run: pnpm install --ignore-scripts
-
-      - name: Auditoria de vulnerabilidades (apenas producao)
-        shell: bash
+          fetch-depth: 0
+      - name: Validate gitmoji commit messages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -o pipefail
-          LOG_FILE="$(mktemp)"
-
-          # Audit only production dependencies — devDeps like firebase-tools
-          # have known transitive vulnerabilities that are not runtime risks.
-          pnpm audit --audit-level moderate --prod 2>&1 | tee "$LOG_FILE"
-          status=${PIPESTATUS[0]}
-
-          if [ "$status" -eq 0 ]; then
-            exit 0
+          # Check each non-merge commit in the PR for gitmoji format
+          COMMITS=$(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].oid')
+          PATTERN='^:[a-z_]+:\s[a-z]+([a-z-]*)?\([a-zA-Z0-9/_.\-]+\): .+'
+          FAILED=0
+          for SHA in $COMMITS; do
+            MSG=$(git log --format='%s' -1 "$SHA")
+            # Skip merge commits
+            case "$MSG" in
+              "Merge "*|"Revert "*|"fixup! "*|"squash! "*) continue ;;
+            esac
+            if ! echo "$MSG" | grep -qE "$PATTERN"; then
+              echo "::error::Commit $SHA does not follow gitmoji format: $MSG"
+              FAILED=1
+            fi
+          done
+          if [ "$FAILED" -eq 1 ]; then
+            echo "::error::One or more commits do not follow the gitmoji convention."
+            exit 1
           fi
+          echo "✅ All commits follow gitmoji convention."
 
-          if grep -q "ERR_PNPM_AUDIT_BAD_RESPONSE" "$LOG_FILE" && grep -Eq "responded with 5[0-9]{2}([^0-9]|$)" "$LOG_FILE"; then
-            echo "::warning::pnpm audit falhou por erro 5xx do endpoint de auditoria da npm."
-            exit 0
-          fi
-
-          exit "$status"
-
-  sonar:
-    name: Analise SonarQube
+  # ─── Validate PR Base (PR only) ───
+  validate-pr-base:
+    name: Validate PR Base
     runs-on: self-hosted
+    timeout-minutes: 5
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Block direct PRs to main from non-develop branches
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [ "$BASE" = "main" ] && [ "$HEAD_REF" != "develop" ]; then
+            echo "::error::PRs to main must come from the develop branch. Current branch: $HEAD_REF"
+            exit 1
+          fi
+          echo "✅ PR target validated (base: $BASE, head: $HEAD_REF)"
+
+  # ─── SonarQube Analysis — non-blocking ───
+  sonar:
+    name: SonarQube Analysis
+    runs-on: self-hosted
+    timeout-minutes: 15
+    needs: [validate]
+    if: always() && needs.validate.result != 'failure'
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
         with:
-          path: ~/.local/share/pnpm/store
-          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-
-      - name: Instalar dependencias
-        run: pnpm install --ignore-scripts
-
-      - name: Run SonarScanner
+          fetch-depth: 0
+      - name: Check SonarQube availability
+        id: sonar-health
+        run: |
+          SONAR_URL="${SONAR_HOST_URL:-http://localhost:9000}"
+          if curl -sf --connect-timeout 5 "$SONAR_URL/api/system/status" > /dev/null 2>&1; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::SonarQube not reachable at $SONAR_URL — skipping analysis."
+          fi
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: Run SonarQube Scanner
+        if: steps.sonar-health.outputs.available == 'true'
+        run: |
+          docker run --rm \
+            -v "$(pwd)":/usr/src \
+            -e SONAR_TOKEN="${SONAR_TOKEN}" \
+            sonarsource/sonar-scanner-cli:latest
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: /opt/sonar-scanner/bin/sonar-scanner
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: Comment PR with SonarQube dashboard link
+        if: steps.sonar-health.outputs.available == 'true' && github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## 📊 SonarQube Analysis
+            Analysis completed successfully. View results on the SonarQube dashboard.
+            `${{ secrets.SONAR_HOST_URL }}/dashboard?id=apple-of-the-infinite-abyss`
+          reactions: "+1"
+
+  # ─── Lighthouse Audit — non-blocking ───
+  lighthouse:
+    name: Lighthouse Audit
+    runs-on: self-hosted
+    timeout-minutes: 20
+    needs: [validate]
+    if: always() && needs.validate.result != 'failure'
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build
+        run: pnpm run build
+      - name: Run Lighthouse CI
+        run: pnpm exec lhci autorun || true
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+  # ─── Preview Deploy (PR only, requires secrets) ───
+  preview:
+    name: Preview Deploy
+    runs-on: self-hosted
+    timeout-minutes: 10
+    needs: [validate]
+    if: github.event_name == 'pull_request'
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Netlify
+        if: env.NETLIFY_AUTH_TOKEN != ''
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "::warning::Netlify secrets not configured — skipping preview deploy."
+            exit 0
+          fi
+          npx netlify-cli deploy \
+            --build \
+            --dir=.next \
+            --alias="pr-${{ github.event.pull_request.number }}"
+      - name: Comment preview URL on PR
+        if: env.NETLIFY_AUTH_TOKEN != ''
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## 🚀 Preview Deploy
+            Preview is available for this PR.
+            Requires `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` secrets to be configured.
+          reactions: rocket

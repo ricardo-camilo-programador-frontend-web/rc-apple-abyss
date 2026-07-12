@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+
+# ─── Pre-push hook (POSIX sh) ───
+# Runs full validation pipeline before allowing push
+
+set -e
+
+echo "🔄 Running pre-push validation..."
+
+pnpm run type-check
+pnpm run biome
+pnpm run build
+
+echo "✅ Pre-push validation passed."

@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+
+# ─── Commit-msg hook (POSIX sh) ───
+# Validates gitmoji commit message format: :emoji: type(scope): description
+
+MSG_FILE="$1"
+COMMIT_MSG=$(cat "$MSG_FILE" | head -1)
+
+# Skip for merge, revert, fixup, squash commits
+case "$COMMIT_MSG" in
+  "Merge "*|"Revert "*|"fixup! "*|"squash! "*) exit 0 ;;
+esac
+
+# Gitmoji pattern: :emoji: type(scope): description
+PATTERN='^:[a-z_]+:\s[a-z]+([a-z-]*)?\([a-zA-Z0-9/_.\-]+\): .+'
+
+if ! echo "$COMMIT_MSG" | grep -qE "$PATTERN"; then
+  echo "❌ Invalid commit message format."
+  echo ""
+  echo "  Expected: :emoji: type(scope): description"
+  echo "  Example:  :sparkles: feat(game): add new upgrade card"
+  echo ""
+  echo "  Your message: $COMMIT_MSG"
+  echo ""
+  echo "  Valid types: feat, fix, docs, style, refactor, test, chore, perf, ci, build"
+  echo "  Emojis: https://gitmoji.dev/"
+  exit 1
+fi
+
+exit 0

@@ -1,0 +1,26 @@
+# PR auto-labeler configuration
+# Maps file patterns to labels
+
+frontend:
+  - app/**/*
+  - components/**/*
+  - hooks/**/*
+  - lib/**/*
+
+config:
+  - .github/**/*
+  - '*.config.*'
+  - tsconfig.*'
+  - biome.json
+  - eslint.config.*
+
+documentation:
+  - '**/*.md'
+
+tests:
+  - '**/*.test.*'
+  - '**/*.spec.*'
+
+dependencies:
+  - '**/package.json'
+  - '**/pnpm-lock.yaml'

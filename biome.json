@@ -63,7 +63,8 @@
       "eslint-patch-bypass.cjs",
       "eslint-patch-stub.cjs",
       "lint.cjs",
-      "pnpm-lock.yaml"
+      "pnpm-lock.yaml",
+      "*.css"
     ]
   }
 }

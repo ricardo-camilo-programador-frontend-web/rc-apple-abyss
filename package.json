@@ -19,7 +19,6 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@google/genai": "^1.52.0",
     "@hookform/resolvers": "^5.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -69,7 +68,7 @@
     "*.{ts,tsx,js,jsx}": [
       "biome check --write --no-errors-on-unmatched"
     ],
-    "*.{json,css,html}": [
+    "*.{json}": [
       "biome check --write --no-errors-on-unmatched"
     ]
   },

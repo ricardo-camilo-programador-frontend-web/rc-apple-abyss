@@ -1,10 +1,11 @@
 'use client';
 
+import { ChevronRight, X } from 'lucide-react';
+import { motion } from 'motion/react';
 import React from 'react';
 import Modal from '@/components/Modal';
-import { motion } from 'motion/react';
-import { ChevronRight, X } from 'lucide-react';
-import { GameEngine } from '@/lib/game/engine';
+import { analytics } from '@/lib/analytics';
+import type { GameEngine } from '@/lib/game/engine';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -19,12 +20,7 @@ const ONBOARDING_STEPS = [
   { titleKey: 'onboarding_step3_title', descriptionKey: 'onboarding_step3_description' },
 ] as const;
 
-export default function OnboardingModal({
-  isOpen,
-  engine,
-  t,
-  onClose,
-}: OnboardingModalProps) {
+export default function OnboardingModal({ isOpen, engine, t, onClose }: OnboardingModalProps) {
   const [currentStep, setCurrentStep] = React.useState(0);
 
   // Sync currentStep with engine state on mount
@@ -43,19 +39,34 @@ export default function OnboardingModal({
     }
   }, [isOpen, engine, onClose]);
 
+  // Track onboarding start
+  const hasTrackedStart = React.useRef(false);
+  React.useEffect(() => {
+    if (isOpen && !hasTrackedStart.current) {
+      hasTrackedStart.current = true;
+      analytics.onboardingStarted();
+      analytics.onboardingStepViewed(currentStep);
+    }
+  }, [isOpen, currentStep]);
+
   const handleNext = () => {
     engine.completeOnboardingStep(currentStep);
 
     if (currentStep < ONBOARDING_STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      analytics.onboardingStepViewed(nextStep);
     } else {
       engine.completeOnboarding();
+      analytics.onboardingCompleted(false);
       onClose();
     }
   };
 
   const handleSkip = () => {
     engine.skipOnboarding();
+    analytics.onboardingSkipped();
+    analytics.onboardingCompleted(true);
     onClose();
   };
 
@@ -68,9 +79,9 @@ export default function OnboardingModal({
       <div className="space-y-4">
         {/* Step indicators */}
         <div className="flex justify-center gap-2 mb-4">
-          {ONBOARDING_STEPS.map((_, index) => (
+          {ONBOARDING_STEPS.map((stepDef, index) => (
             <div
-              key={index}
+              key={stepDef.titleKey}
               className={`w-2.5 h-2.5 rounded-full transition-colors ${
                 index === currentStep
                   ? 'bg-amber-500 scale-125'
@@ -101,17 +112,27 @@ export default function OnboardingModal({
         {/* Actions */}
         <div className="flex justify-between items-center pt-2">
           <button
+            type="button"
             onClick={handleSkip}
             className="text-sm text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 flex items-center gap-1"
+            aria-label={t('onboarding_skip')}
           >
             <X className="w-4 h-4" />
             {t('onboarding_skip')}
           </button>
           <button
+            type="button"
             onClick={handleNext}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg"
+            aria-label={
+              currentStep < ONBOARDING_STEPS.length - 1
+                ? t('onboarding_next')
+                : t('onboarding_start')
+            }
           >
-            {currentStep < ONBOARDING_STEPS.length - 1 ? t('onboarding_next') : t('onboarding_start')}
+            {currentStep < ONBOARDING_STEPS.length - 1
+              ? t('onboarding_next')
+              : t('onboarding_start')}
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

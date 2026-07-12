@@ -137,6 +137,31 @@
 }
 
 /* ============================================
+   Reduced Motion Support
+   Respects user preference for minimal animation
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skill-glow {
+    box-shadow: 0 0 15px rgba(234, 179, 8, 0.5);
+    animation: none;
+  }
+
+  .shake-active {
+    animation: none;
+  }
+}
+
+/* ============================================
    Ad Placeholder Fallback
    Shows when ads fail to load
    ============================================ */

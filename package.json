@@ -61,7 +61,7 @@
     "vitest": "^3.2.6"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13"
   },
   "packageManager": "pnpm@11.0.9",
   "lint-staged": {

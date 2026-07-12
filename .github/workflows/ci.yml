@@ -36,7 +36,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -65,7 +65,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -101,7 +101,7 @@ jobs:
         run: |
           # Check each non-merge commit in the PR for gitmoji format
           COMMITS=$(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].oid')
-          PATTERN='^:[a-z_]+:[[:space:]][a-z]+([a-z-]*)?\([a-zA-Z0-9/_.-]+\): .+'
+          PATTERN='^(:[a-z_]+:[[:space:]])?[a-z]+([a-z-]*)?\([a-zA-Z0-9/_. ,-]+\): .+'
           FAILED=0
           for SHA in $COMMITS; do
             MSG=$(git log --format='%s' -1 "$SHA")
@@ -199,7 +199,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts

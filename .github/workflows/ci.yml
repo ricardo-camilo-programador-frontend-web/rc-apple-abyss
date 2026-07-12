@@ -144,7 +144,7 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 15
     needs: [validate]
-    if: always() && needs.validate.result != 'failure'
+    if: always() && needs.validate.result == 'success'
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -167,6 +167,7 @@ jobs:
         run: |
           docker run --rm \
             -v "$(pwd)":/usr/src \
+            -w /usr/src \
             -e SONAR_TOKEN="${SONAR_TOKEN}" \
             -e SONAR_HOST_URL="${SONAR_HOST_URL:-http://host.docker.internal:9000}" \
             --add-host=host.docker.internal:host-gateway \
@@ -191,7 +192,7 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 20
     needs: [validate]
-    if: always() && needs.validate.result != 'failure'
+    if: always() && needs.validate.result == 'success'
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4

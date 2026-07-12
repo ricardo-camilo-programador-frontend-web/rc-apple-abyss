@@ -32,7 +32,7 @@ interface GameModalStackProps {
   onCloseHelp: () => void;
   onDismissOffline: () => void;
   onStateUpdate: () => void;
-  onImportSave: (str: string) => void;
+  onImportSave: (saveString: string) => Promise<boolean>;
   onResetGame: () => void;
   onExportSave: () => void;
 }

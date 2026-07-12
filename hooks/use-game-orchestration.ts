@@ -41,7 +41,7 @@ interface UseGameOrchestrationReturn {
   handleAscend: () => void;
   handleActivateSkill: () => void;
   handleExportSave: () => void;
-  handleImportSave: (str: string) => void;
+  handleImportSave: (saveString: string) => Promise<boolean>;
   handleResetGame: () => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }
@@ -154,6 +154,7 @@ export function useGameOrchestration(engine: GameEngine): UseGameOrchestrationRe
         handleStateUpdate();
         setShowSettings(false);
       }
+      return success;
     },
     [engine, handleStateUpdate],
   );

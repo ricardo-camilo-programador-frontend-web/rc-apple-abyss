@@ -53,7 +53,6 @@ paths = [
   '''\.env\.example$''',
   '''pnpm-lock\.yaml$''',
   '''node_modules/''',
-  '''\.github/''',
   '''tests/''',
   '''\.gitleaks\.toml$''',
   '''app/layout\.tsx$''',

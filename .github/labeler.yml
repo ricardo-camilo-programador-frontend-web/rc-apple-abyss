@@ -10,7 +10,7 @@ frontend:
 config:
   - .github/**/*
   - '*.config.*'
-  - tsconfig.*'
+  - 'tsconfig.*'
   - biome.json
   - eslint.config.*
 

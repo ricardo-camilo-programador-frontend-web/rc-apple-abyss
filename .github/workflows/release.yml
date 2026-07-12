@@ -1,8 +1,6 @@
 name: Release
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       version:
@@ -34,7 +32,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Determine version
         id: version
@@ -75,12 +73,9 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
 
-          # Create lightweight tag at HEAD
-          git tag "$VERSION" HEAD
-          git push origin "$VERSION"
-
-          # Create GitHub Release with auto-generated notes
+          # GitHub creates the tag atomically with the release.
           gh release create "$VERSION" \
+            --target "$GITHUB_SHA" \
             --generate-notes \
             --title "Release $VERSION"
 

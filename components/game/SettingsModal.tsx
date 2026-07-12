@@ -24,32 +24,32 @@ interface SettingsModalProps {
   t: (key: string, params?: any) => string;
   onClose: () => void;
   onStateUpdate: () => void;
-  onImportSave: (str: string) => void;
+  onImportSave: (saveString: string) => Promise<boolean>;
   onResetGame: () => void;
   onExportSave: () => void;
 }
 
-const LANGUAGES: Array<Language> = [
-  'en',
-  'zh',
-  'hi',
-  'es',
-  'fr',
-  'ar',
-  'bn',
-  'pt',
-  'ru',
-  'ur',
-  'id',
-  'de',
-  'ja',
-  'sw',
-  'mr',
-  'te',
-  'tr',
-  'ta',
-  'vi',
-  'ko',
+const LANGUAGES: Array<{ code: Language; name: string }> = [
+  { code: 'en', name: 'English' },
+  { code: 'zh', name: '中文' },
+  { code: 'hi', name: 'हिन्दी' },
+  { code: 'es', name: 'Español' },
+  { code: 'fr', name: 'Français' },
+  { code: 'ar', name: 'العربية' },
+  { code: 'bn', name: 'বাংলা' },
+  { code: 'pt', name: 'Português' },
+  { code: 'ru', name: 'Русский' },
+  { code: 'ur', name: 'اردو' },
+  { code: 'id', name: 'Bahasa Indonesia' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'ja', name: '日本語' },
+  { code: 'sw', name: 'Kiswahili' },
+  { code: 'mr', name: 'मराठी' },
+  { code: 'te', name: 'తెలుగు' },
+  { code: 'tr', name: 'Türkçe' },
+  { code: 'ta', name: 'தமிழ்' },
+  { code: 'vi', name: 'Tiếng Việt' },
+  { code: 'ko', name: '한국어' },
 ];
 
 export default function SettingsModal({
@@ -83,9 +83,8 @@ export default function SettingsModal({
       setImportError('Please enter a save string.');
       return;
     }
-    const success = await engine.importSave(importString.trim());
+    const success = await onImportSave(importString.trim());
     if (success) {
-      onImportSave(importString.trim());
       setImportString('');
       setImportError('');
     } else {
@@ -113,7 +112,7 @@ export default function SettingsModal({
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
-            className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
+            className="bg-white dark:bg-stone-900 dark:text-stone-100 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 border-b border-stone-100 flex justify-between items-center">
@@ -173,18 +172,18 @@ export default function SettingsModal({
                   {t('settings_language')}
                 </label>
                 <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
-                  {LANGUAGES.map((lang) => (
+                  {LANGUAGES.map((language) => (
                     <button
-                      key={lang}
-                      onClick={() => changeLanguage(lang)}
-                      aria-label={`Switch language to ${lang}`}
+                      key={language.code}
+                      onClick={() => changeLanguage(language.code)}
+                      aria-label={`Switch language to ${language.name}`}
                       className={`p-2 rounded-lg text-xs font-medium border transition-all ${
-                        state.settings.language === lang
+                        state.settings.language === language.code
                           ? 'bg-red-500 text-white border-red-600 shadow-md'
                           : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
                       }`}
                     >
-                      {lang.toUpperCase()}
+                      {language.name}
                     </button>
                   ))}
                 </div>

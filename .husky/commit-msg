@@ -12,7 +12,7 @@ case "$COMMIT_MSG" in
 esac
 
 # Gitmoji pattern: :emoji: type(scope): description
-PATTERN='^:[a-z_]+:\s[a-z]+([a-z-]*)?\([a-zA-Z0-9/_.\-]+\): .+'
+PATTERN='^:[a-z_]+:[[:space:]][a-z]+([a-z-]*)?(\([a-zA-Z0-9/_.-]+\)): .+'
 
 if ! echo "$COMMIT_MSG" | grep -qE "$PATTERN"; then
   echo "❌ Invalid commit message format."

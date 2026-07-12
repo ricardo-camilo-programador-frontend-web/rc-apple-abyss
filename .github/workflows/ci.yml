@@ -101,7 +101,7 @@ jobs:
         run: |
           # Check each non-merge commit in the PR for gitmoji format
           COMMITS=$(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].oid')
-          PATTERN='^:[a-z_]+:\s[a-z]+([a-z-]*)?\([a-zA-Z0-9/_.\-]+\): .+'
+          PATTERN='^:[a-z_]+:[[:space:]][a-z]+([a-z-]*)?\([a-zA-Z0-9/_.-]+\): .+'
           FAILED=0
           for SHA in $COMMITS; do
             MSG=$(git log --format='%s' -1 "$SHA")
@@ -168,6 +168,8 @@ jobs:
           docker run --rm \
             -v "$(pwd)":/usr/src \
             -e SONAR_TOKEN="${SONAR_TOKEN}" \
+            -e SONAR_HOST_URL="${SONAR_HOST_URL:-http://host.docker.internal:9000}" \
+            --add-host=host.docker.internal:host-gateway \
             sonarsource/sonar-scanner-cli:latest
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -203,7 +205,7 @@ jobs:
       - name: Build
         run: pnpm run build
       - name: Run Lighthouse CI
-        run: pnpm exec lhci autorun || true
+        run: pnpm exec lhci autorun
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 

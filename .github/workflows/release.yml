@@ -2,8 +2,15 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (ex: v1.0.0). Omit to use package.json.'
+        required: false
+
+permissions:
+  contents: write
 
 jobs:
   release:
@@ -12,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -22,16 +31,94 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        run: pnpm run build
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: .next/**
-          generate_release_notes: true
+      - name: Determine version
+        id: version
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="$INPUT_VERSION"
+            SOURCE="manual (workflow_dispatch)"
+          else
+            VERSION=$(node -p "require('./package.json').version")
+            SOURCE="package.json"
+          fi
+
+          # Ensure v prefix
+          case "$VERSION" in
+            v*) ;;
+            *) VERSION="v${VERSION}" ;;
+          esac
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "source=${SOURCE}" >> "$GITHUB_OUTPUT"
+          echo "Determined version: ${VERSION} (source: ${SOURCE})"
+
+      - name: Validate semver
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if ! printf '%s' "$VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid version format: '$VERSION'. Expected strict semver: vX.Y.Z (e.g., v1.0.0)"
+            exit 1
+          fi
+          echo "✅ Version format is valid: $VERSION"
+
+      - name: Check for existing tag
+        id: check_tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Tag ${VERSION} already exists — skipping release creation (idempotent)."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "✅ Tag ${VERSION} is new — proceeding with release."
+          fi
+
+      - name: Create and push tag
+        if: steps.check_tag.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git tag "${VERSION}" HEAD
+          git push origin "${VERSION}"
+
+      - name: Create GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "${VERSION}" \
+            --title "${VERSION}" \
+            --generate-notes \
+            --target main
+
+      - name: Summary
+        if: always()
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SOURCE: ${{ steps.version.outputs.source }}
+          EXISTS: ${{ steps.check_tag.outputs.exists }}
+          TRIGGER: ${{ github.event_name }}
+        run: |
+          {
+            echo "## 🚀 Release Workflow"
+            echo ""
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| Version | \`${VERSION:-unknown}\` |"
+            echo "| Source | \`${SOURCE:-unknown}\` |"
+            echo "| Tag exists | \`${EXISTS:-unknown}\` |"
+            echo "| Trigger | \`${TRIGGER}\` |"
+            echo ""
+            if [ "${EXISTS}" = "true" ]; then
+              echo "⚠️ Tag already existed — no new release was created."
+            elif [ -z "${VERSION}" ]; then
+              echo "❌ Version could not be determined or validated."
+            else
+              echo "✅ Tag and GitHub Release created successfully."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

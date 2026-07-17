@@ -147,11 +147,11 @@ export default function Game() {
 
   if (!isMounted || !state || !engine)
     return (
-      <div className="flex items-center justify-center h-screen bg-stone-50">Loading...</div>
+      <div className="flex items-center justify-center h-screen bg-stone-50 dark:bg-stone-900 text-stone-900 dark:text-stone-100">Loading...</div>
     );
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 overflow-hidden select-none">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 overflow-hidden select-none">
       <AdsterraAd format={AdFormat.POPUNDER} />
       <AdsterraAd format={AdFormat.SOCIAL_BAR} />
       <AdsterraAd format={AdFormat.SMARTLINK} />
@@ -167,7 +167,7 @@ export default function Game() {
 
       <div className="flex-1 flex flex-row overflow-hidden">
         {/* Left ad sidebar */}
-        <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/30 items-center justify-center border-r border-stone-200/50 gap-4 py-4">
+        <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/30 dark:bg-stone-800/30 items-center justify-center border-r border-stone-200/50 dark:border-stone-700/50 gap-4 py-4">
           <AdSenseAd slot="vertical-left" format="auto" className="w-full flex-1" />
           <AdsterraAd format={AdFormat.DISPLAY_BANNER_160x300} className="w-full" />
         </div>
@@ -200,7 +200,7 @@ export default function Game() {
         </main>
 
         {/* Right ad sidebar */}
-        <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/30 items-center justify-center border-l border-stone-200/50 gap-4 py-4">
+        <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/30 dark:bg-stone-800/30 items-center justify-center border-l border-stone-200/50 dark:border-stone-700/50 gap-4 py-4">
           <AdSenseAd slot="vertical-right" format="auto" className="w-full flex-1" />
           <AdsterraAd format={AdFormat.DISPLAY_BANNER_160x300} className="w-full" />
         </div>
@@ -216,7 +216,7 @@ export default function Game() {
       <GameFooter t={t} />
 
       {/* Footer ad area */}
-      <div className="w-full h-[90px] bg-stone-200/30 flex items-center justify-center border-t border-stone-200/50">
+      <div className="w-full h-[90px] bg-stone-200/30 dark:bg-stone-800/30 flex items-center justify-center border-t border-stone-200/50 dark:border-stone-700/50">
         <AdSenseAd slot="horizontal-footer" format="auto" className="w-full h-full max-w-4xl" />
       </div>
 
@@ -228,7 +228,7 @@ export default function Game() {
 
       {/* Help modal */}
       <Modal isOpen={!!showHelp} onClose={() => setShowHelp(null)} title={showHelp?.title || ''}>
-        <p className="text-stone-600 text-sm leading-relaxed">{showHelp?.content}</p>
+        <p className="text-stone-600 dark:text-stone-300 text-sm leading-relaxed">{showHelp?.content}</p>
       </Modal>
 
       {/* Skills modal */}

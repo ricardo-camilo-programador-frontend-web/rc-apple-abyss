@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { 
-  ChevronLeft, 
   ExternalLink, 
   BookOpen, 
   Info, 
@@ -43,8 +42,7 @@ export default function AppleVarietiesPage() {
 
   return (
     <div className="min-h-screen bg-stone-100 dark:bg-stone-900 text-stone-900 dark:text-stone-100 font-sans selection:bg-red-200">
-      {/* SEO Meta Tags (handled via Next.js Metadata API in layout or here via Head if needed, 
-          but since it's a client component we use a simple approach or just rely on layout) */}
+      {/* SEO Meta Tags */}
       <title>{`${t('apple_guide_title')} | Apple of the Infinite Abyss`}</title>
       <meta name="description" content={t('apple_guide_meta_description')} />
 
@@ -105,7 +103,7 @@ export default function AppleVarietiesPage() {
             />
           </div>
           
-          <div className="mt-8 pt-8 border-t border-stone-100 dark:border-stone-800 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-stone-500 dark:text-stone-400">
+          <div className="mt-8 pt-8 border-t border-stone-100 dark:border-stone-700 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-stone-500 dark:text-stone-400">
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4" />
               <span className="font-bold uppercase tracking-wider text-[10px]">{t('apple_guide_source_title')}</span>
@@ -114,7 +112,7 @@ export default function AppleVarietiesPage() {
               href="https://www.reddit.com/r/coolguides/comments/g77jhx/i_made_an_infographic_explaining_how-different/?tl=pt-br"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:text-red-600 transition-colors bg-stone-50 dark:bg-stone-800 px-4 py-2 rounded-full border border-stone-200 dark:border-stone-700"
+              className="flex items-center gap-1 hover:text-red-600 transition-colors bg-stone-50 dark:bg-stone-700 px-4 py-2 rounded-full border border-stone-200 dark:border-stone-600"
             >
               <span>{t('apple_guide_source_credit')}</span>
               <ExternalLink className="w-3 h-3" />
@@ -143,10 +141,10 @@ export default function AppleVarietiesPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: (index % 3) * 0.1 }}
-                className="bg-white dark:bg-stone-800 p-6 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm hover:shadow-md hover:border-red-200 transition-all group"
+                className="bg-white dark:bg-stone-800 p-6 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm hover:shadow-md hover:border-red-200 dark:hover:border-red-800 transition-all group"
               >
                 <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-xl font-bold text-stone-800 dark:text-stone-200 group-hover:text-red-600 transition-colors">
+                  <h3 className="text-xl font-bold text-stone-800 dark:text-stone-100 group-hover:text-red-600 transition-colors">
                     {t(`apple_variety_${id}`)}
                   </h3>
                   <span className="text-2xl">🍎</span>

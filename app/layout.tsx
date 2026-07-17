@@ -1,6 +1,6 @@
 import type {Metadata, Viewport} from 'next';
 import {Inter} from 'next/font/google';
-import './globals.css'; // Global styles
+import './globals.css';
 import Script from 'next/script';
 import {ToastProvider} from '@/components/Toast';
 import {ErrorBoundary} from '@/components/ErrorBoundary';
@@ -59,9 +59,10 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
             } catch(e) {}
           })();
         `}} />
-        {/* AdSense — uses next/script for optimization (replaces raw <script async>) */}
+        {/* AdSense */}
         <Script
           id="adsense"
+          async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6735039970151788"
           crossOrigin="anonymous"
           strategy="afterInteractive"
@@ -73,7 +74,6 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
           data-utcoffset="-3"
           strategy="afterInteractive"
         />
-        {/* Analytics: Microsoft Clarity */}
         <Script id="ms-clarity" strategy="afterInteractive">
           {`
             (function(c,l,a,r,i,t,y){
@@ -84,7 +84,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
           `}
         </Script>
       </head>
-      <body suppressHydrationWarning className={`${inter.className} bg-stone-100 dark:bg-stone-900 text-stone-900 dark:text-stone-100`}>
+      <body suppressHydrationWarning className={`${inter.variable} bg-stone-100 dark:bg-stone-900 text-stone-900 dark:text-stone-100 font-sans`}>
         <ThemeProvider>
           <ToastProvider>
             <ErrorBoundary>
@@ -92,17 +92,15 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
             </ErrorBoundary>
           </ToastProvider>
         </ThemeProvider>
-        {/* Service Worker registration */}
-        <Script id="sw-register" strategy="afterInteractive">
-          {`
+        <script dangerouslySetInnerHTML={{
+          __html: `
             if ('serviceWorker' in navigator) {
               window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
-                  .catch(function(err) { console.warn('SW registration failed:', err); });
+                navigator.serviceWorker.register('/sw.js');
               });
             }
-          `}
-        </Script>
+          `
+        }} />
       </body>
     </html>
   );

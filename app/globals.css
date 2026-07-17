@@ -1,40 +1,16 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ============================================
-   Theme Tokens (Tailwind v4 @theme syntax)
-   Semantic color aliases that work for both light/dark
-   ============================================ */
-@theme {
-  --color-card: #ffffff;
-  --color-card-dark: #1c1917;
-  --color-surface: #fafaf9;
-  --color-surface-dark: #292524;
-  --color-primary: #1c1917;
-  --color-primary-dark: #f5f5f4;
-  --color-secondary: #78716c;
-  --color-secondary-dark: #a8a29e;
-  --color-border: #e7e5e4;
-  --color-border-dark: #44403c;
-}
-
 @layer base {
-  * {
+  body {
     @apply transition-colors duration-200;
   }
 
-  /* Accessible focus-visible outline for keyboard navigation */
-  *:focus-visible {
-    outline: 2px solid #f87171;
-    outline-offset: 2px;
-    border-radius: 4px;
-  }
-
-  /* Remove focus-visible for mouse clicks on buttons/links */
-  button:not(:focus-visible),
-  a:not(:focus-visible),
-  input:not(:focus-visible) {
-    outline: none;
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    body {
+      @apply transition-none;
+    }
   }
 
   /* Custom Scrollbar */
@@ -55,41 +31,15 @@
     @apply bg-red-600;
   }
 
-  /* Firefox — uses CSS variables for consistency with Tailwind palette */
+  /* Firefox */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #f87171 #f5f5f4;
+    scrollbar-color: var(--color-red-400) var(--color-stone-100);
   }
 
   .dark * {
-    scrollbar-color: #f87171 #292524;
+    scrollbar-color: var(--color-red-400) var(--color-stone-800);
   }
-}
-
-/* ============================================
-   Dark Mode Helpers
-   Utility classes that automatically adapt
-   ============================================ */
-
-/* Card backgrounds that adapt to theme */
-.bg-card-adaptive {
-  @apply bg-white dark:bg-stone-800;
-}
-
-.bg-surface-adaptive {
-  @apply bg-stone-50 dark:bg-stone-800/50;
-}
-
-.text-primary-adaptive {
-  @apply text-stone-900 dark:text-stone-100;
-}
-
-.text-secondary-adaptive {
-  @apply text-stone-600 dark:text-stone-400;
-}
-
-.border-adaptive {
-  @apply border-stone-200 dark:border-stone-700;
 }
 
 .apple-shadow {
@@ -134,12 +84,4 @@
   object-fit: contain;
   transition: opacity 120ms ease;
   will-change: opacity;
-}
-
-/* ============================================
-   Ad Placeholder Fallback
-   Shows when ads fail to load
-   ============================================ */
-.ad-fallback {
-  @apply bg-stone-100 dark:bg-stone-800 rounded-lg flex items-center justify-center text-stone-400 dark:text-stone-500 text-xs uppercase tracking-widest;
 }

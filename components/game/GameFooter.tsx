@@ -10,7 +10,7 @@ interface GameFooterProps {
 
 export default function GameFooter({ t }: GameFooterProps) {
   return (
-    <footer className="bg-white/80 backdrop-blur-sm border-t border-stone-200/50 p-3 md:p-4 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs text-stone-400 z-10 gap-3 md:gap-2">
+    <footer className="bg-white/80 dark:bg-stone-800/80 backdrop-blur-sm border-t border-stone-200/50 dark:border-stone-700/50 p-3 md:p-4 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs text-stone-400 dark:text-stone-400 z-10 gap-3 md:gap-2">
       <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
         <span className="font-medium">Apple of the Infinite Abyss</span>
         <a 
@@ -26,17 +26,17 @@ export default function GameFooter({ t }: GameFooterProps) {
           href="https://ricardo-camilo-dev-frontend-web.netlify.app/" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="hover:text-stone-600 transition-colors hidden md:inline"
+          className="hover:text-stone-600 dark:hover:text-stone-300 transition-colors hidden md:inline"
         >
           Portfolio
         </a>
-        <Link href="/privacy" className="hover:text-stone-600 transition-colors">Privacy</Link>
-        <Link href="/terms" className="hover:text-stone-600 transition-colors">Terms</Link>
+        <Link href="/privacy" className="hover:text-stone-600 dark:hover:text-stone-300 transition-colors">Privacy</Link>
+        <Link href="/terms" className="hover:text-stone-600 dark:hover:text-stone-300 transition-colors">Terms</Link>
       </div>
       <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
         <Link 
           href="/apple-varieties" 
-          className="flex items-center gap-1 hover:text-stone-600 transition-colors"
+          className="flex items-center gap-1 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
         >
           <BookOpen className="w-3 h-3" />
           <span>{t('apple_guide_footer_link')}</span>

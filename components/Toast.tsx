@@ -56,10 +56,10 @@ const toastIcons: Record<ToastType, React.ElementType> = {
 };
 
 const toastColors: Record<ToastType, { bg: string; border: string; icon: string }> = {
-  success: { bg: 'from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30', border: 'border-green-200 dark:border-green-800', icon: 'text-green-500' },
-  error: { bg: 'from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30', border: 'border-red-200 dark:border-red-800', icon: 'text-red-500' },
-  warning: { bg: 'from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30', border: 'border-yellow-200 dark:border-yellow-800', icon: 'text-yellow-500' },
-  info: { bg: 'from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30', border: 'border-blue-200 dark:border-blue-800', icon: 'text-blue-500' },
+  success: { bg: 'from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950', border: 'border-green-200 dark:border-green-800', icon: 'text-green-500' },
+  error: { bg: 'from-red-50 to-rose-50 dark:from-red-950 dark:to-rose-950', border: 'border-red-200 dark:border-red-800', icon: 'text-red-500' },
+  warning: { bg: 'from-yellow-50 to-amber-50 dark:from-yellow-950 dark:to-amber-950', border: 'border-yellow-200 dark:border-yellow-800', icon: 'text-yellow-500' },
+  info: { bg: 'from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950', border: 'border-blue-200 dark:border-blue-800', icon: 'text-blue-500' },
 };
 
 const actionColors: Record<ToastType, string> = {
@@ -260,7 +260,7 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
 
         <button
           onClick={onClose}
-          className="shrink-0 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
+          className="shrink-0 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
           aria-label="Close notification"
         >
           <X className="w-4 h-4" />

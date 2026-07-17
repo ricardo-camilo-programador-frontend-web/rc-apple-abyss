@@ -4,7 +4,7 @@ export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-stone-100 dark:bg-stone-900 p-8">
       <div className="max-w-3xl mx-auto bg-white dark:bg-stone-800 rounded-2xl shadow-lg p-8">
-        <Link href="/" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 text-sm mb-4 inline-block">
+        <Link href="/" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm mb-4 inline-block">
           ← Back to Game
         </Link>
         <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100 mb-6">Terms of Service</h1>
@@ -138,7 +138,7 @@ export default function TermsOfService() {
               href="https://github.com/ricardo-camilo-programador-frontend-web"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 text-sm"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm"
             >
               https://github.com/ricardo-camilo-programador-frontend-web
             </a>

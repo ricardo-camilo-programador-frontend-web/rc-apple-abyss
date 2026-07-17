@@ -680,8 +680,8 @@ export default function Game() {
   const activeSpriteIndex = getAppleSpriteIndex(state.appleHP, state.maxAppleHP);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 overflow-hidden select-none">
-      <header className="bg-white/80 backdrop-blur-sm border-b border-stone-200/50 p-2 md:p-3 flex justify-between items-center z-10 flex-wrap gap-2 sticky top-0">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 overflow-hidden select-none">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-stone-200/50 p-2 md:p-3 flex justify-between items-center z-10 flex-wrap gap-2 flex-shrink-0">
         <div className="flex items-center gap-3 md:gap-6 flex-wrap">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-100">
             <Coins className="text-yellow-500 w-4 h-4 md:w-5 md:h-5" />
@@ -714,15 +714,15 @@ export default function Game() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-row overflow-hidden">
+      <div className="flex-1 flex flex-row overflow-hidden min-h-0">
         {adsVisible && (
         <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/30 items-center justify-center border-r border-stone-200/50 gap-4 py-4">
           <AdSenseAd slot="vertical-left" format="auto" className="w-full flex-1" />
         </div>
         )}
 
-        <main className="flex-1 flex flex-col lg:flex-row relative overflow-y-auto">
-          <aside className="hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-r border-stone-200/50 overflow-y-auto p-4 flex-col gap-2">
+        <main className="flex-1 flex flex-col lg:flex-row relative overflow-hidden min-h-0">
+          <aside className="hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-r border-stone-200/50 overflow-y-auto p-4 flex-col gap-2 min-h-0">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400">{t('upgrades')}</h2>
               <span className="text-[10px] text-stone-400 font-mono">[C] quick buy</span>
@@ -730,7 +730,7 @@ export default function Game() {
             {renderUpgradesContent()}
           </aside>
 
-          <section className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative min-h-[500px]">
+          <section className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-y-auto min-h-0">
             <div className="relative w-full max-w-lg">
               <div className="absolute inset-0 bg-gradient-to-br from-red-100/30 via-orange-50/20 to-yellow-50/30 rounded-full blur-3xl scale-150" />
               
@@ -872,7 +872,7 @@ export default function Game() {
             </div>
           </section>
 
-          <aside className="hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-l border-stone-200/50 p-4 flex-col gap-4 overflow-y-auto">
+          <aside className="hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-l border-stone-200/50 p-4 flex-col gap-4 overflow-y-auto min-h-0">
             <div>
               <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">{t('ascension')}</h2>
               {renderAscensionContent()}
@@ -892,7 +892,7 @@ export default function Game() {
         )}
       </div>
 
-      <nav className="lg:hidden bg-white/80 backdrop-blur-sm border-t border-stone-200/50 flex justify-around p-3 z-10">
+      <nav className="lg:hidden bg-white/80 backdrop-blur-sm border-t border-stone-200/50 flex justify-around p-3 z-10 flex-shrink-0">
         <button onClick={() => setShowUpgradesModal(true)} className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-stone-100 transition-colors">
           <TrendingUp className="w-5 h-5 text-stone-600" />
           <span className="text-[10px] font-bold uppercase text-stone-500">{t('upgrades')}</span>
@@ -907,7 +907,7 @@ export default function Game() {
         </button>
       </nav>
 
-      <footer className="bg-white/80 backdrop-blur-sm border-t border-stone-200/50 p-3 md:p-4 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs text-stone-400 z-10 gap-3 md:gap-2">
+      <footer className="bg-white/80 backdrop-blur-sm border-t border-stone-200/50 p-3 md:p-4 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs text-stone-400 z-10 gap-3 md:gap-2 flex-shrink-0">
         <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
           <span className="font-medium">Apple of the Infinite Abyss</span>
           <a 
@@ -946,7 +946,7 @@ export default function Game() {
       </footer>
 
       {adsVisible && (
-      <div className="w-full h-[90px] bg-stone-200/30 flex items-center justify-center border-t border-stone-200/50">
+      <div className="w-full h-[90px] bg-stone-200/30 flex items-center justify-center border-t border-stone-200/50 flex-shrink-0">
         <AdSenseAd slot="horizontal-footer" format="auto" className="w-full h-full max-w-4xl" />
       </div>
       )}

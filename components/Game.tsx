@@ -17,12 +17,14 @@ import { useGameKeyboard } from '@/hooks/use-game-keyboard';
 // Extracted hooks
 import { useGameLoop } from '@/hooks/use-game-loop';
 import { useGameOrchestration } from '@/hooks/use-game-orchestration';
+import { useRewardedAds } from '@/hooks/use-rewarded-ads';
 import { analytics } from '@/lib/analytics';
 import { GameEngine } from '@/lib/game/engine';
 
 export default function Game() {
   const [engine] = useState(() => new GameEngine());
   const orch = useGameOrchestration(engine);
+  const rewarded = useRewardedAds(engine, orch.handleStateUpdate);
   const { setIsMounted, setShowOnboarding, handleStateUpdate } = orch;
 
   // Mount effect
@@ -100,6 +102,8 @@ export default function Game() {
             particleOffsets={orch.particleOffsets}
             onAppleClick={orch.handleClick}
             onActivateSkill={orch.handleActivateSkill}
+            onShowRewardedAds={() => rewarded.setShowRewardedAds(true)}
+            goldBoostRemaining={rewarded.goldBoostRemaining}
           />
           <AscensionSidebar
             state={orch.state}
@@ -145,6 +149,12 @@ export default function Game() {
         onImportSave={orch.handleImportSave}
         onResetGame={orch.handleResetGame}
         onExportSave={orch.handleExportSave}
+        showRewardedAds={rewarded.showRewardedAds}
+        onCloseRewardedAds={() => rewarded.setShowRewardedAds(false)}
+        getCooldown={rewarded.getCooldown}
+        onGoldBoost={rewarded.handleGoldBoostReward}
+        onInstantHarvest={rewarded.handleInstantHarvestReward}
+        onResetCooldown={rewarded.handleResetCooldownReward}
       />
 
       <MobileModals

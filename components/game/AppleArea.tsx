@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart, Zap } from 'lucide-react';
+import { Gift, Heart, Zap } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type React from 'react';
 import type { GameEngine } from '@/lib/game/engine';
@@ -15,6 +15,8 @@ interface AppleAreaProps {
   particleOffsets: ReadonlyArray<{ x: number; y: number; delay: number }>;
   onAppleClick: (e: React.MouseEvent) => void;
   onActivateSkill: () => void;
+  onShowRewardedAds?: () => void;
+  goldBoostRemaining?: number;
 }
 
 export default function AppleArea({
@@ -25,6 +27,8 @@ export default function AppleArea({
   particleOffsets,
   onAppleClick,
   onActivateSkill,
+  onShowRewardedAds,
+  goldBoostRemaining = 0,
 }: AppleAreaProps) {
   const hpPercent = (state.appleHP / state.maxAppleHP) * 100;
   const activeSpriteIndex = getAppleSpriteIndex(state.appleHP, state.maxAppleHP);
@@ -174,6 +178,22 @@ export default function AppleArea({
                 />
               )}
           </motion.button>
+
+          {/* Rewarded Ads Button */}
+          {onShowRewardedAds && (
+            <button
+              onClick={onShowRewardedAds}
+              className="w-full relative flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-2 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:border-emerald-300 shadow-md shadow-emerald-100/50 transition-all"
+            >
+              <Gift className="w-4 h-4" />
+              <span className="text-sm">Free Rewards</span>
+              {goldBoostRemaining > 0 && (
+                <span className="ml-auto px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 rounded-full text-[10px] font-mono font-bold text-emerald-800 dark:text-emerald-300">
+                  2x active: {goldBoostRemaining}s
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </section>

@@ -9,10 +9,12 @@ import {
   Upload,
   Volume2,
   VolumeX,
+  X,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import React, { useState } from 'react';
 import ThemeToggle from '@/components/game/ThemeToggle';
+import { useAdGuard } from '@/hooks/use-ad-guard';
 import { analytics } from '@/lib/analytics';
 import type { GameEngine } from '@/lib/game/engine';
 import type { GameState, Language } from '@/lib/game/types';
@@ -65,6 +67,7 @@ export default function SettingsModal({
 }: SettingsModalProps) {
   const [importString, setImportString] = useState('');
   const [importError, setImportError] = useState('');
+  const { adsRemoved, toggleAdsRemoved } = useAdGuard();
 
   const toggleMute = () => {
     const newMuted = !state.settings.muted;
@@ -187,6 +190,46 @@ export default function SettingsModal({
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Ad Preferences section */}
+              <div className="space-y-3 pt-4 border-t border-stone-100 dark:border-stone-700">
+                <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
+                  <X className="w-3 h-3" />
+                  Ad Preferences
+                </label>
+                <button
+                  onClick={toggleAdsRemoved}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
+                    adsRemoved
+                      ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30'
+                      : 'border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800 hover:bg-stone-100'
+                  }`}
+                >
+                  <div className="text-left">
+                    <div
+                      className={`font-bold text-sm ${adsRemoved ? 'text-emerald-900 dark:text-emerald-300' : 'text-stone-700 dark:text-stone-200'}`}
+                    >
+                      {adsRemoved ? 'Ads Removed' : 'Remove Ads'}
+                    </div>
+                    <div className="text-xs text-stone-500 dark:text-stone-400">
+                      {adsRemoved
+                        ? 'Display ads are hidden. Rewarded ads still available.'
+                        : 'Hide all display ads (banners). Rewarded ads remain optional.'}
+                    </div>
+                  </div>
+                  <div
+                    className={`w-12 h-6 rounded-full transition-all relative ${
+                      adsRemoved ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'
+                    }`}
+                  >
+                    <div
+                      className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${
+                        adsRemoved ? 'left-6' : 'left-0.5'
+                      }`}
+                    />
+                  </div>
+                </button>
               </div>
 
               {/* Save Management section */}

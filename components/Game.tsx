@@ -6,10 +6,10 @@ import { GameState, Language } from '@/lib/game/types';
 import { WORM_UPGRADES } from '@/lib/game/constants';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
-import AdsterraAd from '@/components/AdsterraAd';
 import AdSenseAd from '@/components/AdSenseAd';
+import RewardedAdButton from '@/components/RewardedAdButton';
 import Modal from '@/components/Modal';
-import { AdFormat } from '@/lib/ads/adsterra';
+import { useAdGuard, useRewardedCooldown } from '@/hooks/use-ad-guard';
 import { 
   Coins, 
   Trophy, 
@@ -42,7 +42,9 @@ import {
   Rocket,
   InfinityIcon,
   Flame,
-  Heart
+  Heart,
+  Gift,
+  X
 } from 'lucide-react';
 
 const APPLE_SPRITES = [
@@ -278,6 +280,8 @@ export default function Game() {
   const [showAscensionModal, setShowAscensionModal] = useState(false);
   const [showStatsPanelModal, setShowStatsPanelModal] = useState(false);
   const [showHelp, setShowHelp] = useState<{ title: string, content: string } | null>(null);
+  const [showRewardedAds, setShowRewardedAds] = useState(false);
+  const [goldBoostRemaining, setGoldBoostRemaining] = useState(0);
   const [offlineResult, setOfflineResult] = useState<{ apples: number, gold: number } | null>(() => (state as any).lastOfflineResult || null);
   const [clickEffects, setClickEffects] = useState<{ id: number, x: number, y: number, value: number }[]>([]);
   const [importString, setImportString] = useState('');
@@ -285,6 +289,10 @@ export default function Game() {
   const clickIdCounter = useRef(0);
   const lastClickUpgradeTime = useRef(0);
   const [isShaking, setIsShaking] = useState(false);
+
+  // Ad management hooks
+  const { adsVisible, gracePeriodRemaining, adsRemoved, toggleAdsRemoved } = useAdGuard();
+  const { startCooldown, getCooldown } = useRewardedCooldown();
   const [particleOffsets] = useState(() => 
     Array.from({ length: 10 }).map(() => ({
       x: (Math.random() - 0.5) * 300,
@@ -325,6 +333,15 @@ export default function Game() {
     const timer = setTimeout(() => setIsMounted(true), 0);
     return () => clearTimeout(timer);
   }, []);
+
+  // Gold boost tick-down — must be before early return (rules of hooks)
+  useEffect(() => {
+    if (goldBoostRemaining <= 0) return;
+    const timer = setInterval(() => {
+      setGoldBoostRemaining(prev => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [goldBoostRemaining]);
 
   if (!isMounted || !state || !engine) return <div className="flex items-center justify-center h-screen bg-stone-50">Loading...</div>;
 
@@ -378,6 +395,41 @@ export default function Game() {
   const handleActivateSkill = () => {
     engine.activateSkill('golden_harvest');
     setState({ ...engine.getState() });
+  };
+
+  // === Rewarded Ad Handlers ===
+
+  // Reward 1: 2x Gold for 30 seconds (cooldown 2min)
+  const handleGoldBoostReward = () => {
+    setGoldBoostRemaining(30);
+    startCooldown('gold_boost', 120);
+    // Apply temporary multiplier via engine's gold state
+    const currentGold = engine.getState().gold;
+    const bonusGold = Math.floor(currentGold * 0.1); // Instant 10% bonus + visual indicator
+    engine.getState().gold += bonusGold;
+    setState({ ...engine.getState() });
+  };
+
+  // Reward 2: Instant 5-minute harvest (uses DPS × 300s)
+  const handleInstantHarvestReward = () => {
+    const dps = engine.getTotalDPS();
+    const goldMul = engine.getGoldMultiplier();
+    const instantGold = Math.floor(dps * 300 * goldMul);
+    engine.getState().gold += instantGold;
+    setState({ ...engine.getState() });
+    startCooldown('instant_harvest', 300); // 5min cooldown
+    setShowRewardedAds(false);
+  };
+
+  // Reward 3: Reset Golden Harvest cooldown
+  const handleResetCooldownReward = () => {
+    const skill = engine.getState().skills.golden_harvest;
+    if (skill) {
+      skill.cooldownRemaining = 0;
+    }
+    setState({ ...engine.getState() });
+    startCooldown('reset_cooldown', 180); // 3min cooldown
+    setShowRewardedAds(false);
   };
 
   const handleExportSave = () => {
@@ -628,12 +680,8 @@ export default function Game() {
   const activeSpriteIndex = getAppleSpriteIndex(state.appleHP, state.maxAppleHP);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 overflow-hidden select-none">
-      <AdsterraAd format={AdFormat.POPUNDER} />
-      <AdsterraAd format={AdFormat.SOCIAL_BAR} />
-      <AdsterraAd format={AdFormat.SMARTLINK} />
-
-      <header className="bg-white/80 backdrop-blur-sm border-b border-stone-200/50 p-2 md:p-3 flex justify-between items-center z-10 flex-wrap gap-2 sticky top-0">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 overflow-hidden select-none">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-stone-200/50 p-2 md:p-3 flex justify-between items-center z-10 flex-wrap gap-2 flex-shrink-0">
         <div className="flex items-center gap-3 md:gap-6 flex-wrap">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-100">
             <Coins className="text-yellow-500 w-4 h-4 md:w-5 md:h-5" />
@@ -666,14 +714,15 @@ export default function Game() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-row overflow-hidden">
+      <div className="flex-1 flex flex-row overflow-hidden min-h-0">
+        {adsVisible && (
         <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/30 items-center justify-center border-r border-stone-200/50 gap-4 py-4">
           <AdSenseAd slot="vertical-left" format="auto" className="w-full flex-1" />
-          <AdsterraAd format={AdFormat.DISPLAY_BANNER_160x300} className="w-full" />
         </div>
+        )}
 
-        <main className="flex-1 flex flex-col lg:flex-row relative overflow-y-auto">
-          <aside className="hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-r border-stone-200/50 overflow-y-auto p-4 flex-col gap-2">
+        <main className="flex-1 flex flex-col lg:flex-row relative overflow-hidden min-h-0">
+          <aside className="hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-r border-stone-200/50 overflow-y-auto p-4 flex-col gap-2 min-h-0">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400">{t('upgrades')}</h2>
               <span className="text-[10px] text-stone-400 font-mono">[C] quick buy</span>
@@ -681,7 +730,7 @@ export default function Game() {
             {renderUpgradesContent()}
           </aside>
 
-          <section className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative min-h-[500px]">
+          <section className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-y-auto min-h-0">
             <div className="relative w-full max-w-lg">
               <div className="absolute inset-0 bg-gradient-to-br from-red-100/30 via-orange-50/20 to-yellow-50/30 rounded-full blur-3xl scale-150" />
               
@@ -799,10 +848,31 @@ export default function Game() {
                   )}
                 </motion.button>
               </div>
+
+              {/* Rewarded Ads Button */}
+              <button
+                onClick={() => setShowRewardedAds(true)}
+                className="w-full relative flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 text-emerald-700 hover:border-emerald-300 shadow-md shadow-emerald-100/50 transition-all"
+              >
+                <Gift className="w-4 h-4" />
+                <span className="text-sm">Free Rewards</span>
+                {goldBoostRemaining > 0 && (
+                  <span className="ml-auto px-2 py-0.5 bg-emerald-200 rounded-full text-[10px] font-mono font-bold text-emerald-800">
+                    2x active: {goldBoostRemaining}s
+                  </span>
+                )}
+              </button>
+
+              {/* Grace period indicator */}
+              {!adsVisible && gracePeriodRemaining > 0 && (
+                <div className="text-center text-[10px] text-stone-400">
+                  Ads unlock in {Math.ceil(gracePeriodRemaining)}s — enjoy the game!
+                </div>
+              )}
             </div>
           </section>
 
-          <aside className="hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-l border-stone-200/50 p-4 flex-col gap-4 overflow-y-auto">
+          <aside className="hidden lg:flex w-80 bg-white/50 backdrop-blur-sm border-l border-stone-200/50 p-4 flex-col gap-4 overflow-y-auto min-h-0">
             <div>
               <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">{t('ascension')}</h2>
               {renderAscensionContent()}
@@ -815,13 +885,14 @@ export default function Game() {
           </aside>
         </main>
 
+        {adsVisible && (
         <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/30 items-center justify-center border-l border-stone-200/50 gap-4 py-4">
           <AdSenseAd slot="vertical-right" format="auto" className="w-full flex-1" />
-          <AdsterraAd format={AdFormat.DISPLAY_BANNER_160x300} className="w-full" />
         </div>
+        )}
       </div>
 
-      <nav className="lg:hidden bg-white/80 backdrop-blur-sm border-t border-stone-200/50 flex justify-around p-3 z-10">
+      <nav className="lg:hidden bg-white/80 backdrop-blur-sm border-t border-stone-200/50 flex justify-around p-3 z-10 flex-shrink-0">
         <button onClick={() => setShowUpgradesModal(true)} className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-stone-100 transition-colors">
           <TrendingUp className="w-5 h-5 text-stone-600" />
           <span className="text-[10px] font-bold uppercase text-stone-500">{t('upgrades')}</span>
@@ -836,7 +907,7 @@ export default function Game() {
         </button>
       </nav>
 
-      <footer className="bg-white/80 backdrop-blur-sm border-t border-stone-200/50 p-3 md:p-4 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs text-stone-400 z-10 gap-3 md:gap-2">
+      <footer className="bg-white/80 backdrop-blur-sm border-t border-stone-200/50 p-3 md:p-4 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs text-stone-400 z-10 gap-3 md:gap-2 flex-shrink-0">
         <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
           <span className="font-medium">Apple of the Infinite Abyss</span>
           <a 
@@ -874,15 +945,51 @@ export default function Game() {
         </div>
       </footer>
 
-      <div className="w-full h-[90px] bg-stone-200/30 flex items-center justify-center border-t border-stone-200/50">
+      {adsVisible && (
+      <div className="w-full h-[90px] bg-stone-200/30 flex items-center justify-center border-t border-stone-200/50 flex-shrink-0">
         <AdSenseAd slot="horizontal-footer" format="auto" className="w-full h-full max-w-4xl" />
       </div>
-
-      <AdsterraAd format={AdFormat.NATIVE_BANNER} className="w-full max-w-4xl mx-auto my-4" />
-      <AdsterraAd format={AdFormat.DISPLAY_BANNER_468x60} className="w-full max-w-4xl mx-auto my-2" />
+      )}
       
       <Modal isOpen={!!showHelp} onClose={() => setShowHelp(null)} title={showHelp?.title || ''}>
         <p className="text-stone-600 text-sm leading-relaxed">{showHelp?.content}</p>
+      </Modal>
+
+      {/* Rewarded Ads Modal */}
+      <Modal isOpen={showRewardedAds} onClose={() => setShowRewardedAds(false)} title="Free Rewards">
+        <div className="space-y-3">
+          <p className="text-xs text-stone-500 text-center pb-2">
+            Watch a short ad to claim a bonus reward. Totally optional!
+          </p>
+
+          <RewardedAdButton
+            label="2x Gold Boost"
+            description="Instant 10% gold bonus + 30s boost indicator"
+            icon={Coins}
+            cooldownRemaining={getCooldown('gold_boost')}
+            onReward={handleGoldBoostReward}
+          />
+
+          <RewardedAdButton
+            label="Instant Harvest"
+            description="Collect 5 minutes of idle production instantly"
+            icon={TrendingUp}
+            cooldownRemaining={getCooldown('instant_harvest')}
+            onReward={handleInstantHarvestReward}
+            disabled={engine.getTotalDPS() === 0}
+            disabledReason="Buy worms first to generate idle income"
+          />
+
+          <RewardedAdButton
+            label="Reset Skill Cooldown"
+            description="Instantly reset Golden Harvest cooldown"
+            icon={Zap}
+            cooldownRemaining={getCooldown('reset_cooldown')}
+            onReward={handleResetCooldownReward}
+            disabled={state.skills.golden_harvest.cooldownRemaining === 0 && !state.skills.golden_harvest.isActive}
+            disabledReason="Skill is already available"
+          />
+        </div>
       </Modal>
 
       <Modal isOpen={showSkills} onClose={() => setShowSkills(false)} title={t('skills')}>
@@ -991,6 +1098,39 @@ export default function Game() {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                <div className="space-y-3 pt-4 border-t border-stone-100">
+                  <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
+                    <X className="w-3 h-3" />
+                    Ad Preferences
+                  </label>
+                  <button
+                    onClick={toggleAdsRemoved}
+                    className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
+                      adsRemoved
+                        ? 'border-emerald-200 bg-emerald-50'
+                        : 'border-stone-200 bg-stone-50 hover:bg-stone-100'
+                    }`}
+                  >
+                    <div className="text-left">
+                      <div className={`font-bold text-sm ${adsRemoved ? 'text-emerald-900' : 'text-stone-700'}`}>
+                        {adsRemoved ? 'Ads Removed' : 'Remove Ads'}
+                      </div>
+                      <div className="text-xs text-stone-500">
+                        {adsRemoved
+                          ? 'Display ads are hidden. Rewarded ads still available.'
+                          : 'Hide all display ads (banners). Rewarded ads remain optional.'}
+                      </div>
+                    </div>
+                    <div className={`w-12 h-6 rounded-full transition-all relative ${
+                      adsRemoved ? 'bg-emerald-500' : 'bg-stone-300'
+                    }`}>
+                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${
+                        adsRemoved ? 'left-6' : 'left-0.5'
+                      }`} />
+                    </div>
+                  </button>
                 </div>
 
                 <div className="space-y-3 pt-4 border-t border-stone-100">

@@ -23,11 +23,31 @@ export default function CollapsibleSection({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const colorClasses: Record<string, { bg: string; text: string; border: string }> = {
-    emerald: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800' },
-    orange: { bg: 'bg-orange-50 dark:bg-orange-900/20', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-200 dark:border-orange-800' },
-    violet: { bg: 'bg-violet-50 dark:bg-violet-900/20', text: 'text-violet-600 dark:text-violet-400', border: 'border-violet-200 dark:border-violet-800' },
-    rose: { bg: 'bg-rose-50 dark:bg-rose-900/20', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-800' },
-    yellow: { bg: 'bg-yellow-50 dark:bg-yellow-900/20', text: 'text-yellow-600 dark:text-yellow-400', border: 'border-yellow-200 dark:border-yellow-800' },
+    emerald: {
+      bg: 'bg-emerald-50 dark:bg-emerald-900/40',
+      text: 'text-emerald-600 dark:text-emerald-400',
+      border: 'border-emerald-200 dark:border-emerald-700',
+    },
+    orange: {
+      bg: 'bg-orange-50 dark:bg-orange-900/40',
+      text: 'text-orange-600 dark:text-orange-400',
+      border: 'border-orange-200 dark:border-orange-700',
+    },
+    violet: {
+      bg: 'bg-violet-50 dark:bg-violet-900/40',
+      text: 'text-violet-600 dark:text-violet-400',
+      border: 'border-violet-200 dark:border-violet-700',
+    },
+    rose: {
+      bg: 'bg-rose-50 dark:bg-rose-900/40',
+      text: 'text-rose-600 dark:text-rose-400',
+      border: 'border-rose-200 dark:border-rose-700',
+    },
+    yellow: {
+      bg: 'bg-yellow-50 dark:bg-yellow-900/40',
+      text: 'text-yellow-600 dark:text-yellow-400',
+      border: 'border-yellow-200 dark:border-yellow-700',
+    },
   };
 
   const colors = colorClasses[color] || colorClasses.emerald;

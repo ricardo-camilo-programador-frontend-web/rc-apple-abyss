@@ -1,9 +1,33 @@
-import { GameState, Language } from './types';
-import { INITIAL_STATE, WORM_UPGRADES, CLICK_UPGRADE, LUCKY_WORMS_CONFIG, GAME_CONFIG } from './constants';
 import { AudioSystem } from './audio';
+import {
+  CLICK_UPGRADE,
+  GAME_CONFIG,
+  INITIAL_JOURNEY_STATE,
+  INITIAL_STATE,
+  LUCKY_WORMS_CONFIG,
+  WORM_UPGRADES,
+} from './constants';
+import {
+  calculateClaimResult,
+  calculateDailyGoldReward,
+  canClaimDailyReward,
+  sanitizeDailyRewardState,
+} from './daily-reward';
+import { calculateAllGoalProgress, findNewlyCompletedGoals, getGoalDefinition } from './goals';
 import { LocalizationSystem } from './localization';
+import { OfflineProgressResult, OfflineProgressSystem } from './offline';
 import { SkillSystem } from './skills';
-import { OfflineProgressSystem, OfflineProgressResult } from './offline';
+import {
+  DailyRewardState,
+  type GameState,
+  type GoalProgress,
+  type JourneyState,
+  type Language,
+  type OnboardingState,
+} from './types';
+
+/** Number of onboarding steps (must match ONBOARDING_STEPS in OnboardingModal) */
+const ONBOARDING_TOTAL_STEPS = 3;
 
 /** Max deltaTime in seconds — prevents massive damage spikes when tab returns from background */
 const MAX_DELTA_TIME_S = 5;
@@ -26,12 +50,15 @@ export class GameEngine {
     this.audio = new AudioSystem(this.state.settings.muted, this.state.settings.volume);
     this.localization = new LocalizationSystem(this.state.settings.language);
     this.skills = new SkillSystem(this.state);
-    this.offlineSystem = new OfflineProgressSystem({}, {
-      getCurrentState: () => this.state,
-      getWormDPS: (id) => this.getWormDPS(id),
-      getTotalDPS: () => this.getTotalDPS(),
-      getGoldMultiplier: () => this.getGoldMultiplier(),
-    });
+    this.offlineSystem = new OfflineProgressSystem(
+      {},
+      {
+        getCurrentState: () => this.state,
+        getWormDPS: (id) => this.getWormDPS(id),
+        getTotalDPS: () => this.getTotalDPS(),
+        getGoldMultiplier: () => this.getGoldMultiplier(),
+      },
+    );
 
     this.calculateOfflineProgress();
     this.startAutoSave();
@@ -52,18 +79,31 @@ export class GameEngine {
   }
 
   private mergeWithInitialState(parsed: Partial<GameState>): GameState {
-    const mergedSkills: Record<string, { isActive: boolean; remainingDuration: number; cooldownRemaining: number }> = {};
-    const initialSkills = INITIAL_STATE.skills as Record<string, { isActive: boolean; remainingDuration: number; cooldownRemaining: number }>;
-    const parsedSkills = (parsed.skills || {}) as Record<string, { isActive: boolean; remainingDuration: number; cooldownRemaining: number }>;
-    const allSkillIds = new Set([
-      ...Object.keys(initialSkills),
-      ...Object.keys(parsedSkills),
-    ]);
+    const mergedSkills: Record<
+      string,
+      { isActive: boolean; remainingDuration: number; cooldownRemaining: number }
+    > = {};
+    const initialSkills = INITIAL_STATE.skills as Record<
+      string,
+      { isActive: boolean; remainingDuration: number; cooldownRemaining: number }
+    >;
+    const parsedSkills = (parsed.skills || {}) as Record<
+      string,
+      { isActive: boolean; remainingDuration: number; cooldownRemaining: number }
+    >;
+    const allSkillIds = new Set([...Object.keys(initialSkills), ...Object.keys(parsedSkills)]);
     for (const id of allSkillIds) {
-      const initial = initialSkills[id] || { isActive: false, remainingDuration: 0, cooldownRemaining: 0 };
+      const initial = initialSkills[id] || {
+        isActive: false,
+        remainingDuration: 0,
+        cooldownRemaining: 0,
+      };
       const saved = parsedSkills[id];
       mergedSkills[id] = saved ? { ...initial, ...saved } : { ...initial };
     }
+
+    // Merge journey state with additive migration for old saves
+    const mergedJourney = this.mergeJourneyState(parsed.journey);
 
     return {
       ...INITIAL_STATE,
@@ -72,6 +112,38 @@ export class GameEngine {
       skills: mergedSkills,
       statistics: { ...INITIAL_STATE.statistics, ...(parsed.statistics || {}) },
       settings: { ...INITIAL_STATE.settings, ...(parsed.settings || {}) },
+      journey: mergedJourney,
+    };
+  }
+
+  /**
+   * Merge journey state from parsed save data.
+   * Old saves without journey field get default initial state (additive migration).
+   * Corrupted journey data is sanitized gracefully.
+   */
+  private mergeJourneyState(parsedJourney: JourneyState | undefined): JourneyState {
+    if (!parsedJourney) {
+      return { ...INITIAL_JOURNEY_STATE };
+    }
+
+    return {
+      completedGoals: Array.isArray(parsedJourney.completedGoals)
+        ? [...parsedJourney.completedGoals]
+        : [],
+      onboarding: this.mergeOnboardingState(parsedJourney.onboarding),
+      dailyReward: sanitizeDailyRewardState(parsedJourney.dailyReward),
+    };
+  }
+
+  private mergeOnboardingState(parsed: Partial<OnboardingState> | undefined): OnboardingState {
+    if (!parsed) {
+      return { ...INITIAL_JOURNEY_STATE.onboarding };
+    }
+    return {
+      hasSeenOnboarding:
+        typeof parsed.hasSeenOnboarding === 'boolean' ? parsed.hasSeenOnboarding : false,
+      completedStep: typeof parsed.completedStep === 'number' ? parsed.completedStep : -1,
+      wasSkipped: typeof parsed.wasSkipped === 'boolean' ? parsed.wasSkipped : false,
     };
   }
 
@@ -187,14 +259,15 @@ export class GameEngine {
   }
 
   public getClickDamage(): number {
-    const baseDamage = GAME_CONFIG.CLICK_BASE_DAMAGE * Math.pow(CLICK_UPGRADE.damageGrowth, this.state.clickLevel);
-    const luckyWormBonus = 1 + (this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm);
+    const baseDamage =
+      GAME_CONFIG.CLICK_BASE_DAMAGE * Math.pow(CLICK_UPGRADE.damageGrowth, this.state.clickLevel);
+    const luckyWormBonus = 1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm;
     const skillMultiplier = this.skills.getGoldMultiplierClick();
     return baseDamage * luckyWormBonus * skillMultiplier;
   }
 
   public getWormDPS(id: string): number {
-    const upgrade = WORM_UPGRADES.find(u => u.id === id);
+    const upgrade = WORM_UPGRADES.find((u) => u.id === id);
     if (!upgrade) return 0;
     const count = this.state.worms[id] || 0;
     if (count === 0) return 0;
@@ -206,17 +279,17 @@ export class GameEngine {
     for (const upgrade of WORM_UPGRADES) {
       totalDPS += this.getWormDPS(upgrade.id);
     }
-    const luckyWormBonus = 1 + (this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm);
+    const luckyWormBonus = 1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm;
     const skillMultiplier = this.skills.getGoldMultiplierIdle();
     return totalDPS * luckyWormBonus * skillMultiplier;
   }
 
   public getGoldMultiplier(): number {
-    return 1 + (this.state.luckyWorms * LUCKY_WORMS_CONFIG.goldBonusPerWorm);
+    return 1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.goldBonusPerWorm;
   }
 
   public getUpgradeCost(upgradeId: string): number {
-    const upgrade = WORM_UPGRADES.find(u => u.id === upgradeId);
+    const upgrade = WORM_UPGRADES.find((u) => u.id === upgradeId);
     if (!upgrade) return 0;
     const count = this.state.worms[upgradeId] || 0;
     return Math.floor(upgrade.baseCost * Math.pow(upgrade.costGrowth, count));
@@ -233,7 +306,10 @@ export class GameEngine {
   }
 
   public getClickUpgradeCost(): number {
-    return Math.floor(GAME_CONFIG.CLICK_UPGRADE_BASE_COST * Math.pow(GAME_CONFIG.CLICK_UPGRADE_COST_GROWTH, this.state.clickLevel));
+    return Math.floor(
+      GAME_CONFIG.CLICK_UPGRADE_BASE_COST *
+        Math.pow(GAME_CONFIG.CLICK_UPGRADE_COST_GROWTH, this.state.clickLevel),
+    );
   }
 
   public buyClickUpgrade(): boolean {
@@ -296,7 +372,11 @@ export class GameEngine {
 
   public activateSkill(skillId: string): void {
     if (skillId === 'golden_harvest') {
-      this.skills.activateSkill(skillId, GAME_CONFIG.SKILL_DURATION_S, GAME_CONFIG.SKILL_COOLDOWN_S);
+      this.skills.activateSkill(
+        skillId,
+        GAME_CONFIG.SKILL_DURATION_S,
+        GAME_CONFIG.SKILL_COOLDOWN_S,
+      );
       this.state.statistics.goldenHarvestActivations++;
       this.audio.playUpgrade();
     }
@@ -327,7 +407,7 @@ export class GameEngine {
     const dataStr = JSON.stringify(this.state);
     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(dataStr));
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
     return btoa(JSON.stringify({ data: this.state, hash: hashHex }));
   }
 
@@ -341,7 +421,7 @@ export class GameEngine {
       const dataStr = JSON.stringify(saveObj.data);
       const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(dataStr));
       const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const expectedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      const expectedHash = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 
       if (expectedHash !== saveObj.hash) return false;
 
@@ -384,6 +464,202 @@ export class GameEngine {
   public resetGame(): void {
     this.state = this.mergeWithInitialState({ settings: this.state.settings });
     this.saveGame();
+  }
+
+  /* ─── Journey / Goal Commands ─── */
+
+  /**
+   * Check for newly completed goals and award their rewards.
+   * Returns an array of newly completed goal ids.
+   * Each goal is awarded exactly once (idempotent).
+   */
+  public checkAndAwardGoals(): Array<string> {
+    const journeyState = this.ensureJourneyState();
+    const completedSet = new Set(journeyState.completedGoals);
+    const newlyCompleted = findNewlyCompletedGoals(this.state, journeyState.completedGoals);
+
+    const newCompletedIds: Array<string> = [];
+
+    for (const goal of newlyCompleted) {
+      if (completedSet.has(goal.id)) continue;
+
+      // Grant reward deterministically
+      if (goal.rewardType === 'gold') {
+        this.state.gold += goal.rewardAmount;
+        this.state.statistics.totalGoldEarned += goal.rewardAmount;
+      } else if (goal.rewardType === 'luckyWorms') {
+        this.state.luckyWorms += goal.rewardAmount;
+        this.state.statistics.luckyWormsCollected = this.state.luckyWorms;
+      }
+
+      completedSet.add(goal.id);
+      newCompletedIds.push(goal.id);
+    }
+
+    if (newCompletedIds.length > 0) {
+      journeyState.completedGoals = [...completedSet];
+      this.debouncedSave();
+    }
+
+    return newCompletedIds;
+  }
+
+  /**
+   * Get all goal progress (completed and pending).
+   */
+  public getAllGoalProgress(): Array<GoalProgress> {
+    const journeyState = this.ensureJourneyState();
+    return calculateAllGoalProgress(this.state, journeyState.completedGoals);
+  }
+
+  /**
+   * Get progress of a specific goal by id.
+   */
+  public getGoalProgressById(goalId: string): GoalProgress | undefined {
+    const allProgress = this.getAllGoalProgress();
+    return allProgress.find((progress) => progress.goalId === goalId);
+  }
+
+  /* ─── Daily Reward Commands ─── */
+
+  /**
+   * Check if a daily reward can be claimed right now.
+   */
+  public canClaimDailyReward(): boolean {
+    const journeyState = this.ensureJourneyState();
+    return canClaimDailyReward(journeyState.dailyReward);
+  }
+
+  /**
+   * Claim the daily reward if eligible.
+   * Returns the streak day (1-based) if claimed, or 0 if not eligible.
+   */
+  public claimDailyReward(): number {
+    const journeyState = this.ensureJourneyState();
+
+    if (!canClaimDailyReward(journeyState.dailyReward)) {
+      return 0;
+    }
+
+    const claimResult = calculateClaimResult(journeyState.dailyReward);
+    const goldReward = calculateDailyGoldReward(claimResult.streakDay, this.state.stage);
+
+    this.state.gold += goldReward;
+    this.state.statistics.totalGoldEarned += goldReward;
+    journeyState.dailyReward = claimResult.newState;
+
+    this.debouncedSave();
+    return claimResult.streakDay;
+  }
+
+  /**
+   * Get time until next daily reward claim (in ms).
+   * Returns 0 if available now.
+   */
+  public getTimeUntilNextDailyReward(): number {
+    const journeyState = this.ensureJourneyState();
+    const dailyRewardState = journeyState.dailyReward;
+    if (canClaimDailyReward(dailyRewardState)) {
+      return 0;
+    }
+    return Math.max(0, dailyRewardState.nextClaimAvailableAt - Date.now());
+  }
+
+  /* ─── Onboarding Commands ─── */
+
+  /**
+   * Mark a specific onboarding step as completed.
+   * Step index is 0-based.
+   */
+  public completeOnboardingStep(stepIndex: number): void {
+    const journeyState = this.ensureJourneyState();
+    if (stepIndex > journeyState.onboarding.completedStep) {
+      journeyState.onboarding = {
+        ...journeyState.onboarding,
+        hasSeenOnboarding: true,
+        completedStep: stepIndex,
+      };
+      this.debouncedSave();
+    }
+  }
+
+  /**
+   * Mark onboarding as completed (all steps done).
+   */
+  public completeOnboarding(): void {
+    const journeyState = this.ensureJourneyState();
+    journeyState.onboarding = {
+      hasSeenOnboarding: true,
+      completedStep: Number.MAX_SAFE_INTEGER,
+      wasSkipped: false,
+    };
+    this.debouncedSave();
+  }
+
+  /**
+   * Skip onboarding entirely.
+   */
+  public skipOnboarding(): void {
+    const journeyState = this.ensureJourneyState();
+    journeyState.onboarding = {
+      hasSeenOnboarding: true,
+      completedStep: -1,
+      wasSkipped: true,
+    };
+    this.debouncedSave();
+  }
+
+  /**
+   * Check if onboarding should be shown.
+   * Returns true only when the player has never started onboarding
+   * or has partially completed it (not finished all steps and not skipped).
+   */
+  public shouldShowOnboarding(): boolean {
+    const journeyState = this.ensureJourneyState();
+    const onboarding = journeyState.onboarding;
+    // Already fully completed or explicitly skipped — never show again
+    if (onboarding.wasSkipped || onboarding.completedStep >= ONBOARDING_TOTAL_STEPS - 1) {
+      return false;
+    }
+    // Never seen — always show
+    if (!onboarding.hasSeenOnboarding) {
+      return true;
+    }
+    // Partially completed — resume from next step
+    return onboarding.completedStep < ONBOARDING_TOTAL_STEPS - 1;
+  }
+
+  /**
+   * Get the onboarding state.
+   */
+  public getOnboardingState(): OnboardingState {
+    return this.ensureJourneyState().onboarding;
+  }
+
+  /**
+   * Reset onboarding so it can be shown again (from settings).
+   */
+  public resetOnboarding(): void {
+    const journeyState = this.ensureJourneyState();
+    journeyState.onboarding = {
+      hasSeenOnboarding: false,
+      completedStep: -1,
+      wasSkipped: false,
+    };
+    this.debouncedSave();
+  }
+
+  /* ─── Journey Helpers ─── */
+
+  /**
+   * Ensure journey state exists on the game state.
+   * Handles the case where old saves don't have it.
+   */
+  private ensureJourneyState(): JourneyState {
+    if (!this.state.journey) {
+      this.state.journey = { ...INITIAL_JOURNEY_STATE };
+    }
+    return this.state.journey;
   }
 
   /**

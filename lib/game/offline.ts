@@ -1,5 +1,5 @@
-import { GameState } from './types';
 import { GAME_CONFIG } from './constants';
+import type { GameState } from './types';
 
 export interface OfflineProgressResult {
   applesEaten: number;
@@ -9,10 +9,10 @@ export interface OfflineProgressResult {
   finalStage: number;
   finalAppleHP: number;
   finalMaxAppleHP: number;
-  antiCheatFlags: AntiCheatFlag[];
+  antiCheatFlags: Array<AntiCheatFlag>;
 }
 
-export type AntiCheatFlag = 
+export type AntiCheatFlag =
   | 'SUSPICIOUS_TIME_NEGATIVE'
   | 'EXCESSIVE_DAMAGE_PER_ITERATION'
   | 'UNREALISTIC_GOLD_AMOUNT';
@@ -104,14 +104,13 @@ export class OfflineProgressSystem {
 
   applyToState(result: OfflineProgressResult): void {
     const state = this.deps.getCurrentState();
-    
+
     state.gold += result.goldGained;
     state.totalApplesEaten += result.applesEaten;
     state.stage = result.finalStage;
     state.appleHP = Math.max(1, result.finalAppleHP);
     state.maxAppleHP = result.finalMaxAppleHP;
 
-    
     if (result.stagesAdvanced > 0) {
       state.highestStage = Math.max(state.highestStage, result.finalStage);
     }
@@ -136,7 +135,14 @@ export class OfflineProgressSystem {
   }
 
   private simulateAppleDestruction(data: OfflineCalculationData): OfflineProgressResult {
-    const { startStage, startAppleHP, startMaxAppleHP, totalDamage, goldMultiplier, offlineSeconds } = data;
+    const {
+      startStage,
+      startAppleHP,
+      startMaxAppleHP,
+      totalDamage,
+      goldMultiplier,
+      offlineSeconds,
+    } = data;
 
     if (totalDamage <= 0) {
       return this.createEmptyResult(offlineSeconds, startStage, startAppleHP, startMaxAppleHP);
@@ -144,7 +150,7 @@ export class OfflineProgressSystem {
 
     const maxIterations = Math.min(
       this.config.maxOfflineApplesPerBatch,
-      Math.ceil(totalDamage / this.config.appleHP.baseHP)
+      Math.ceil(totalDamage / this.config.appleHP.baseHP),
     );
 
     let currentStage = startStage;
@@ -156,7 +162,6 @@ export class OfflineProgressSystem {
 
     for (let i = 0; i < maxIterations && remainingDamage > 0; i++) {
       const appleHP = currentAppleHP;
-      const maxAppleHP = currentMaxAppleHP;
 
       if (remainingDamage < appleHP) {
         currentAppleHP = appleHP - remainingDamage;
@@ -176,7 +181,6 @@ export class OfflineProgressSystem {
       currentAppleHP = currentMaxAppleHP;
     }
 
-    
     if (currentAppleHP <= 0) {
       currentAppleHP = currentMaxAppleHP;
     }
@@ -193,7 +197,12 @@ export class OfflineProgressSystem {
     };
   }
 
-  private createEmptyResult(offlineSeconds: number, startStage: number, startAppleHP: number, startMaxAppleHP: number): OfflineProgressResult {
+  private createEmptyResult(
+    offlineSeconds: number,
+    startStage: number,
+    startAppleHP: number,
+    startMaxAppleHP: number,
+  ): OfflineProgressResult {
     return {
       applesEaten: 0,
       goldGained: 0,
@@ -214,8 +223,8 @@ export class OfflineProgressSystem {
     applesEaten: number,
     goldGained: number,
     totalDamage: number,
-  ): AntiCheatFlag[] {
-    const flags: AntiCheatFlag[] = [];
+  ): Array<AntiCheatFlag> {
+    const flags: Array<AntiCheatFlag> = [];
 
     if (goldGained > this.config.maxReasonableGoldAmount) {
       flags.push('UNREALISTIC_GOLD_AMOUNT');

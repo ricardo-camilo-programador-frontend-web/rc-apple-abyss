@@ -1,16 +1,16 @@
 'use client';
 
+import { AlertCircle, AlertTriangle, CheckCircle, Info, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import React, {
   createContext,
-  useContext,
-  useState,
-  useCallback,
-  useRef,
-  useEffect,
   type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
 } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -27,7 +27,7 @@ export interface Toast {
 }
 
 interface ToastContextValue {
-  toasts: Toast[];
+  toasts: Array<Toast>;
   addToast: (toast: Omit<Toast, 'id'>) => string;
   removeToast: (id: string) => void;
   clearToasts: () => void;
@@ -56,10 +56,26 @@ const toastIcons: Record<ToastType, React.ElementType> = {
 };
 
 const toastColors: Record<ToastType, { bg: string; border: string; icon: string }> = {
-  success: { bg: 'from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950', border: 'border-green-200 dark:border-green-800', icon: 'text-green-500' },
-  error: { bg: 'from-red-50 to-rose-50 dark:from-red-950 dark:to-rose-950', border: 'border-red-200 dark:border-red-800', icon: 'text-red-500' },
-  warning: { bg: 'from-yellow-50 to-amber-50 dark:from-yellow-950 dark:to-amber-950', border: 'border-yellow-200 dark:border-yellow-800', icon: 'text-yellow-500' },
-  info: { bg: 'from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950', border: 'border-blue-200 dark:border-blue-800', icon: 'text-blue-500' },
+  success: {
+    bg: 'from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30',
+    border: 'border-green-200 dark:border-green-800',
+    icon: 'text-green-500',
+  },
+  error: {
+    bg: 'from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30',
+    border: 'border-red-200 dark:border-red-800',
+    icon: 'text-red-500',
+  },
+  warning: {
+    bg: 'from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30',
+    border: 'border-yellow-200 dark:border-yellow-800',
+    icon: 'text-yellow-500',
+  },
+  info: {
+    bg: 'from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30',
+    border: 'border-blue-200 dark:border-blue-800',
+    icon: 'text-blue-500',
+  },
 };
 
 const actionColors: Record<ToastType, string> = {
@@ -78,7 +94,7 @@ interface ToastProviderProps {
 const MAX_DURATION = 86_400_000; // 24 hours
 
 export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [toasts, setToasts] = useState<Array<Toast>>([]);
   // Track timeouts for cleanup on unmount and manual dismiss
   const timeoutRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const mountedRef = useRef(true);
@@ -143,7 +159,7 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
 
       return id;
     },
-    [maxToasts, removeToast]
+    [maxToasts, removeToast],
   );
 
   const clearToasts = useCallback(() => {
@@ -154,22 +170,22 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
 
   const success = useCallback(
     (title: string, message?: string) => addToast({ type: 'success', title, message }),
-    [addToast]
+    [addToast],
   );
 
   const error = useCallback(
     (title: string, message?: string) => addToast({ type: 'error', title, message }),
-    [addToast]
+    [addToast],
   );
 
   const warning = useCallback(
     (title: string, message?: string) => addToast({ type: 'warning', title, message }),
-    [addToast]
+    [addToast],
   );
 
   const info = useCallback(
     (title: string, message?: string) => addToast({ type: 'info', title, message }),
-    [addToast]
+    [addToast],
   );
 
   return (
@@ -192,7 +208,7 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
 }
 
 interface ToastContainerProps {
-  toasts: Toast[];
+  toasts: Array<Toast>;
   removeToast: (id: string) => void;
 }
 
@@ -240,7 +256,9 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm">{toast.title}</p>
           {toast.message && (
-            <p className="text-stone-600 dark:text-stone-300 text-xs mt-1 leading-relaxed">{toast.message}</p>
+            <p className="text-stone-600 dark:text-stone-300 text-xs mt-1 leading-relaxed">
+              {toast.message}
+            </p>
           )}
           {toast.action && (
             <button
@@ -260,7 +278,7 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
 
         <button
           onClick={onClose}
-          className="shrink-0 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
+          className="shrink-0 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
           aria-label="Close notification"
         >
           <X className="w-4 h-4" />

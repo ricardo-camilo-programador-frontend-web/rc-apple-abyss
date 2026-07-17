@@ -4,142 +4,81 @@ on:
   pull_request:
     types: [opened, synchronize, ready_for_review]
 
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
-
-concurrency:
-  group: pr-triage-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
-
 jobs:
   label:
-    name: Auto-label
+    name: Auto-Label
     runs-on: self-hosted
     timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
-      - name: Apply file-based labels
-        uses: actions/labeler@v5
+      - uses: actions/labeler@v5
         with:
           configuration-path: .github/labeler.yml
-          sync-labels: true
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
   triage:
-    name: Risk & Size Assessment
+    name: Risk and Size Assessment
     runs-on: self-hosted
     timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
-      - name: Checkout PR head
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Compute diff metrics
-        id: metrics
+      - uses: actions/checkout@v4
+      - name: Assess PR risk and size
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          # Get changed lines count
+          CHANGES=$(gh pr diff "$PR_NUMBER" --name-only 2>/dev/null | wc -l)
+          LINES_ADDED=$(gh pr diff "$PR_NUMBER" 2>/dev/null | grep -c '^+' || echo 0)
+          LINES_DELETED=$(gh pr diff "$PR_NUMBER" 2>/dev/null | grep -c '^-' || echo 0)
+          TOTAL_LINES=$((LINES_ADDED + LINES_DELETED))
 
-          # Count added/removed lines (exclude merge commits)
-          STATS="$(git diff --numstat "$BASE_SHA"..."$HEAD_SHA" || true)"
-
-          ADDED=0
-          REMOVED=0
-          FILES=0
-          if [ -n "$STATS" ]; then
-            FILES=$(printf '%s\n' "$STATS" | grep -c . || true)
-            ADDED=$(printf '%s\n' "$STATS" | awk '/^[0-9]/{s+=$1} END{print s+0}')
-            REMOVED=$(printf '%s\n' "$STATS" | awk '/^[0-9]/{s+=$2} END{print s+0}')
+          # Determine size label
+          if [ "$TOTAL_LINES" -le 20 ]; then
+            SIZE="size/XS"
+          elif [ "$TOTAL_LINES" -le 50 ]; then
+            SIZE="size/S"
+          elif [ "$TOTAL_LINES" -le 200 ]; then
+            SIZE="size/M"
+          elif [ "$TOTAL_LINES" -le 500 ]; then
+            SIZE="size/L"
+          else
+            SIZE="size/XL"
           fi
 
-          TOTAL=$((ADDED + REMOVED))
-          echo "added=$ADDED" >> "$GITHUB_OUTPUT"
-          echo "removed=$REMOVED" >> "$GITHUB_OUTPUT"
-          echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
-          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+          # Determine risk level
+          FILES_TOUCHED=$(gh pr diff "$PR_NUMBER" --name-only 2>/dev/null)
+          TOUCHES_CONFIG=$(echo "$FILES_TOUCHED" | grep -c '\.config\.\|tsconfig\|biome\.json\|eslint\.' || echo 0)
+          TOUCHES_CI=$(echo "$FILES_TOUCHED" | grep -c '\.github/' || echo 0)
+          TOUCHES_TYPES=$(echo "$FILES_TOUCHED" | grep -c '\.ts$\|\.tsx$' || echo 0)
 
-          # Risk: 0-99 low, 100-499 medium, 500+ high
-          if   [ "$TOTAL" -ge 500 ]; then RISK="high"
-          elif [ "$TOTAL" -ge 100 ]; then RISK="medium"
-          else RISK="low"; fi
-          echo "risk=$RISK" >> "$GITHUB_OUTPUT"
+          if [ "$TOTAL_LINES" -gt 500 ] || [ "$TOUCHES_CONFIG" -gt 0 ]; then
+            RISK="risk/high"
+          elif [ "$TOTAL_LINES" -gt 200 ] || [ "$TOUCHES_CI" -gt 0 ]; then
+            RISK="risk/medium"
+          else
+            RISK="risk/low"
+          fi
 
-          # Size buckets
-          if   [ "$TOTAL" -ge 1000 ]; then SIZE="XL"
-          elif [ "$TOTAL" -ge 500  ]; then SIZE="L"
-          elif [ "$TOTAL" -ge 100  ]; then SIZE="M"
-          elif [ "$TOTAL" -ge 30   ]; then SIZE="S"
-          else SIZE="XS"; fi
-          echo "size=$SIZE" >> "$GITHUB_OUTPUT"
+          # Apply labels
+          gh pr edit "$PR_NUMBER" --add-label "$SIZE" --add-label "$RISK" 2>/dev/null || true
 
-      - name: Manage risk & size labels
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-            const issue_number = context.payload.pull_request.number;
-            const metrics = ${{ toJSON(steps.metrics.outputs) }};
-            const { risk, size, total, added, removed, files } = metrics;
+          # Post summary comment
+          gh pr comment "$PR_NUMBER" --body "
+          ## 🔍 PR Assessment
 
-            const current = await github.rest.issues.listLabelsOnIssue({
-              owner, repo, issue_number, per_page: 100
-            });
-            const names = current.data.map(l => l.name);
+          | Metric | Value |
+          |--------|-------|
+          | Files changed | ${CHANGES} |
+          | Lines added | ${LINES_ADDED} |
+          | Lines removed | ${LINES_DELETED} |
+          | Size | ${SIZE} |
+          | Risk | ${RISK} |
 
-            const remove = [];
-            for (const name of names) {
-              if (/^risk:(low|medium|high)$/.test(name) && name !== `risk:${risk}`) remove.push(name);
-              if (/^size\/(XS|S|M|L|XL)$/.test(name) && name !== `size/${size}`) remove.push(name);
-            }
-            for (const name of [...new Set(remove)]) {
-              await github.rest.issues.removeLabel({ owner, repo, issue_number, name }).catch(() => {});
-            }
-
-            const add = [`risk:${risk}`, `size:${size}`].filter(l => !names.includes(l));
-            if (add.length) {
-              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: add });
-            }
-
-            core.setOutput('risk', risk);
-            core.setOutput('size', size);
-
-      - name: Find existing triage comment
-        uses: peter-evans/find-comment@v3
-        id: fc
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: '<!-- pr-triage-summary -->'
-
-      - name: Post / update triage summary
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          edit-mode: replace
-          body: |
-            <!-- pr-triage-summary -->
-            ## 🧪 PR Triage Summary
-
-            | Metric | Value |
-            | --- | --- |
-            | 🏷️ Risk | `risk:${{ steps.metrics.outputs.risk }}` |
-            | 📐 Size | `size:${{ steps.metrics.outputs.size }}` |
-            | 📁 Files changed | ${{ steps.metrics.outputs.files }} |
-            | ➕ Lines added | ${{ steps.metrics.outputs.added }} |
-            | ➖ Lines removed | ${{ steps.metrics.outputs.removed }} |
-            | 📊 Total churn | ${{ steps.metrics.outputs.total }} |
-
-            ### Risk thresholds
-            - 🟢 **low**: < 100 changed lines
-            - 🟡 **medium**: 100–499 changed lines
-            - 🔴 **high**: ≥ 500 changed lines
-
-            ### Size scale
-            `XS` < 30 · `S` 30–99 · `M` 100–499 · `L` 500–999 · `XL` ≥ 1000
-
-            _This comment is automatically updated on every push to this PR._
+          _Labels and assessment applied automatically._
+          " 2>/dev/null || true

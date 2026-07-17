@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { GameEngine } from '@/lib/game/engine';
+import type { GameEngine } from '@/lib/game/engine';
 
 export function useGameLoop(engine: GameEngine, onStateUpdate: () => void) {
   useEffect(() => {

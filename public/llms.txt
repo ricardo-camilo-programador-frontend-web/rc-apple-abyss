@@ -1,0 +1,77 @@
+# Apple of the Infinite Abyss — llms.txt
+
+## Project Overview
+
+Apple of the Infinite Abyss is a minimalist incremental idle game built with Next.js 15, React 19, TypeScript 5, and TailwindCSS 4. The core mechanic revolves around eating apples with the help of worms. The product works fully offline — no network required for gameplay.
+
+## Architecture
+
+### Core Game Loop (`lib/game/engine.ts`)
+- `GameEngine` class manages all game state
+- Pure functions handle calculations; engine handles state mutation
+- Save/load uses base64 + SHA-256 checksum in localStorage
+- Offline progress calculated on return
+
+### Pure Rule Modules
+- `lib/game/goals.ts` — Goal catalog, progress calculation, completion detection
+- `lib/game/daily-reward.ts` — Streak tracking, eligibility, gold calculation, timestamp validation
+- All rule functions are pure (no side effects, no engine dependency)
+
+### State Types (`lib/game/types.ts`)
+- `GameState` — Full game state including optional `journey` field for backward-compatible migration
+- `JourneyState` — Goals completed, onboarding state, daily reward state
+- `GoalDefinition` — Static goal metadata (id, type, target, reward)
+- `GoalProgress` — Runtime progress snapshot (currentValue, isCompleted)
+- `DailyRewardState` — Streak, last claim date, next availability timestamp
+- `OnboardingState` — Tutorial completion tracking
+
+### Save Migration
+- `mergeJourneyState()` in engine.ts provides additive migration
+- Old saves without `journey` field get default initial state
+- Corrupted data sanitized via `sanitizeDailyRewardState()`
+
+### UI Components (`components/game/`)
+- `OnboardingModal.tsx` — 3-step guided tutorial
+- `JourneyModal.tsx` — Daily reward claim + goal progress display
+- `GameHeader.tsx` — Top bar with journey button + daily reward indicator
+- `MobileNav.tsx` — Bottom navigation with journey tab
+
+### Analytics (`lib/analytics.ts`)
+- Event tracking via Microsoft Clarity
+- Product events: goalCompleted, dailyRewardClaimed, onboardingCompleted
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `lib/game/types.ts` | All TypeScript interfaces |
+| `lib/game/constants.ts` | Game config, localization (20 languages), initial state |
+| `lib/game/engine.ts` | Game engine (state machine, save/load, journey commands) |
+| `lib/game/goals.ts` | Pure goal rules |
+| `lib/game/daily-reward.ts` | Pure daily reward rules |
+| `components/Game.tsx` | Core game orchestrator |
+| `components/game/OnboardingModal.tsx` | Onboarding UI |
+| `components/game/JourneyModal.tsx` | Goals + daily reward UI |
+| `tests/engine.test.ts` | Engine tests (128 total) |
+| `tests/goals.test.ts` | Goal rule tests |
+| `tests/daily-reward.test.ts` | Daily reward rule tests |
+
+## Conventions
+
+- No `any` types; all code is fully typed
+- Variable names are never abbreviated
+- Pure functions for all game rules (deterministic, testable)
+- Localization uses English fallback; `en` key always present
+- Component props use explicit interfaces (no inline types)
+
+## Running Tests
+
+```bash
+pnpm test        # Run Vitest (128 tests)
+pnpm type-check  # TypeScript type checking
+pnpm build       # Next.js production build
+```
+
+## Live Demo
+
+https://click-on-the-malus-domestica-ide.netlify.app/

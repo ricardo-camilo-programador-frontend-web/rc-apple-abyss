@@ -1,12 +1,11 @@
+/** @type {import('lighthouse-ci').LighthouseCIConfig} */
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: 'pnpm run start',
-      url: [
-        'http://localhost:3000/',
-        'http://localhost:3000/apple-varieties',
-      ],
-      numberOfRuns: 3,
+      startServerCommand: 'pnpm exec next start --hostname 127.0.0.1 --port 3417',
+      startServerReadyPattern: 'Ready',
+      url: ['http://127.0.0.1:3417/', 'http://127.0.0.1:3417/apple-varieties'],
+      numberOfRuns: 2,
     },
     assert: {
       assertions: {
@@ -20,4 +19,4 @@ module.exports = {
       target: 'temporary-public-storage',
     },
   },
-}
+};

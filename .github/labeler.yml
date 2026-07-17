@@ -1,35 +1,32 @@
-# Auto-labeler configuration for actions/labeler@v5
-# Labels PRs based on changed file paths.
-# Reference: Issue #14 — PR auto-triage
-
 frontend:
   - changed-files:
       - any-glob-to-any-file:
-          - app/**
-          - components/**
-          - hooks/**
-          - lib/**
+          - 'app/**/*'
+          - 'components/**/*'
+          - 'hooks/**/*'
+          - 'lib/**/*'
 
 config:
   - changed-files:
       - any-glob-to-any-file:
-          - .github/**
-          - "*.config.*"
-          - tsconfig.*
+          - '.github/**/*'
+          - '*.config.*'
+          - 'tsconfig.*'
+          - 'biome.json'
+          - 'eslint.config.*'
 
 documentation:
   - changed-files:
-      - any-glob-to-any-file:
-          - "**/*.md"
+      - any-glob-to-any-file: '**/*.md'
 
 tests:
   - changed-files:
       - any-glob-to-any-file:
-          - "**/*.test.*"
-          - "**/*.spec.*"
+          - '**/*.test.*'
+          - '**/*.spec.*'
 
 dependencies:
   - changed-files:
       - any-glob-to-any-file:
-          - "**/package.json"
-          - "**/pnpm-lock.yaml"
+          - '**/package.json'
+          - '**/pnpm-lock.yaml'

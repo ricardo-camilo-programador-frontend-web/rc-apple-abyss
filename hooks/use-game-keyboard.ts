@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { GameEngine } from '@/lib/game/engine';
+import type { GameEngine } from '@/lib/game/engine';
 
 export function useGameKeyboard(engine: GameEngine, onStateUpdate: () => void) {
   const lastClickUpgradeTime = useRef(0);

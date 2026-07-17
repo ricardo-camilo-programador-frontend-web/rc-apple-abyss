@@ -1,23 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
-import { GameState, Language } from '@/lib/game/types';
-import { GameEngine } from '@/lib/game/engine';
-import { motion, AnimatePresence } from 'motion/react';
 import {
-  Settings,
-  Volume2,
-  VolumeX,
-  Languages,
   ChevronRight,
   Download,
-  Upload,
+  Languages,
   RefreshCw,
-  Sun,
-  Moon,
-  Monitor,
+  Settings,
+  Upload,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
-import { useTheme } from '@/components/ThemeProvider';
+import { AnimatePresence, motion } from 'motion/react';
+import React, { useState } from 'react';
+import ThemeToggle from '@/components/game/ThemeToggle';
+import { analytics } from '@/lib/analytics';
+import type { GameEngine } from '@/lib/game/engine';
+import type { GameState, Language } from '@/lib/game/types';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -26,14 +24,32 @@ interface SettingsModalProps {
   t: (key: string, params?: any) => string;
   onClose: () => void;
   onStateUpdate: () => void;
-  onImportSave: (str: string) => void;
+  onImportSave: (saveString: string) => Promise<boolean>;
   onResetGame: () => void;
   onExportSave: () => void;
 }
 
-const LANGUAGES: Language[] = [
-  'en', 'zh', 'hi', 'es', 'fr', 'ar', 'bn', 'pt', 'ru', 'ur',
-  'id', 'de', 'ja', 'sw', 'mr', 'te', 'tr', 'ta', 'vi', 'ko',
+const LANGUAGES: Array<{ code: Language; name: string }> = [
+  { code: 'en', name: 'English' },
+  { code: 'zh', name: '中文' },
+  { code: 'hi', name: 'हिन्दी' },
+  { code: 'es', name: 'Español' },
+  { code: 'fr', name: 'Français' },
+  { code: 'ar', name: 'العربية' },
+  { code: 'bn', name: 'বাংলা' },
+  { code: 'pt', name: 'Português' },
+  { code: 'ru', name: 'Русский' },
+  { code: 'ur', name: 'اردو' },
+  { code: 'id', name: 'Bahasa Indonesia' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'ja', name: '日本語' },
+  { code: 'sw', name: 'Kiswahili' },
+  { code: 'mr', name: 'मराठी' },
+  { code: 'te', name: 'తెలుగు' },
+  { code: 'tr', name: 'Türkçe' },
+  { code: 'ta', name: 'தமிழ்' },
+  { code: 'vi', name: 'Tiếng Việt' },
+  { code: 'ko', name: '한국어' },
 ];
 
 export default function SettingsModal({
@@ -49,7 +65,6 @@ export default function SettingsModal({
 }: SettingsModalProps) {
   const [importString, setImportString] = useState('');
   const [importError, setImportError] = useState('');
-  const { theme, setTheme } = useTheme();
 
   const toggleMute = () => {
     const newMuted = !state.settings.muted;
@@ -59,17 +74,17 @@ export default function SettingsModal({
 
   const changeLanguage = (lang: Language) => {
     engine.setLanguage(lang);
+    analytics.languageChanged(lang);
     onStateUpdate();
   };
 
-  const handleImportSave = () => {
+  const handleImportSave = async () => {
     if (!importString.trim()) {
       setImportError('Please enter a save string.');
       return;
     }
-    const success = engine.importSave(importString.trim());
+    const success = await onImportSave(importString.trim());
     if (success) {
-      onImportSave(importString.trim());
       setImportString('');
       setImportError('');
     } else {
@@ -97,23 +112,26 @@ export default function SettingsModal({
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
-            className="bg-white dark:bg-stone-800 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
-            onClick={e => e.stopPropagation()}
+            className="bg-white dark:bg-stone-900 dark:text-stone-100 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-stone-100 dark:border-stone-700 flex justify-between items-center">
-              <h2 className="font-bold text-lg dark:text-stone-100 flex items-center gap-2">
+            <div className="p-6 border-b border-stone-100 flex justify-between items-center">
+              <h2 className="font-bold text-lg flex items-center gap-2">
                 <Settings className="w-5 h-5" />
                 {t('settings')}
               </h2>
-              <button onClick={onClose} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200" aria-label="Close">
+              <button onClick={onClose} className="text-stone-400 hover:text-stone-600">
                 <ChevronRight className="w-6 h-6" />
               </button>
             </div>
 
             <div className="p-6 space-y-6">
+              {/* Theme section */}
+              <ThemeToggle />
+
               {/* Sound section */}
               <div className="space-y-3">
-                <label className="text-xs font-bold uppercase text-stone-400 dark:text-stone-500 flex items-center gap-2">
+                <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
                   <Volume2 className="w-3 h-3" />
                   {t('settings_sound')}
                 </label>
@@ -123,7 +141,7 @@ export default function SettingsModal({
                     className={`p-3 rounded-xl border-2 transition-all ${
                       state.settings.muted
                         ? 'border-red-200 bg-red-50 text-red-600'
-                        : 'border-stone-200 dark:border-stone-600 text-stone-600 dark:text-stone-300'
+                        : 'border-stone-200 text-stone-600'
                     }`}
                   >
                     {state.settings.muted ? (
@@ -138,7 +156,7 @@ export default function SettingsModal({
                     max="1"
                     step="0.1"
                     value={state.settings.volume}
-                    onChange={e => {
+                    onChange={(e) => {
                       engine.setVolume(parseFloat(e.target.value));
                       onStateUpdate();
                     }}
@@ -149,66 +167,38 @@ export default function SettingsModal({
 
               {/* Language section */}
               <div className="space-y-3">
-                <label className="text-xs font-bold uppercase text-stone-400 dark:text-stone-500 flex items-center gap-2">
+                <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
                   <Languages className="w-3 h-3" />
                   {t('settings_language')}
                 </label>
                 <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
-                  {LANGUAGES.map(lang => (
+                  {LANGUAGES.map((language) => (
                     <button
-                      key={lang}
-                      onClick={() => changeLanguage(lang)}
+                      key={language.code}
+                      onClick={() => changeLanguage(language.code)}
+                      aria-label={`Switch language to ${language.name}`}
                       className={`p-2 rounded-lg text-xs font-medium border transition-all ${
-                        state.settings.language === lang
+                        state.settings.language === language.code
                           ? 'bg-red-500 text-white border-red-600 shadow-md'
-                          : 'bg-stone-50 dark:bg-stone-700 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-600'
+                          : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
                       }`}
                     >
-                      {lang.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Theme section */}
-              <div className="space-y-3">
-                <label className="text-xs font-bold uppercase text-stone-400 dark:text-stone-500 flex items-center gap-2">
-                  <Monitor className="w-3 h-3" />
-                  Theme
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {([
-                    { value: 'light' as const, icon: Sun, label: 'Light' },
-                    { value: 'dark' as const, icon: Moon, label: 'Dark' },
-                    { value: 'system' as const, icon: Monitor, label: 'System' },
-                  ]).map(({ value, icon: Icon, label }) => (
-                    <button
-                      key={value}
-                      onClick={() => setTheme(value)}
-                      aria-pressed={theme === value}
-                      className={`p-2 rounded-lg text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ${
-                        theme === value
-                          ? 'bg-red-500 text-white border-red-600 shadow-md'
-                          : 'bg-stone-50 dark:bg-stone-700 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-600'
-                      }`}
-                    >
-                      <Icon className="w-3 h-3" aria-hidden="true" />
-                      {label}
+                      {language.name}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Save Management section */}
-              <div className="space-y-3 pt-4 border-t border-stone-100 dark:border-stone-700">
-                <label className="text-xs font-bold uppercase text-stone-400 dark:text-stone-500 flex items-center gap-2">
+              <div className="space-y-3 pt-4 border-t border-stone-100">
+                <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
                   <Download className="w-3 h-3" />
                   Save Management
                 </label>
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={onExportSave}
-                    className="flex items-center justify-center gap-2 p-3 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 rounded-xl transition-colors font-medium text-sm"
+                    className="flex items-center justify-center gap-2 p-3 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl transition-colors font-medium text-sm"
                   >
                     <Download className="w-4 h-4" />
                     Export Save
@@ -218,25 +208,23 @@ export default function SettingsModal({
                     <input
                       type="text"
                       value={importString}
-                      onChange={e => setImportString(e.target.value)}
+                      onChange={(e) => setImportString(e.target.value)}
                       placeholder="Paste save string..."
-                      className="flex-1 p-3 bg-stone-50 dark:bg-stone-700 border border-stone-200 dark:border-stone-600 rounded-xl text-sm focus:outline-none focus:border-red-300 dark:text-stone-200 dark:placeholder:text-stone-500"
+                      className="flex-1 p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-red-300"
                     />
                     <button
                       onClick={handleImportSave}
-                      className="flex items-center justify-center p-3 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 rounded-xl transition-colors"
+                      className="flex items-center justify-center p-3 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl transition-colors"
                       title="Import Save"
                     >
                       <Upload className="w-4 h-4" />
                     </button>
                   </div>
-                  {importError && (
-                    <p className="text-xs text-red-500 font-medium">{importError}</p>
-                  )}
+                  {importError && <p className="text-xs text-red-500 font-medium">{importError}</p>}
 
                   <button
                     onClick={handleResetGame}
-                    className="flex items-center justify-center gap-2 p-3 mt-2 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-xl transition-colors font-medium text-sm border border-red-100 dark:border-red-800/50"
+                    className="flex items-center justify-center gap-2 p-3 mt-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors font-medium text-sm border border-red-100"
                   >
                     <RefreshCw className="w-4 h-4" />
                     Hard Reset

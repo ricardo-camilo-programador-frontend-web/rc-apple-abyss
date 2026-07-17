@@ -1,8 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import type React from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
+
+export type { Theme };
 
 interface ThemeContextValue {
   theme: Theme;
@@ -11,8 +14,6 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
-
-const THEME_STORAGE_KEY = 'theme';
 
 export function useTheme() {
   const context = useContext(ThemeContext);
@@ -41,29 +42,16 @@ function applyTheme(resolved: 'light' | 'dark') {
   }
 }
 
-/** Read the initial resolved theme from the DOM (set by the anti-FOUC script in layout.tsx) */
-function getInitialResolvedTheme(): 'light' | 'dark' {
-  if (typeof document !== 'undefined') {
-    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-  }
-  return 'light';
-}
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('system');
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(getInitialResolvedTheme);
-  const themeRef = useRef(theme);
-
-  useEffect(() => {
-    themeRef.current = theme;
-  }, [theme]);
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
     try {
-      localStorage.setItem(THEME_STORAGE_KEY, newTheme);
-    } catch (e) {
-      console.warn('Theme preference could not be saved:', e);
+      localStorage.setItem('theme', newTheme);
+    } catch {
+      // localStorage not available
     }
     const resolved = resolveTheme(newTheme);
     setResolvedTheme(resolved);
@@ -71,39 +59,39 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Read saved preference
     let savedTheme: Theme = 'system';
     try {
-      const stored = localStorage.getItem(THEME_STORAGE_KEY);
+      const stored = localStorage.getItem('theme');
       if (stored === 'light' || stored === 'dark' || stored === 'system') {
         savedTheme = stored;
       }
-    } catch (e) {
-      console.warn('Theme preference could not be read:', e);
+    } catch {
+      // localStorage not available
     }
 
+    // Initialize theme from localStorage — intentional one-time sync
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reading from external system (localStorage)
     setThemeState(savedTheme);
     const resolved = resolveTheme(savedTheme);
     setResolvedTheme(resolved);
     applyTheme(resolved);
 
-    // Listen for system preference changes (only re-resolves when theme === 'system')
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
-      if (themeRef.current !== 'system') return;
-      const newResolved = getSystemPreference();
-      setResolvedTheme(newResolved);
-      applyTheme(newResolved);
+      setThemeState((current) => {
+        const newResolved = resolveTheme(current);
+        setResolvedTheme(newResolved);
+        applyTheme(newResolved);
+        return current;
+      });
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  const contextValue = useMemo(() => ({ theme, resolvedTheme, setTheme }), [theme, resolvedTheme, setTheme]);
-
   return (
-    <ThemeContext.Provider value={contextValue}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

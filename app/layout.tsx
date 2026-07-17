@@ -14,7 +14,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: 'Apple of the Infinite Abyss',
-  description: 'A minimalist incremental idle game where you eat apples with help of worms.',
+  description: 'A minimalist incremental idle game where you eat apples with help of worms. Features goals, daily rewards, onboarding, and skill activation.',
   manifest: '/manifest.json',
   icons: {
     icon: [

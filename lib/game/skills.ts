@@ -1,5 +1,5 @@
-import { GameState, SkillState } from './types';
 import { GAME_CONFIG } from './constants';
+import { type GameState, SkillState } from './types';
 
 export class SkillSystem {
   private state: GameState;
@@ -18,9 +18,9 @@ export class SkillSystem {
   }
 
   public update(deltaTime: number) {
-    Object.keys(this.state.skills).forEach(id => {
+    Object.keys(this.state.skills).forEach((id) => {
       const skill = this.state.skills[id];
-      
+
       if (skill.isActive) {
         skill.remainingDuration -= deltaTime;
         if (skill.remainingDuration <= 0) {

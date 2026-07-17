@@ -1,21 +1,21 @@
 name: Release
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version (ex: v1.0.0). Omit to use package.json.'
+        description: 'Semver version override (ex: v1.0.0). Omit to use package.json version.'
         required: false
+        type: string
 
 permissions:
   contents: write
 
 jobs:
   release:
+    name: Create Release
     runs-on: self-hosted
-
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,97 +28,64 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Determine version
         id: version
-        env:
-          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          if [ -n "$INPUT_VERSION" ]; then
-            VERSION="$INPUT_VERSION"
-            SOURCE="manual (workflow_dispatch)"
+          if [ -n "${{ inputs.version }}" ]; then
+            INPUT_VERSION="${{ inputs.version }}"
           else
-            VERSION=$(node -p "require('./package.json').version")
-            SOURCE="package.json"
+            INPUT_VERSION="v$(node -p "require('./package.json').version")"
           fi
 
-          # Ensure v prefix
-          case "$VERSION" in
-            v*) ;;
-            *) VERSION="v${VERSION}" ;;
-          esac
-
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "source=${SOURCE}" >> "$GITHUB_OUTPUT"
-          echo "Determined version: ${VERSION} (source: ${SOURCE})"
-
-      - name: Validate semver
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          if ! printf '%s' "$VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::Invalid version format: '$VERSION'. Expected strict semver: vX.Y.Z (e.g., v1.0.0)"
+          # Validate semver format: v<major>.<minor>.<patch>
+          if ! echo "$INPUT_VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid version format: '$INPUT_VERSION'. Expected vX.Y.Z (semver)."
             exit 1
           fi
-          echo "✅ Version format is valid: $VERSION"
 
-      - name: Check for existing tag
-        id: check_tag
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
+          echo "version=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "source=${{ inputs.version && 'manual' || 'package.json' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Check for duplicate tag
+        id: duplicate-check
         run: |
-          if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null 2>&1; then
+          if git tag -l | grep -q "^${{ steps.version.outputs.version }}$"; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "⚠️ Tag ${VERSION} already exists — skipping release creation (idempotent)."
+            echo "::notice::Tag ${{ steps.version.outputs.version }} already exists — skipping."
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "✅ Tag ${VERSION} is new — proceeding with release."
           fi
 
-      - name: Create and push tag
-        if: steps.check_tag.outputs.exists == 'false'
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          git tag "${VERSION}" HEAD
-          git push origin "${VERSION}"
+      - name: Build
+        if: steps.duplicate-check.outputs.exists == 'false'
+        run: pnpm run build
 
-      - name: Create GitHub Release
-        if: steps.check_tag.outputs.exists == 'false'
+      - name: Create tag and release
+        if: steps.duplicate-check.outputs.exists == 'false'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.version.outputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${VERSION}" \
-            --title "${VERSION}" \
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # GitHub creates the tag atomically with the release.
+          gh release create "$VERSION" \
+            --target "$GITHUB_SHA" \
             --generate-notes \
-            --target main
+            --title "Release $VERSION"
 
       - name: Summary
-        if: always()
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-          SOURCE: ${{ steps.version.outputs.source }}
-          EXISTS: ${{ steps.check_tag.outputs.exists }}
-          TRIGGER: ${{ github.event_name }}
         run: |
-          {
-            echo "## 🚀 Release Workflow"
-            echo ""
-            echo "| Field | Value |"
-            echo "|-------|-------|"
-            echo "| Version | \`${VERSION:-unknown}\` |"
-            echo "| Source | \`${SOURCE:-unknown}\` |"
-            echo "| Tag exists | \`${EXISTS:-unknown}\` |"
-            echo "| Trigger | \`${TRIGGER}\` |"
-            echo ""
-            if [ "${EXISTS}" = "true" ]; then
-              echo "⚠️ Tag already existed — no new release was created."
-            elif [ -z "${VERSION}" ]; then
-              echo "❌ Version could not be determined or validated."
-            else
-              echo "✅ Tag and GitHub Release created successfully."
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "## Release Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Version | \`${{ steps.version.outputs.version }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Source | ${{ steps.version.outputs.source }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Trigger | ${{ github.event_name == 'push' && 'push to main' || 'manual dispatch' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Skipped | ${{ steps.duplicate-check.outputs.exists == 'true' && 'Yes (duplicate tag)' || 'No' }} |" >> "$GITHUB_STEP_SUMMARY"

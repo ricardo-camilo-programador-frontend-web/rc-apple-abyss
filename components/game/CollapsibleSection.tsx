@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import type React from 'react';
+import { useState } from 'react';
 
 interface CollapsibleSectionProps {
   title: string;
@@ -12,15 +13,15 @@ interface CollapsibleSectionProps {
   defaultOpen?: boolean;
 }
 
-export default function CollapsibleSection({ 
-  title, 
-  icon: Icon, 
-  color, 
-  children, 
-  defaultOpen = true 
+export default function CollapsibleSection({
+  title,
+  icon: Icon,
+  color,
+  children,
+  defaultOpen = true,
 }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  
+
   const colorClasses: Record<string, { bg: string; text: string; border: string }> = {
     emerald: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800' },
     orange: { bg: 'bg-orange-50 dark:bg-orange-900/20', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-200 dark:border-orange-800' },
@@ -56,9 +57,7 @@ export default function CollapsibleSection({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="pt-2 space-y-2">
-              {children}
-            </div>
+            <div className="pt-2 space-y-2">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>

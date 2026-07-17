@@ -6,10 +6,8 @@ import { GameState, Language } from '@/lib/game/types';
 import { WORM_UPGRADES } from '@/lib/game/constants';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
-import AdsterraAd from '@/components/AdsterraAd';
 import AdSenseAd from '@/components/AdSenseAd';
 import Modal from '@/components/Modal';
-import { AdFormat } from '@/lib/ads/adsterra';
 import { 
   Coins, 
   Trophy, 
@@ -629,10 +627,6 @@ export default function Game() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 overflow-hidden select-none">
-      <AdsterraAd format={AdFormat.POPUNDER} />
-      <AdsterraAd format={AdFormat.SOCIAL_BAR} />
-      <AdsterraAd format={AdFormat.SMARTLINK} />
-
       <header className="bg-white/80 backdrop-blur-sm border-b border-stone-200/50 p-2 md:p-3 flex justify-between items-center z-10 flex-wrap gap-2 sticky top-0">
         <div className="flex items-center gap-3 md:gap-6 flex-wrap">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-100">
@@ -669,7 +663,6 @@ export default function Game() {
       <div className="flex-1 flex flex-row overflow-hidden">
         <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/30 items-center justify-center border-r border-stone-200/50 gap-4 py-4">
           <AdSenseAd slot="vertical-left" format="auto" className="w-full flex-1" />
-          <AdsterraAd format={AdFormat.DISPLAY_BANNER_160x300} className="w-full" />
         </div>
 
         <main className="flex-1 flex flex-col lg:flex-row relative overflow-y-auto">
@@ -817,7 +810,6 @@ export default function Game() {
 
         <div className="hidden xl:flex flex-col w-[160px] bg-stone-200/30 items-center justify-center border-l border-stone-200/50 gap-4 py-4">
           <AdSenseAd slot="vertical-right" format="auto" className="w-full flex-1" />
-          <AdsterraAd format={AdFormat.DISPLAY_BANNER_160x300} className="w-full" />
         </div>
       </div>
 
@@ -877,9 +869,6 @@ export default function Game() {
       <div className="w-full h-[90px] bg-stone-200/30 flex items-center justify-center border-t border-stone-200/50">
         <AdSenseAd slot="horizontal-footer" format="auto" className="w-full h-full max-w-4xl" />
       </div>
-
-      <AdsterraAd format={AdFormat.NATIVE_BANNER} className="w-full max-w-4xl mx-auto my-4" />
-      <AdsterraAd format={AdFormat.DISPLAY_BANNER_468x60} className="w-full max-w-4xl mx-auto my-2" />
       
       <Modal isOpen={!!showHelp} onClose={() => setShowHelp(null)} title={showHelp?.title || ''}>
         <p className="text-stone-600 text-sm leading-relaxed">{showHelp?.content}</p>

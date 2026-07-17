@@ -1,0 +1,163 @@
+# =============================================================================
+# Gitleaks Configuration — rc-apple-abyss
+# =============================================================================
+# Custom secret-detection rules tailored to this project's specific secrets:
+#   - Adsterra publisher IDs
+#   - Google AdSense client IDs
+#   - Google Gemini API keys
+#   - Hardcoded JWT secrets
+#   - Embedded private keys
+#   - Database URLs with embedded credentials
+#
+# Extends Gitleaks' built-in default rules (AWS, GitHub, Stripe, etc.) with
+# 6 project-specific rules defined below.
+#
+# Reference: Issue #11 — Setup secret scanning with Gitleaks
+# QA Manual §6 (Secret Scanning)
+# =============================================================================
+
+title = "rc-apple-abyss — Custom Secret Scanning"
+
+# ---- Extend Gitleaks default rules -------------------------------------------
+# Keeps the 100+ built-in detectors (cloud provider keys, tokens, etc.) active
+# alongside the 6 project-specific rules below.
+[extend]
+useDefault = true
+
+
+# =============================================================================
+# Custom Rules (6)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Adsterra Publisher ID
+#    Flags an assignment of an Adsterra publisher ID to a concrete value.
+#    Requires a value after `=`/`:` so bare env-var names (e.g.
+#    `NEXT_PUBLIC_ADSTERRA_PUBLISHER_ID` in source) are NOT flagged.
+# -----------------------------------------------------------------------------
+[[rules]]
+id = "adsterra-publisher-id"
+description = "Adsterra publisher ID credential"
+# Match "adsterra...publisher...id" immediately followed by = / : and a value.
+regex = '''(?i)adsterra[_-]?publisher[_-]?id\s*[:=]\s*['"]?[a-z0-9]{4,}'''
+keywords = ["adsterra", "publisher"]
+tags = ["adsterra", "publisher-id", "token"]
+
+# -----------------------------------------------------------------------------
+# 2. Google AdSense Client ID
+#    Detects ca-pub-XXXXXXXXXXXXXXXX format (16-digit publisher ID).
+#    NOTE: These IDs are embedded client-side in index.html by design and are
+#    public. See allowlist below for the documented exception.
+# -----------------------------------------------------------------------------
+[[rules]]
+id = "adsense-client-id"
+description = "Google AdSense client ID (ca-pub-XXXXXXXXXXXXXXXX)"
+regex = '''ca-pub-[0-9]{16}'''
+keywords = ["ca-pub"]
+tags = ["adsense", "google", "client-id"]
+
+# -----------------------------------------------------------------------------
+# 3. Google Gemini API Key
+#    Detects AIza followed by 35 alphanumeric characters (API key format).
+# -----------------------------------------------------------------------------
+[[rules]]
+id = "gemini-api-key"
+description = "Google Gemini / AI Studio API key"
+regex = '''AIza[a-zA-Z0-9_-]{35}'''
+keywords = ["AIza"]
+tags = ["gemini", "google", "api-key"]
+
+# -----------------------------------------------------------------------------
+# 4. Hardcoded JWT Secret
+#    Flags any direct assignment of a JWT secret value (not an env reference).
+# -----------------------------------------------------------------------------
+[[rules]]
+id = "jwt-secret-hardcoded"
+description = "Hardcoded JWT secret"
+regex = '''(?i)jwt[_-]?secret\s*[:=]'''
+keywords = ["jwt", "jwt-secret", "jwt_secret"]
+tags = ["jwt", "secret", "hardcoded"]
+
+# -----------------------------------------------------------------------------
+# 5. Private Key (inline / PEM)
+#    Detects any embedded private key block (RSA, EC, OpenSSH, PGP, etc.).
+# -----------------------------------------------------------------------------
+[[rules]]
+id = "private-key-inline"
+description = "Embedded private key (PEM / OpenSSH)"
+regex = '''-----BEGIN[A-Z0-9 ]*PRIVATE KEY-----'''
+keywords = ["-----BEGIN"]
+tags = ["private-key", "pem", "key"]
+
+# -----------------------------------------------------------------------------
+# 6. Database URL with embedded credentials
+#    Detects mysql/postgres/mongodb connection strings containing user:pass@.
+# -----------------------------------------------------------------------------
+[[rules]]
+id = "database-url-with-password"
+description = "Database URL with embedded credentials"
+regex = '''(mysql|postgres|mongodb)(\+\w+)?://[^\s]*:[^\s@]*@[^\s]+'''
+keywords = ["mysql://", "postgres://", "mongodb://"]
+tags = ["database", "url", "credentials"]
+
+
+# =============================================================================
+# Allowlist — documented false-positive exclusions
+# =============================================================================
+# Each entry is annotated with the reason it is safe to exclude.
+[allowlist]
+description = "Allowlist for documented false positives and non-secret files"
+
+paths = [
+    # --- Placeholder / example environment files ---
+    # .env.example contains only placeholder values ("***", "YOUR_PUBLISHER_ID"),
+    # never real secrets. Safe by design.
+    '''(?i)\.env\.example$''',
+    '''(?i)\.env\.sample$''',
+
+    # --- Dependency lock files ---
+    # Auto-generated; may contain base64/hex hashes that match secret patterns.
+    '''pnpm-lock\.yaml''',
+    '''package-lock\.json''',
+    '''yarn\.lock''',
+    '''\.lock$''',
+
+    # --- Dependencies & build artefacts ---
+    # Never tracked by git, but excluded defensively for local scans.
+    '''(?i)(^|/)node_modules/''',
+    '''(?i)(^|/)\.next/''',
+    '''(?i)(^|/)dist/''',
+    '''(?i)(^|/)build/''',
+    '''(?i)(^|/)out/''',
+    '''tsconfig\.tsbuildinfo''',
+
+    # --- Test fixtures ---
+    # Test files may use synthetic / dummy secret-shaped strings deliberately.
+    '''(?i)(^|/)tests?/''',
+    '''(?i)__tests__/''',
+    '''(?i)\.(test|spec)\.(ts|tsx|js|jsx)$''',
+    '''(?i)\.stories\.(ts|tsx|js|jsx)$''',
+
+    # --- This config file itself ---
+    # Contains regex patterns that resemble secrets; self-exclude.
+    '''\.gitleaks\.toml''',
+]
+
+# --- Regex-based allowlist ----------------------------------------------------
+# AdSense publisher IDs (ca-pub-XXXXXXXXXXXXXXXX) are PUBLIC identifiers that
+# Google REQUIRES to be embedded in client-side HTML (<meta> + <script> tags).
+# They are not secrets — anyone viewing the page source can see them.
+# index.html legitimately contains the project's real AdSense ID.
+#
+# Adsterra HPF keys / zone identifiers are likewise PUBLIC: they are baked into
+# client-side script URLs (highperformanceformat.com/<key>/invoke.js) and loaded
+# in every visitor's browser. They are not secrets.
+regexes = [
+    # Known public AdSense publisher ID embedded in index.html (client-side by design)
+    '''ca-pub-6735039970151788''',
+
+    # Known public Adsterra HPF keys (zone identifiers in client-side script URLs)
+    '''e6f86c3f8f1bf5b544a0a68e968978ad''',
+    '''0a6274cc8a5e07d6492ff2804701356b''',
+    '''f1e2ae74db63e4987a929a82612cff9a''',
+]

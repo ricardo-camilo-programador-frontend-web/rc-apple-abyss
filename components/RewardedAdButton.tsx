@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import { Lock, Play } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Play, Lock } from 'lucide-react';
+import type React from 'react';
+import { useCallback, useState } from 'react';
 
 /**
  * RewardedAdButton — opt-in ad experience for idle/incremental games.
@@ -92,9 +93,11 @@ export default function RewardedAdButton({
       </div>
 
       {/* Icon */}
-      <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
-        isLocked ? 'bg-stone-200' : 'bg-emerald-100'
-      }`}>
+      <div
+        className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
+          isLocked ? 'bg-stone-200' : 'bg-emerald-100'
+        }`}
+      >
         {isLocked ? (
           <Lock className="w-5 h-5 text-stone-400" />
         ) : (

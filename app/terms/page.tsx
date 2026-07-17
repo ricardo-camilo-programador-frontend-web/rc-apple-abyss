@@ -1,14 +1,19 @@
+import Link from 'next/link';
+
 export default function TermsOfService() {
   return (
-    <div className="min-h-screen bg-stone-100 p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-stone-900 mb-6">Terms of Service</h1>
+    <div className="min-h-screen bg-stone-100 dark:bg-stone-900 p-8">
+      <div className="max-w-3xl mx-auto bg-white dark:bg-stone-800 rounded-2xl shadow-lg p-8">
+        <Link href="/" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm mb-4 inline-block">
+          ← Back to Game
+        </Link>
+        <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100 mb-6">Terms of Service</h1>
         
-        <div className="space-y-6 text-stone-700">
+        <div className="space-y-6 text-stone-700 dark:text-stone-300">
           <section>
-            <h2 className="text-xl font-bold mb-2">Last Updated: {new Date().toLocaleDateString()}</h2>
+            <h2 className="text-xl font-bold mb-2">Last Updated: June 2026</h2>
             <p className="leading-relaxed">
-              By using Apple of the Infinite Abyss ("the Application"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Application.
+              By using Apple of the Infinite Abyss (&ldquo;the Application&rdquo;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Application.
             </p>
           </section>
 
@@ -80,7 +85,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-bold mb-3">8. Disclaimers</h2>
             <p className="text-sm leading-relaxed mb-2">
-              THE APPLICATION IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+              THE APPLICATION IS PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED.
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm">
               <li>We make no warranties about the accuracy, reliability, or completeness of the Application</li>
@@ -133,7 +138,7 @@ export default function TermsOfService() {
               href="https://github.com/ricardo-camilo-programador-frontend-web"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 text-sm"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm"
             >
               https://github.com/ricardo-camilo-programador-frontend-web
             </a>

@@ -1,0 +1,27 @@
+language: en
+
+reviews:
+  path_instructions:
+    - path: "components/**/*.{ts,tsx}"
+      instructions: |
+        - Follow Clean Code principles
+        - DRY: avoid duplication between components
+        - No `any` types — use proper TypeScript types
+        - Strict TypeScript mode enforced
+        - Components must be accessible (keyboard navigation, aria attributes)
+    - path: "lib/**/*.{ts,tsx}"
+      instructions: |
+        - Pure functions preferred for business logic
+        - No side effects in pure calculation modules
+        - Comprehensive test coverage required
+        - No `any` types — use proper TypeScript types
+    - path: "app/**/*.{ts,tsx}"
+      instructions: |
+        - Server Components preferred where possible
+        - Only add 'use client' when truly needed
+        - Accessible markup required
+
+# Enforce feature → develop → main branch flow
+branch_rules:
+  - base: main
+    require_branch: develop

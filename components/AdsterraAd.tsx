@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { AdFormat, loadAdsterra, ENABLE_ADS, ADSTERRA_ZONE_IDS } from '@/lib/ads/adsterra';
+import { ADSTERRA_ZONE_IDS, AdFormat, ENABLE_ADS, loadAdsterra } from '@/lib/ads/adsterra';
 
 interface AdsterraAdProps {
   format: AdFormat;
@@ -11,13 +11,20 @@ interface AdsterraAdProps {
   containerId?: string; // Specific container ID from Adsterra (for native banners)
 }
 
-export default function AdsterraAd({ format, className = '', zoneId, zoneScript }: AdsterraAdProps) {
+export default function AdsterraAd({
+  format,
+  className = '',
+  zoneId,
+  zoneScript,
+}: AdsterraAdProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  
+
   // Unique ID for the container to inject the script into
-  const [containerId] = useState(() => `adsterra-${format}-${Math.random().toString(36).substr(2, 9)}`);
+  const [containerId] = useState(
+    () => `adsterra-${format}-${Math.random().toString(36).substr(2, 9)}`,
+  );
 
   useEffect(() => {
     if (!ENABLE_ADS) return;
@@ -25,7 +32,10 @@ export default function AdsterraAd({ format, className = '', zoneId, zoneScript 
     const loadScript = () => {
       try {
         const zoneConfig = ADSTERRA_ZONE_IDS[format];
-        const scriptUrl = zoneScript || zoneConfig?.scriptUrl || `//pl${process.env.NEXT_PUBLIC_ADSTERRA_PUBLISHER_ID || '5657606'}.highrevenuegate.com/invoke.js`;
+        const scriptUrl =
+          zoneScript ||
+          zoneConfig?.scriptUrl ||
+          `//pl${process.env.NEXT_PUBLIC_ADSTERRA_PUBLISHER_ID || '5657606'}.highrevenuegate.com/invoke.js`;
         const actualZoneId = zoneId || zoneConfig?.zoneId || `native-${format}`;
         const specificContainerId = containerId || zoneConfig?.containerId || actualZoneId;
 
@@ -105,7 +115,7 @@ export default function AdsterraAd({ format, className = '', zoneId, zoneScript 
             observer.disconnect();
           }
         },
-        { rootMargin: '200px' } // Load slightly before it comes into view
+        { rootMargin: '200px' }, // Load slightly before it comes into view
       );
 
       observer.observe(containerRef.current);
@@ -136,8 +146,8 @@ export default function AdsterraAd({ format, className = '', zoneId, zoneScript 
 
   // Formats that are hidden and don't render a visible container
   if (
-    format === AdFormat.POPUNDER || 
-    format === AdFormat.SOCIAL_BAR || 
+    format === AdFormat.POPUNDER ||
+    format === AdFormat.SOCIAL_BAR ||
     format === AdFormat.INTERSTITIAL ||
     format === AdFormat.SMARTLINK
   ) {
@@ -148,7 +158,6 @@ export default function AdsterraAd({ format, className = '', zoneId, zoneScript 
   if (hasError) {
     // Hide empty container if script fails, or show fallback if dev wants
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Adsterra fallback rendered for format: ${format}`);
     }
     return null; // Hide empty container
   }
@@ -158,8 +167,8 @@ export default function AdsterraAd({ format, className = '', zoneId, zoneScript 
       <span className="absolute top-0 left-0 w-full text-center text-[10px] uppercase tracking-widest text-stone-400 opacity-50 pointer-events-none">
         Advertisement
       </span>
-      <div 
-        id={containerId} 
+      <div
+        id={containerId}
         className="adsterra-container flex items-center justify-center min-h-[90px] bg-stone-50 rounded-lg overflow-hidden mt-4"
         aria-hidden="true"
       >

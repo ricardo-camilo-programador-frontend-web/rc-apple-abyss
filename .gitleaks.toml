@@ -1,0 +1,63 @@
+# ============================================================================
+# Gitleaks Configuration — Apple of the Infinite Abyss
+# 6 custom rules for project-specific secrets
+# ============================================================================
+
+title = "Apple of the Infinite Abyss — Gitleaks Rules"
+version = "0.1.0"
+
+# --- Custom Rules ---
+
+[[rules]]
+id = "adsterra-publisher-id"
+description = "Adsterra publisher ID"
+regex = '''adsterra[_\-]?publisher[_\-]?id\s*[:=]\s*['\"]?\d{6,}['\"]?'''
+tags = ["adsterra", "key"]
+
+[[rules]]
+id = "adsense-client-id"
+description = "Google AdSense client ID"
+regex = '''ca-pub-[0-9]{16}'''
+tags = ["adsense", "key"]
+
+[[rules]]
+id = "gemini-api-key"
+description = "Google Gemini API key"
+regex = '''AIza[a-zA-Z0-9_\-]{35}'''
+tags = ["google", "gemini", "key"]
+
+[[rules]]
+id = "jwt-secret-hardcoded"
+description = "Hardcoded JWT secret"
+regex = '''jwt[_\-]?secret\s*[:=]\s*['"][^'"]{8,}['"]'''
+tags = ["jwt", "secret"]
+
+[[rules]]
+id = "private-key-inline"
+description = "Embedded private key"
+regex = '''-----BEGIN[ ]?(RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----'''
+tags = ["key", "private"]
+
+[[rules]]
+id = "database-url-with-password"
+description = "Database URL with embedded credentials"
+regex = '''(mysql|postgres|mongodb|redis)://[^:]+:[^@]+@'''
+tags = ["database", "credentials"]
+
+# --- Allowlist ---
+# Known non-secrets: AdSense client ID in layout metadata is public info.
+# Counter.dev/Clarity analytics script IDs are public instrumentation.
+
+[allowlist]
+paths = [
+  '''\.env\.example$''',
+  '''pnpm-lock\.yaml$''',
+  '''node_modules/''',
+  '''tests/''',
+  '''\.gitleaks\.toml$''',
+  '''app/layout\.tsx$''',
+]
+regexes = [
+  '''counter\.dev''',
+  '''clarity\.ms''',
+]

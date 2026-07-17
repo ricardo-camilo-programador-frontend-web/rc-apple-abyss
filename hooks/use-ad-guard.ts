@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Ad Guard Hook — controls ad visibility with industry-standard practices.
@@ -73,7 +73,7 @@ export function useAdGuard(): AdGuardState {
   const adsVisible = pastGracePeriod && !adsRemoved;
 
   const toggleAdsRemoved = useCallback(() => {
-    setAdsRemoved(prev => !prev);
+    setAdsRemoved((prev) => !prev);
   }, []);
 
   return {
@@ -95,7 +95,7 @@ export function useRewardedCooldown() {
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      setCooldowns(prev => {
+      setCooldowns((prev) => {
         let changed = false;
         const next = { ...prev };
         for (const key of Object.keys(next)) {
@@ -113,12 +113,15 @@ export function useRewardedCooldown() {
   }, []);
 
   const startCooldown = useCallback((key: string, seconds: number) => {
-    setCooldowns(prev => ({ ...prev, [key]: seconds }));
+    setCooldowns((prev) => ({ ...prev, [key]: seconds }));
   }, []);
 
-  const getCooldown = useCallback((key: string): number => {
-    return cooldowns[key] || 0;
-  }, [cooldowns]);
+  const getCooldown = useCallback(
+    (key: string): number => {
+      return cooldowns[key] || 0;
+    },
+    [cooldowns],
+  );
 
   return { startCooldown, getCooldown };
 }

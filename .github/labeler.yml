@@ -1,0 +1,32 @@
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'app/**/*'
+          - 'components/**/*'
+          - 'hooks/**/*'
+          - 'lib/**/*'
+
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**/*'
+          - '*.config.*'
+          - 'tsconfig.*'
+          - 'biome.json'
+          - 'eslint.config.*'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: '**/*.md'
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.test.*'
+          - '**/*.spec.*'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/package.json'
+          - '**/pnpm-lock.yaml'

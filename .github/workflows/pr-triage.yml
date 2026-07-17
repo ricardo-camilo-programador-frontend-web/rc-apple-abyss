@@ -1,0 +1,84 @@
+name: PR Triage
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+jobs:
+  label:
+    name: Auto-Label
+    runs-on: self-hosted
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          configuration-path: .github/labeler.yml
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+  triage:
+    name: Risk and Size Assessment
+    runs-on: self-hosted
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assess PR risk and size
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # Get changed lines count
+          CHANGES=$(gh pr diff "$PR_NUMBER" --name-only 2>/dev/null | wc -l)
+          LINES_ADDED=$(gh pr diff "$PR_NUMBER" 2>/dev/null | grep -c '^+' || echo 0)
+          LINES_DELETED=$(gh pr diff "$PR_NUMBER" 2>/dev/null | grep -c '^-' || echo 0)
+          TOTAL_LINES=$((LINES_ADDED + LINES_DELETED))
+
+          # Determine size label
+          if [ "$TOTAL_LINES" -le 20 ]; then
+            SIZE="size/XS"
+          elif [ "$TOTAL_LINES" -le 50 ]; then
+            SIZE="size/S"
+          elif [ "$TOTAL_LINES" -le 200 ]; then
+            SIZE="size/M"
+          elif [ "$TOTAL_LINES" -le 500 ]; then
+            SIZE="size/L"
+          else
+            SIZE="size/XL"
+          fi
+
+          # Determine risk level
+          FILES_TOUCHED=$(gh pr diff "$PR_NUMBER" --name-only 2>/dev/null)
+          TOUCHES_CONFIG=$(echo "$FILES_TOUCHED" | grep -c '\.config\.\|tsconfig\|biome\.json\|eslint\.' || echo 0)
+          TOUCHES_CI=$(echo "$FILES_TOUCHED" | grep -c '\.github/' || echo 0)
+          TOUCHES_TYPES=$(echo "$FILES_TOUCHED" | grep -c '\.ts$\|\.tsx$' || echo 0)
+
+          if [ "$TOTAL_LINES" -gt 500 ] || [ "$TOUCHES_CONFIG" -gt 0 ]; then
+            RISK="risk/high"
+          elif [ "$TOTAL_LINES" -gt 200 ] || [ "$TOUCHES_CI" -gt 0 ]; then
+            RISK="risk/medium"
+          else
+            RISK="risk/low"
+          fi
+
+          # Apply labels
+          gh pr edit "$PR_NUMBER" --add-label "$SIZE" --add-label "$RISK" 2>/dev/null || true
+
+          # Post summary comment
+          gh pr comment "$PR_NUMBER" --body "
+          ## 🔍 PR Assessment
+
+          | Metric | Value |
+          |--------|-------|
+          | Files changed | ${CHANGES} |
+          | Lines added | ${LINES_ADDED} |
+          | Lines removed | ${LINES_DELETED} |
+          | Size | ${SIZE} |
+          | Risk | ${RISK} |
+
+          _Labels and assessment applied automatically._
+          " 2>/dev/null || true

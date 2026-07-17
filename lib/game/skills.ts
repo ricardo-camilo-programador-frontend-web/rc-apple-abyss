@@ -1,4 +1,5 @@
-import { GameState, SkillState } from './types';
+import { GAME_CONFIG } from './constants';
+import { type GameState, SkillState } from './types';
 
 export class SkillSystem {
   private state: GameState;
@@ -17,9 +18,9 @@ export class SkillSystem {
   }
 
   public update(deltaTime: number) {
-    Object.keys(this.state.skills).forEach(id => {
+    Object.keys(this.state.skills).forEach((id) => {
       const skill = this.state.skills[id];
-      
+
       if (skill.isActive) {
         skill.remainingDuration -= deltaTime;
         if (skill.remainingDuration <= 0) {
@@ -42,10 +43,10 @@ export class SkillSystem {
   }
 
   public getGoldMultiplierClick(): number {
-    return this.isSkillActive('golden_harvest') ? 5 : 1;
+    return this.isSkillActive('golden_harvest') ? GAME_CONFIG.SKILL_CLICK_GOLD_MULTIPLIER : 1;
   }
 
   public getGoldMultiplierIdle(): number {
-    return this.isSkillActive('golden_harvest') ? 2.5 : 1;
+    return this.isSkillActive('golden_harvest') ? GAME_CONFIG.SKILL_IDLE_GOLD_MULTIPLIER : 1;
   }
 }

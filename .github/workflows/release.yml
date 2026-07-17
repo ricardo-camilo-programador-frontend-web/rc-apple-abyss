@@ -1,34 +1,91 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semver version override (ex: v1.0.0). Omit to use package.json version.'
+        required: false
+        type: string
+
+permissions:
+  contents: write
 
 jobs:
   release:
+    name: Create Release
     runs-on: self-hosted
-
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: 24
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            INPUT_VERSION="${{ inputs.version }}"
+          else
+            INPUT_VERSION="v$(node -p "require('./package.json').version")"
+          fi
+
+          # Validate semver format: v<major>.<minor>.<patch>
+          if ! echo "$INPUT_VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid version format: '$INPUT_VERSION'. Expected vX.Y.Z (semver)."
+            exit 1
+          fi
+
+          echo "version=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "source=${{ inputs.version && 'manual' || 'package.json' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Check for duplicate tag
+        id: duplicate-check
+        run: |
+          if git tag -l | grep -q "^${{ steps.version.outputs.version }}$"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Tag ${{ steps.version.outputs.version }} already exists — skipping."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build
-        run: npm run build
+        if: steps.duplicate-check.outputs.exists == 'false'
+        run: pnpm run build
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/**
-          generate_release_notes: true
+      - name: Create tag and release
+        if: steps.duplicate-check.outputs.exists == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # GitHub creates the tag atomically with the release.
+          gh release create "$VERSION" \
+            --target "$GITHUB_SHA" \
+            --generate-notes \
+            --title "Release $VERSION"
+
+      - name: Summary
+        run: |
+          echo "## Release Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Version | \`${{ steps.version.outputs.version }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Source | ${{ steps.version.outputs.source }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Trigger | ${{ github.event_name == 'push' && 'push to main' || 'manual dispatch' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Skipped | ${{ steps.duplicate-check.outputs.exists == 'true' && 'Yes (duplicate tag)' || 'No' }} |" >> "$GITHUB_STEP_SUMMARY"

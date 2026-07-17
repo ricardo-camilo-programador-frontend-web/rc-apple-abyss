@@ -1,0 +1,77 @@
+# CodeRabbit AI Review Configuration
+# Reference: Issue #14 — PR auto-triage & CodeRabbit AI review
+
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+reviews:
+  # Review in English regardless of repository language.
+  language: en-US
+
+  # Auto-review every PR across all branches.
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+
+  # Request changes workflow — reviewers can block merges.
+  request_changes_workflow: true
+
+  # High-signal path-level instructions.
+  path_instructions:
+    - path: "app/**"
+      instructions: >-
+        Review Next.js App Router files. Enforce:
+        React Server Components by default; "use client" only when needed;
+        Clean Code and DRY; no TypeScript `any` (use `unknown` + narrowing);
+        strict null checks; colocated styles with Tailwind CSS v4 utilities.
+    - path: "components/**"
+      instructions: >-
+        Review React components for Clean Code, DRY, and reusability.
+        Forbid `any` and `@ts-ignore`; enforce strict typed props;
+        prefer composition over prop drilling; ensure accessibility (a11y).
+    - path: "hooks/**"
+      instructions: >-
+        Review custom hooks for: typed return values (no `any`);
+        proper dependency arrays; memoization correctness; SSR safety.
+    - path: "lib/**"
+      instructions: >-
+        Review utilities and services for: pure functions where possible;
+        DRY; explicit error handling; strict TypeScript; no `any`.
+    - path: "**/*.test.*"
+      instructions: >-
+        Ensure tests cover meaningful behavior, not implementation details.
+        Use descriptive test names; avoid snapshots unless necessary.
+    - path: "**/*.spec.*"
+      instructions: >-
+        Ensure spec files assert behavior and edge cases with strict typing.
+
+  # Branch flow enforcement: feature/fix → develop → main.
+  # PRs targeting `main` must come from `develop`.
+  branch_flow:
+    require_base_branch:
+      default: develop
+      rules:
+        - base_branch: main
+          require_head_branch: develop
+
+  # Skip review noise for trivial files.
+  path_filters:
+    - "!**/*.lock"
+    - "!**/*.lockb"
+
+  # Keep reviews focused.
+  high_level_summary: true
+  review_status: true
+  collapse_walkthrough: true
+
+  # Tools / checks.
+  auto_test:
+    enabled: true
+  lint:
+    enabled: true
+
+# High-level behavior.
+tone_instructions: >-
+  Be concise and actionable. Prefer specific file:line references.
+  Focus on correctness, performance, accessibility, and maintainability.
+  Do not block on purely stylistic preferences already enforced by ESLint/Prettier.

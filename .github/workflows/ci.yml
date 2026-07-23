@@ -10,6 +10,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   # ─── Secret Scan (Gitleaks) — parallel ───
   secret-scan:
@@ -221,29 +225,35 @@ jobs:
     needs: [validate]
     if: github.event_name == 'pull_request'
     continue-on-error: true
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
     steps:
       - uses: actions/checkout@v4
       - name: Deploy to Netlify
-        if: env.NETLIFY_AUTH_TOKEN != ''
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        id: deploy
         run: |
           if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
-            echo "::warning::Netlify secrets not configured — skipping preview deploy."
+            echo "SKIP=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Netlify secrets not configured — skipping preview deploy."
             exit 0
           fi
           npx netlify-cli deploy \
             --build \
             --dir=.next \
-            --alias="pr-${{ github.event.pull_request.number }}"
+            --alias="pr-${{ github.event.pull_request.number }}" \
+            > deploy-output.txt 2>&1
+          # Extract the deploy URL from output
+          DEPLOY_URL=$(grep -oP 'Website URL:\s*\Khttps://[^\s]+' deploy-output.txt || \
+                        grep -oP 'https://[a-z0-9-]+\.netlify\.app[^\s]*' deploy-output.txt | head -1)
+          echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+          echo "✅ Preview deployed to: $DEPLOY_URL"
       - name: Comment preview URL on PR
-        if: env.NETLIFY_AUTH_TOKEN != ''
+        if: steps.deploy.outputs.deploy_url != ''
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             ## 🚀 Preview Deploy
-            Preview is available for this PR.
-            Requires `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` secrets to be configured.
+            **Preview URL:** ${{ steps.deploy.outputs.deploy_url }}
           reactions: rocket

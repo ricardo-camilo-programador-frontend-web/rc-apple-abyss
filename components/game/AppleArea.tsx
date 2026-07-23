@@ -34,7 +34,7 @@ export default function AppleArea({
   const activeSpriteIndex = getAppleSpriteIndex(state.appleHP, state.maxAppleHP);
 
   return (
-    <section className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative min-h-[500px]">
+    <section className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-y-auto min-h-0">
       <div className="relative w-full max-w-lg">
         <div className="absolute inset-0 bg-gradient-to-br from-red-100/30 via-orange-50/20 to-yellow-50/30 rounded-full blur-3xl scale-150" />
 
@@ -105,19 +105,19 @@ export default function AppleArea({
         </div>
 
         <div className="mt-8 space-y-4">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-stone-100">
+          <div className="bg-white/80 dark:bg-stone-800/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-stone-100 dark:border-stone-700">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Heart className="w-4 h-4 text-red-500" />
-                <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
+                <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
                   Apple HP
                 </span>
               </div>
-              <span className="font-mono text-sm font-bold text-stone-700">
+              <span className="font-mono text-sm font-bold text-stone-700 dark:text-stone-100">
                 {Math.ceil(state.appleHP).toLocaleString()} / {state.maxAppleHP.toLocaleString()}
               </span>
             </div>
-            <div className="h-3 bg-stone-100 rounded-full overflow-hidden">
+            <div className="h-3 bg-stone-100 dark:bg-stone-700 rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-to-r from-red-500 via-red-400 to-orange-400 rounded-full"
                 initial={false}
@@ -149,8 +149,8 @@ export default function AppleArea({
               state.skills.golden_harvest.isActive
                 ? 'bg-gradient-to-r from-yellow-400 to-amber-400 text-white shadow-lg shadow-yellow-200/50'
                 : state.skills.golden_harvest.cooldownRemaining > 0
-                  ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 text-yellow-700 hover:border-yellow-400 shadow-lg shadow-yellow-100/50'
+                  ? 'bg-stone-100 dark:bg-stone-800 text-stone-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-yellow-50 dark:from-yellow-900/40 to-amber-50 dark:to-amber-900/40 border-2 border-yellow-300 dark:border-yellow-600 text-yellow-700 dark:text-yellow-200 hover:border-yellow-400 shadow-lg shadow-yellow-100/50'
             }`}
           >
             <Zap
@@ -170,7 +170,7 @@ export default function AppleArea({
             {state.skills.golden_harvest.cooldownRemaining > 0 &&
               !state.skills.golden_harvest.isActive && (
                 <motion.div
-                  className="absolute inset-0 bg-stone-200/50"
+                  className="absolute inset-0 bg-stone-200/50 dark:bg-stone-600/50"
                   initial={false}
                   animate={{
                     height: `${(state.skills.golden_harvest.cooldownRemaining / 120) * 100}%`,
@@ -183,12 +183,12 @@ export default function AppleArea({
           {onShowRewardedAds && (
             <button
               onClick={onShowRewardedAds}
-              className="w-full relative flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-2 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:border-emerald-300 shadow-md shadow-emerald-100/50 transition-all"
+              className="w-full relative flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/40 dark:to-green-900/40 border-2 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:border-emerald-300 dark:hover:border-emerald-600 shadow-md shadow-emerald-100/50 transition-all"
             >
               <Gift className="w-4 h-4" />
               <span className="text-sm">Free Rewards</span>
               {goldBoostRemaining > 0 && (
-                <span className="ml-auto px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 rounded-full text-[10px] font-mono font-bold text-emerald-800 dark:text-emerald-300">
+                <span className="ml-auto px-2 py-0.5 bg-emerald-200 dark:bg-emerald-800 rounded-full text-[10px] font-mono font-bold text-emerald-800 dark:text-emerald-200">
                   2x active: {goldBoostRemaining}s
                 </span>
               )}

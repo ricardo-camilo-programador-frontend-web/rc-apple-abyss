@@ -2,6 +2,7 @@
 
 import { Gift, Heart, Zap } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import Image from 'next/image';
 import type React from 'react';
 import type { GameEngine } from '@/lib/game/engine';
 import { APPLE_SPRITES, getAppleSpriteIndex } from '@/lib/game/sprites';
@@ -66,12 +67,15 @@ export default function AppleArea({
                   }`}
                 >
                   {APPLE_SPRITES.map((src, index) => (
-                    <img
+                    <Image
                       key={src}
                       src={src}
                       alt="Apple — click to deal damage"
+                      fill
+                      sizes="(min-width: 1024px) 384px, (min-width: 768px) 320px, 256px"
                       className="apple-sprite"
-                      loading="eager"
+                      priority={index === 0}
+                      loading={index === 0 ? 'eager' : 'lazy'}
                       decoding="async"
                       style={{ opacity: index === activeSpriteIndex ? 1 : 0 }}
                     />

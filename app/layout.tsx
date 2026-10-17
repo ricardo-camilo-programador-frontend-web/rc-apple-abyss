@@ -14,10 +14,30 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://click-on-the-malus-domestica-ide.netlify.app'),
   title: 'Apple of the Infinite Abyss',
   description:
     'A minimalist incremental idle game where you eat apples with help of worms. Features goals, daily rewards, onboarding, and skill activation.',
   manifest: '/manifest.json',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    url: '/',
+    siteName: 'Apple of the Infinite Abyss',
+    title: 'Apple of the Infinite Abyss',
+    description:
+      'A minimalist incremental idle game where you eat apples with help of worms. Features goals, daily rewards, onboarding, and skill activation.',
+    images: [{ url: '/icon-512.png', width: 512, height: 512, alt: 'Apple of the Infinite Abyss' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Apple of the Infinite Abyss',
+    description:
+      'A minimalist incremental idle game where you eat apples with help of worms. Features goals, daily rewards, onboarding, and skill activation.',
+    images: ['/icon-512.png'],
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

@@ -7,7 +7,7 @@ on:
 jobs:
   label:
     name: Auto-Label
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
@@ -20,7 +20,7 @@ jobs:
 
   triage:
     name: Risk and Size Assessment
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read

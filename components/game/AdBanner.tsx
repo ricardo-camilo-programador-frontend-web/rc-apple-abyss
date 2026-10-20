@@ -72,6 +72,7 @@ export default function AdBanner() {
               Advertisement
             </span>
             <button
+              type="button"
               onClick={handleDismiss}
               aria-label="Dismiss ad banner"
               className="p-0.5 rounded text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300 transition-colors"

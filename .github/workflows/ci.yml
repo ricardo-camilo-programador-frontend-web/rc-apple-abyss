@@ -12,7 +12,6 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   # ─── Secret Scan (Gitleaks) — parallel ───
@@ -98,6 +97,9 @@ jobs:
     timeout-minutes: 5
     needs: [secret-scan, security]
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -148,6 +150,9 @@ jobs:
   # ─── SonarQube Analysis — non-blocking ───
   sonar:
     name: SonarQube Analysis
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [validate]
@@ -225,6 +230,9 @@ jobs:
     needs: [validate]
     if: github.event_name == 'pull_request'
     continue-on-error: true
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -254,7 +262,11 @@ jobs:
           DEPLOY_URL=$(grep -oP 'Website URL:\s*\Khttps://[^\s]+' deploy-output.txt || \
                         grep -oP 'https://[a-z0-9-]+\.netlify\.app[^\s]*' deploy-output.txt | head -1)
           echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
-          echo "✅ Preview deployed to: $DEPLOY_URL"
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "::warning::Preview deploy concluído, mas nenhuma URL foi detectada no output."
+          else
+            echo "✅ Preview deployed to: $DEPLOY_URL"
+          fi
       - name: Comment preview URL on PR
         if: steps.deploy.outputs.deploy_url != ''
         uses: peter-evans/create-or-update-comment@v4

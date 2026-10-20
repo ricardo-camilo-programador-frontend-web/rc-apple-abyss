@@ -18,7 +18,7 @@ jobs:
   # ─── Secret Scan (Gitleaks) — parallel ───
   secret-scan:
     name: Secret Scan
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
   # ─── Security Audit — parallel ───
   security:
     name: Security Audit
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     continue-on-error: true
     steps:
@@ -64,7 +64,7 @@ jobs:
   # ─── Validate (lint + type-check + build + test) ───
   validate:
     name: Validate
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [secret-scan, security]
     steps:
@@ -94,7 +94,7 @@ jobs:
   # ─── Commit Lint (PR only) ───
   commit-lint:
     name: Commit Lint
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [secret-scan, security]
     if: github.event_name == 'pull_request'
@@ -130,7 +130,7 @@ jobs:
   # ─── Validate PR Base (PR only) ───
   validate-pr-base:
     name: Validate PR Base
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     if: github.event_name == 'pull_request'
     steps:
@@ -148,7 +148,7 @@ jobs:
   # ─── SonarQube Analysis — non-blocking ───
   sonar:
     name: SonarQube Analysis
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [validate]
     if: always() && needs.validate.result == 'success'
@@ -196,7 +196,7 @@ jobs:
   # ─── Lighthouse Audit — non-blocking ───
   lighthouse:
     name: Lighthouse Audit
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [validate]
     if: always() && needs.validate.result == 'success'
@@ -220,7 +220,7 @@ jobs:
   # ─── Preview Deploy (PR only, requires secrets) ───
   preview:
     name: Preview Deploy
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [validate]
     if: github.event_name == 'pull_request'
@@ -230,6 +230,13 @@ jobs:
       NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Deploy to Netlify
         id: deploy
         run: |

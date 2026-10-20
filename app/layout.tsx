@@ -1,10 +1,11 @@
-import type {Metadata, Viewport} from 'next';
-import {Inter} from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import Script from 'next/script';
-import {ToastProvider} from '@/components/Toast';
-import {ErrorBoundary} from '@/components/ErrorBoundary';
-import {ThemeProvider} from '@/components/ThemeProvider';
+import { Analytics } from '@/components/Analytics';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import { ToastProvider } from '@/components/Toast';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -13,18 +14,37 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://click-on-the-malus-domestica-ide.netlify.app'),
   title: 'Apple of the Infinite Abyss',
-  description: 'A minimalist incremental idle game where you eat apples with help of worms. Features goals, daily rewards, onboarding, and skill activation.',
+  description:
+    'A minimalist incremental idle game where you eat apples with help of worms. Features goals, daily rewards, onboarding, and skill activation.',
   manifest: '/manifest.json',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    url: '/',
+    siteName: 'Apple of the Infinite Abyss',
+    title: 'Apple of the Infinite Abyss',
+    description:
+      'A minimalist incremental idle game where you eat apples with help of worms. Features goals, daily rewards, onboarding, and skill activation.',
+    images: [{ url: '/icon-512.png', width: 512, height: 512, alt: 'Apple of the Infinite Abyss' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Apple of the Infinite Abyss',
+    description:
+      'A minimalist incremental idle game where you eat apples with help of worms. Features goals, daily rewards, onboarding, and skill activation.',
+    images: ['/icon-512.png'],
+  },
   icons: {
     icon: [
-      {url: '/favicon.ico', sizes: 'any'},
-      {url: '/icon-192.png', sizes: '192x192', type: 'image/png'},
-      {url: '/icon-512.png', sizes: '512x512', type: 'image/png'},
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
-    apple: [
-      {url: '/apple-icon.png', sizes: '180x180', type: 'image/png'},
-    ],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   other: {
     'google-adsense-account': 'ca-pub-6735039970151788',
@@ -33,8 +53,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    {media: '(prefers-color-scheme: light)', color: '#fafaf9'},
-    {media: '(prefers-color-scheme: dark)', color: '#1c1917'},
+    { media: '(prefers-color-scheme: light)', color: '#fafaf9' },
+    { media: '(prefers-color-scheme: dark)', color: '#1c1917' },
   ],
   width: 'device-width',
   initialScale: 1,
@@ -43,12 +63,14 @@ export const viewport: Viewport = {
   colorScheme: 'light dark',
 };
 
-export default function RootLayout({children}: {children: React.ReactNode}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <head>
         {/* Anti-FOUC theme script — runs before paint to set dark class */}
-        <script dangerouslySetInnerHTML={{__html: `
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
           (function() {
             try {
               var theme = localStorage.getItem('theme') || 'system';
@@ -58,7 +80,9 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
               }
             } catch(e) {}
           })();
-        `}} />
+        `,
+          }}
+        />
         {/* AdSense */}
         <Script
           id="adsense"
@@ -67,40 +91,29 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
-        {/* Analytics: counter.dev */}
-        <Script
-          src="https://cdn.counter.dev/script.js"
-          data-id="f30df6f3-776d-4154-959d-0210ac8a8325"
-          data-utcoffset="-3"
-          strategy="afterInteractive"
-        />
-        <Script id="ms-clarity" strategy="afterInteractive">
-          {`
-            (function(c,l,a,r,i,t,y){
-                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-            })(window, document, "clarity", "script", "vtlognmjgs");
-          `}
-        </Script>
+        {/* Analytics (GA4, optional GTM, Clarity, counter.dev) — see lib/analytics/config.ts */}
+        <Analytics />
       </head>
-      <body suppressHydrationWarning className={`${inter.variable} bg-stone-100 dark:bg-stone-900 text-stone-900 dark:text-stone-100 font-sans`}>
+      <body
+        suppressHydrationWarning
+        className={`${inter.variable} bg-stone-100 dark:bg-stone-900 text-stone-900 dark:text-stone-100 font-sans`}
+      >
         <ThemeProvider>
           <ToastProvider>
-            <ErrorBoundary>
-              {children}
-            </ErrorBoundary>
+            <ErrorBoundary>{children}</ErrorBoundary>
           </ToastProvider>
         </ThemeProvider>
-        <script dangerouslySetInnerHTML={{
-          __html: `
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
             if ('serviceWorker' in navigator) {
               window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/sw.js');
               });
             }
-          `
-        }} />
+          `,
+          }}
+        />
       </body>
     </html>
   );

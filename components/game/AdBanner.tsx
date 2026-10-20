@@ -10,14 +10,18 @@ const DISMISS_KEY = 'apple_abyss_ad_banner_dismissed_until';
 const DISMISS_DURATION_MS = 60 * 60 * 1000; // 1 hour
 const DISMISS_EVENT = 'apple-abyss:ad-banner-dismissed';
 
+// Fallback em memória quando o localStorage está bloqueado (modo privacidade)
+const dismissedFallbackUntil = { value: 0 };
+
 function isDismissed(): boolean {
   if (typeof window === 'undefined') return false;
+  if (Date.now() < dismissedFallbackUntil.value) return true;
   try {
     const until = localStorage.getItem(DISMISS_KEY);
     if (!until) return false;
     return Date.now() < parseInt(until, 10);
   } catch {
-    return false; // localStorage bloqueado (modo privacidade)
+    return false;
   }
 }
 
@@ -42,7 +46,7 @@ export default function AdBanner() {
     try {
       localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_DURATION_MS));
     } catch {
-      // localStorage bloqueado — apenas esconde nesta sessão
+      dismissedFallbackUntil.value = Date.now() + DISMISS_DURATION_MS;
     }
     window.dispatchEvent(new Event(DISMISS_EVENT));
   }, []);

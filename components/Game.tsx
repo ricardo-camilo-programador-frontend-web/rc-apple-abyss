@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 // Extracted ad, modal and effects components
+import AdBanner from '@/components/game/AdBanner';
 import AdSidebars from '@/components/game/AdLayout';
 import AppleArea from '@/components/game/AppleArea';
 import AscensionSidebar from '@/components/game/AscensionSidebar';
@@ -72,7 +73,7 @@ export default function Game() {
     );
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 overflow-hidden select-none">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 overflow-hidden select-none">
       <GameHeader
         state={orch.state}
         t={orch.t}
@@ -84,9 +85,9 @@ export default function Game() {
         canClaimDailyReward={orch.canClaimDailyReward}
       />
 
-      <div className="flex-1 flex flex-row overflow-hidden">
+      <div className="flex-1 flex flex-row overflow-hidden min-h-0">
         <AdSidebars />
-        <main className="flex-1 flex flex-col lg:flex-row relative overflow-y-auto">
+        <main className="flex-1 flex flex-col lg:flex-row relative overflow-hidden min-h-0">
           <UpgradeSidebar
             state={orch.state}
             engine={engine}
@@ -171,6 +172,8 @@ export default function Game() {
         onBuyClickUpgrade={orch.handleBuyClickUpgrade}
         onAscend={orch.handleAscend}
       />
+
+      <AdBanner />
     </div>
   );
 }

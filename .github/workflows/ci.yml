@@ -225,9 +225,6 @@ jobs:
     needs: [validate]
     if: github.event_name == 'pull_request'
     continue-on-error: true
-    env:
-      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -239,6 +236,9 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Deploy to Netlify
         id: deploy
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
           if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
             echo "SKIP=true" >> $GITHUB_OUTPUT

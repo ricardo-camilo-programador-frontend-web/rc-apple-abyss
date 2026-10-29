@@ -114,6 +114,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           `,
           }}
         />
+        <Script src="/rc-study-modal.js" strategy="afterInteractive" />
       </body>
     </html>
   );

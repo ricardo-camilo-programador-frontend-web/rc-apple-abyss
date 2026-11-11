@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { Coins } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import React from 'react';
 
 interface OfflineModalProps {
   result: { apples: number; gold: number } | null;
@@ -11,36 +11,44 @@ interface OfflineModalProps {
 }
 
 export default function OfflineModal({ result, t, onDismiss }: OfflineModalProps) {
+  const reduceMotion =
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   return (
     <AnimatePresence>
       {result && (
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          exit={reduceMotion ? undefined : { opacity: 0 }}
+          className="abyss-backdrop"
+          role="presentation"
         >
           <motion.div
-            initial={{ scale: 0.9, y: 20 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="offline-title"
+            initial={reduceMotion ? false : { scale: 0.96, y: 12 }}
             animate={{ scale: 1, y: 0 }}
-            className="bg-white dark:bg-stone-800 rounded-3xl w-full max-w-sm shadow-2xl p-8 text-center space-y-6"
+            className="abyss-modal"
           >
-            <div className="w-20 h-20 bg-gradient-to-br from-yellow-100 to-amber-100 dark:from-yellow-900/40 dark:to-amber-900/40 rounded-full flex items-center justify-center mx-auto">
-              <Coins className="w-10 h-10 text-yellow-600 dark:text-yellow-400" />
+            <div className="abyss-modal-body text-center space-y-5">
+              <div className="abyss-card-icon w-16 h-16 mx-auto rounded-full">
+                <Coins className="w-8 h-8" aria-hidden="true" />
+              </div>
+              <h2 id="offline-title" className="text-2xl font-bold">
+                {t('offline_welcome')}
+              </h2>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+                {t('offline_earnings', {
+                  n: result.apples,
+                  g: Math.floor(result.gold).toLocaleString(),
+                })}
+              </p>
+              <button type="button" onClick={onDismiss} className="abyss-btn abyss-btn-apple">
+                {t('awesome') || 'Awesome!'}
+              </button>
             </div>
-            <h2 className="text-2xl font-bold dark:text-stone-100">{t('offline_welcome')}</h2>
-            <p className="text-stone-600 dark:text-stone-400 text-sm leading-relaxed">
-              {t('offline_earnings', {
-                n: result.apples,
-                g: Math.floor(result.gold).toLocaleString(),
-              })}
-            </p>
-            <button
-              onClick={onDismiss}
-              className="w-full py-4 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-2xl font-bold hover:from-red-600 hover:to-rose-600 transition-all shadow-lg shadow-red-200 dark:shadow-red-900/40 active:scale-95"
-            >
-              {t('awesome') || 'Awesome!'}
-            </button>
           </motion.div>
         </motion.div>
       )}

@@ -75,59 +75,49 @@ export default function RewardedAdButton({
 
   return (
     <motion.button
+      type="button"
       onClick={handleWatchAd}
       disabled={isLocked || isWatching}
       whileHover={!isLocked && !isWatching ? { scale: 1.02 } : {}}
       whileTap={!isLocked && !isWatching ? { scale: 0.98 } : {}}
-      className={`w-full relative flex items-center gap-3 p-4 rounded-2xl border-2 transition-all overflow-hidden ${
-        isLocked
-          ? 'border-stone-100 bg-stone-50 cursor-not-allowed opacity-60'
-          : 'border-emerald-200 bg-gradient-to-r from-emerald-50 to-green-50 hover:border-emerald-300 shadow-md shadow-emerald-100/50'
-      }`}
+      className={`abyss-card ${isLocked ? '' : 'is-gold'}`}
       title={disabled ? disabledReason : undefined}
     >
       {/* Ad badge */}
-      <div className="absolute top-1.5 right-2 flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-100 rounded-full">
-        <Play className="w-2.5 h-2.5 text-emerald-600" />
-        <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-700">Ad</span>
+      <div className="absolute top-2 right-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full abyss-level">
+        <Play className="w-2.5 h-2.5" aria-hidden="true" />
+        <span className="text-[10px] font-bold uppercase tracking-wider">Ad</span>
       </div>
 
       {/* Icon */}
-      <div
-        className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
-          isLocked ? 'bg-stone-200' : 'bg-emerald-100'
-        }`}
-      >
+      <div className="abyss-card-icon">
         {isLocked ? (
-          <Lock className="w-5 h-5 text-stone-400" />
+          <Lock className="w-5 h-5" aria-hidden="true" />
         ) : (
-          <Icon className={`w-5 h-5 ${isLocked ? 'text-stone-400' : 'text-emerald-600'}`} />
+          <Icon className="w-5 h-5" aria-hidden="true" />
         )}
       </div>
 
       {/* Content */}
       <div className="flex-1 text-left min-w-0">
-        <div className={`font-bold text-sm ${isLocked ? 'text-stone-400' : 'text-emerald-900'}`}>
-          {label}
-        </div>
-        <div className={`text-xs truncate ${isLocked ? 'text-stone-300' : 'text-emerald-700'}`}>
+        <div className="font-bold text-sm">{label}</div>
+        <div className="text-xs truncate" style={{ color: 'var(--muted)' }}>
           {isWatching ? 'Watching ad...' : description}
         </div>
       </div>
 
       {/* Cooldown / watching indicator */}
       {cooldownRemaining > 0 && !isWatching && (
-        <div className="flex-shrink-0 px-2 py-1 bg-stone-200 rounded-lg">
-          <span className="text-xs font-mono font-bold text-stone-500">
-            {Math.ceil(cooldownRemaining)}s
-          </span>
+        <div className="abyss-level">
+          <span className="text-xs font-mono font-bold">{Math.ceil(cooldownRemaining)}s</span>
         </div>
       )}
 
       {/* Watching progress bar */}
       {isWatching && (
         <motion.div
-          className="absolute bottom-0 left-0 h-1 bg-emerald-500"
+          className="absolute bottom-0 left-0 h-1"
+          style={{ background: 'var(--teal)' }}
           initial={{ width: '0%' }}
           animate={{ width: '100%' }}
           transition={{ duration: 3, ease: 'linear' }}

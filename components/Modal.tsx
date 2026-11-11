@@ -3,13 +3,14 @@
 import { X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type React from 'react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  wide?: boolean;
 }
 
 const FOCUSABLE_SELECTOR = [
@@ -21,9 +22,12 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(', ');
 
-export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, children, wide = false }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+  const reduceMotion =
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -67,16 +71,14 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
     }
   }, [isOpen, handleKeyDown]);
 
-  const titleId = `modal-title-${title.replace(/\s+/g, '-').toLowerCase()}`;
-
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          exit={reduceMotion ? undefined : { opacity: 0 }}
+          className="abyss-backdrop"
           onClick={onClose}
         >
           <motion.div
@@ -85,27 +87,26 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
-            initial={{ scale: 0.9, y: 20 }}
+            initial={reduceMotion ? false : { scale: 0.96, y: 12 }}
             animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 20 }}
-            className="bg-white dark:bg-stone-800 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
+            exit={reduceMotion ? undefined : { scale: 0.96, y: 12 }}
+            className={`abyss-modal ${wide ? 'abyss-modal-wide' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-stone-100 dark:border-stone-700 flex justify-between items-center">
-              <h2 id={titleId} className="font-bold text-lg text-stone-900 dark:text-stone-100">
+            <div className="abyss-modal-head">
+              <h2 id={titleId} className="font-bold text-lg">
                 {title}
               </h2>
               <button
+                type="button"
                 onClick={onClose}
-                className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"
+                className="abyss-close"
                 aria-label="Close dialog"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 max-h-[70vh] overflow-y-auto text-stone-900 dark:text-stone-100">
-              {children}
-            </div>
+            <div className="abyss-modal-body">{children}</div>
           </motion.div>
         </motion.div>
       )}

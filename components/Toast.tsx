@@ -55,34 +55,18 @@ const toastIcons: Record<ToastType, React.ElementType> = {
   info: Info,
 };
 
-const toastColors: Record<ToastType, { bg: string; border: string; icon: string }> = {
-  success: {
-    bg: 'from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30',
-    border: 'border-green-200 dark:border-green-800',
-    icon: 'text-green-500',
-  },
-  error: {
-    bg: 'from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30',
-    border: 'border-red-200 dark:border-red-800',
-    icon: 'text-red-500',
-  },
-  warning: {
-    bg: 'from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30',
-    border: 'border-yellow-200 dark:border-yellow-800',
-    icon: 'text-yellow-500',
-  },
-  info: {
-    bg: 'from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30',
-    border: 'border-blue-200 dark:border-blue-800',
-    icon: 'text-blue-500',
-  },
+const toastColors: Record<ToastType, string> = {
+  success: 'success',
+  error: 'error',
+  warning: 'warning',
+  info: 'info',
 };
 
 const actionColors: Record<ToastType, string> = {
-  success: 'text-emerald-500 hover:text-emerald-600',
-  error: 'text-red-500 hover:text-red-600',
-  warning: 'text-amber-500 hover:text-amber-600',
-  info: 'text-blue-500 hover:text-blue-600',
+  success: 'var(--teal)',
+  error: 'var(--danger)',
+  warning: 'var(--gold)',
+  info: 'var(--magic)',
 };
 
 interface ToastProviderProps {
@@ -246,17 +230,18 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
       initial={{ opacity: 0, y: 50, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
-      className={`pointer-events-auto bg-gradient-to-r ${color.bg} border ${color.border} rounded-xl shadow-lg overflow-hidden`}
+      className="abyss-toast"
+      data-tone={color}
     >
       <div className="flex items-start gap-3 p-4">
-        <div className={`shrink-0 ${color.icon}`}>
+        <div className="shrink-0" style={{ color: 'var(--ink)' }}>
           <Icon className="w-5 h-5" />
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm">{toast.title}</p>
+          <p className="font-semibold text-sm">{toast.title}</p>
           {toast.message && (
-            <p className="text-stone-600 dark:text-stone-300 text-xs mt-1 leading-relaxed">
+            <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--muted)' }}>
               {toast.message}
             </p>
           )}
@@ -269,18 +254,15 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
                   onClose();
                 }
               }}
-              className={`text-xs font-bold ${actionColor} mt-2 transition-colors`}
+              className="text-xs font-bold mt-2 min-h-11"
+              style={{ color: actionColor }}
             >
               {toast.action.label}
             </button>
           )}
         </div>
 
-        <button
-          onClick={onClose}
-          className="shrink-0 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
-          aria-label="Close notification"
-        >
+        <button onClick={onClose} className="abyss-close shrink-0" aria-label="Close notification">
           <X className="w-4 h-4" />
         </button>
       </div>

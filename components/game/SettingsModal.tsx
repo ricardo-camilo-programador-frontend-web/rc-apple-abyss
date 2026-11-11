@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  ChevronRight,
   Download,
   Languages,
   RefreshCw,
@@ -108,44 +107,52 @@ export default function SettingsModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="abyss-backdrop"
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.9, y: 20 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="settings-title"
+            initial={{ scale: 0.96, y: 12 }}
             animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 20 }}
-            className="bg-white dark:bg-stone-900 dark:text-stone-100 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
+            exit={{ scale: 0.96, y: 12 }}
+            className="abyss-modal abyss-modal-wide"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-stone-100 flex justify-between items-center">
-              <h2 className="font-bold text-lg flex items-center gap-2">
-                <Settings className="w-5 h-5" />
+            <div className="abyss-modal-head">
+              <h2 id="settings-title" className="font-bold text-lg flex items-center gap-2">
+                <Settings className="w-5 h-5" aria-hidden="true" />
                 {t('settings')}
               </h2>
-              <button onClick={onClose} className="text-stone-400 hover:text-stone-600">
-                <ChevronRight className="w-6 h-6" />
+              <button
+                type="button"
+                onClick={onClose}
+                className="abyss-close"
+                aria-label="Close settings"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="abyss-modal-body space-y-6">
               {/* Theme section */}
               <ThemeToggle />
 
               {/* Sound section */}
               <div className="space-y-3">
-                <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
-                  <Volume2 className="w-3 h-3" />
+                <span className="abyss-kicker flex items-center gap-2">
+                  <Volume2 className="w-3 h-3" aria-hidden="true" />
                   {t('settings_sound')}
-                </label>
+                </span>
                 <div className="flex items-center gap-4">
                   <button
+                    type="button"
                     onClick={toggleMute}
-                    className={`p-3 rounded-xl border-2 transition-all ${
-                      state.settings.muted
-                        ? 'border-red-200 bg-red-50 text-red-600'
-                        : 'border-stone-200 text-stone-600'
-                    }`}
+                    aria-pressed={state.settings.muted}
+                    aria-label={state.settings.muted ? 'Unmute' : 'Mute'}
+                    className={`abyss-icon-btn border ${state.settings.muted ? 'abyss-btn-danger' : ''}`}
+                    style={{ borderColor: 'var(--line)' }}
                   >
                     {state.settings.muted ? (
                       <VolumeX className="w-5 h-5" />
@@ -163,28 +170,31 @@ export default function SettingsModal({
                       engine.setVolume(parseFloat(e.target.value));
                       onStateUpdate();
                     }}
-                    className="flex-1 accent-red-500"
+                    aria-label={t('settings_sound')}
+                    className="flex-1 accent-[var(--apple)]"
                   />
                 </div>
               </div>
 
               {/* Language section */}
               <div className="space-y-3">
-                <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
-                  <Languages className="w-3 h-3" />
+                <span id="language-label" className="abyss-kicker flex items-center gap-2">
+                  <Languages className="w-3 h-3" aria-hidden="true" />
                   {t('settings_language')}
-                </label>
-                <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
+                </span>
+                <div
+                  className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1"
+                  role="group"
+                  aria-labelledby="language-label"
+                >
                   {LANGUAGES.map((language) => (
                     <button
                       key={language.code}
+                      type="button"
                       onClick={() => changeLanguage(language.code)}
                       aria-label={`Switch language to ${language.name}`}
-                      className={`p-2 rounded-lg text-xs font-medium border transition-all ${
-                        state.settings.language === language.code
-                          ? 'bg-red-500 text-white border-red-600 shadow-md'
-                          : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
-                      }`}
+                      aria-pressed={state.settings.language === language.code}
+                      className="abyss-lang"
                     >
                       {language.name}
                     </button>
@@ -193,35 +203,30 @@ export default function SettingsModal({
               </div>
 
               {/* Ad Preferences section */}
-              <div className="space-y-3 pt-4 border-t border-stone-100 dark:border-stone-700">
-                <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
-                  <X className="w-3 h-3" />
+              <div className="space-y-3 pt-4" style={{ borderTop: '1px solid var(--line)' }}>
+                <span className="abyss-kicker flex items-center gap-2">
+                  <X className="w-3 h-3" aria-hidden="true" />
                   Ad Preferences
-                </label>
+                </span>
                 <button
+                  type="button"
                   onClick={toggleAdsRemoved}
-                  className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
-                    adsRemoved
-                      ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30'
-                      : 'border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800 hover:bg-stone-100'
-                  }`}
+                  aria-pressed={adsRemoved}
+                  className="abyss-card flex items-center justify-between gap-3"
                 >
                   <div className="text-left">
-                    <div
-                      className={`font-bold text-sm ${adsRemoved ? 'text-emerald-900 dark:text-emerald-300' : 'text-stone-700 dark:text-stone-200'}`}
-                    >
+                    <div className="font-bold text-sm">
                       {adsRemoved ? 'Ads Removed' : 'Remove Ads'}
                     </div>
-                    <div className="text-xs text-stone-500 dark:text-stone-400">
+                    <div className="text-xs" style={{ color: 'var(--muted)' }}>
                       {adsRemoved
                         ? 'Display ads are hidden. Rewarded ads still available.'
                         : 'Hide all display ads (banners). Rewarded ads remain optional.'}
                     </div>
                   </div>
                   <div
-                    className={`w-12 h-6 rounded-full transition-all relative ${
-                      adsRemoved ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'
-                    }`}
+                    className="w-12 h-6 rounded-full relative"
+                    style={{ background: adsRemoved ? 'var(--teal)' : 'var(--line)' }}
                   >
                     <div
                       className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${
@@ -233,15 +238,16 @@ export default function SettingsModal({
               </div>
 
               {/* Save Management section */}
-              <div className="space-y-3 pt-4 border-t border-stone-100">
-                <label className="text-xs font-bold uppercase text-stone-400 flex items-center gap-2">
-                  <Download className="w-3 h-3" />
+              <div className="space-y-3 pt-4" style={{ borderTop: '1px solid var(--line)' }}>
+                <span className="abyss-kicker flex items-center gap-2">
+                  <Download className="w-3 h-3" aria-hidden="true" />
                   Save Management
-                </label>
+                </span>
                 <div className="flex flex-col gap-2">
                   <button
+                    type="button"
                     onClick={onExportSave}
-                    className="flex items-center justify-center gap-2 p-3 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl transition-colors font-medium text-sm"
+                    className="abyss-btn abyss-btn-ghost"
                   >
                     <Download className="w-4 h-4" />
                     Export Save
@@ -253,21 +259,31 @@ export default function SettingsModal({
                       value={importString}
                       onChange={(e) => setImportString(e.target.value)}
                       placeholder="Paste save string..."
-                      className="flex-1 p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-red-300"
+                      aria-label="Paste save string"
+                      aria-invalid={importError ? true : undefined}
+                      className="abyss-input"
                     />
                     <button
+                      type="button"
                       onClick={handleImportSave}
-                      className="flex items-center justify-center p-3 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl transition-colors"
+                      className="abyss-icon-btn border"
+                      style={{ borderColor: 'var(--line)' }}
                       title="Import Save"
+                      aria-label="Import save"
                     >
                       <Upload className="w-4 h-4" />
                     </button>
                   </div>
-                  {importError && <p className="text-xs text-red-500 font-medium">{importError}</p>}
+                  {importError && (
+                    <p className="abyss-error" role="alert">
+                      {importError}
+                    </p>
+                  )}
 
                   <button
+                    type="button"
                     onClick={handleResetGame}
-                    className="flex items-center justify-center gap-2 p-3 mt-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors font-medium text-sm border border-red-100"
+                    className="abyss-btn abyss-btn-danger"
                   >
                     <RefreshCw className="w-4 h-4" />
                     Hard Reset

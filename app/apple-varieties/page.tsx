@@ -62,7 +62,7 @@ export default function AppleVarietiesPage() {
   const t = (key: string, params?: any) => engine.getLocalization().t(key, params);
 
   return (
-    <div className="min-h-screen bg-stone-100 dark:bg-stone-900 text-stone-900 dark:text-stone-100 font-sans selection:bg-red-200">
+    <div className="min-h-screen font-sans">
       {/* SEO Meta Tags (handled via Next.js Metadata API in layout or here via Head if needed, 
           but since it's a client component we use a simple approach or just rely on layout) */}
       <title>{`${t('apple_guide_title')} | Apple of the Infinite Abyss`}</title>
@@ -73,17 +73,14 @@ export default function AppleVarietiesPage() {
       <AdsterraAd format={AdFormat.SOCIAL_BAR} />
 
       {/* Header / Navigation */}
-      <header className="bg-white dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-stone-600 dark:text-stone-300 hover:text-red-600 transition-colors font-medium group"
-          >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+      <header className="abyss-guide-header">
+        <div className="max-w-5xl mx-auto w-full flex items-center justify-between">
+          <Link href="/" className="abyss-back">
+            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             <span>Back to Game</span>
           </Link>
-          <div className="flex items-center gap-2 text-red-600 font-bold">
-            <BookOpen className="w-5 h-5" />
+          <div className="flex items-center gap-2 font-bold" style={{ color: 'var(--apple)' }}>
+            <BookOpen className="w-5 h-5" aria-hidden="true" />
             <span className="hidden sm:inline">Educational Guide</span>
           </div>
         </div>
@@ -96,10 +93,11 @@ export default function AppleVarietiesPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center space-y-6"
         >
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight text-stone-900 dark:text-stone-100 leading-tight">
-            {t('apple_guide_title')}
-          </h1>
-          <p className="text-lg md:text-xl text-stone-600 dark:text-stone-300 max-w-2xl mx-auto leading-relaxed">
+          <h1 className="abyss-title">{t('apple_guide_title')}</h1>
+          <p
+            className="text-lg md:text-xl max-w-2xl mx-auto leading-relaxed"
+            style={{ color: 'var(--muted)' }}
+          >
             {t('apple_guide_intro')}
           </p>
         </motion.section>
@@ -112,7 +110,7 @@ export default function AppleVarietiesPage() {
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="bg-white dark:bg-stone-800 p-4 md:p-8 rounded-3xl shadow-xl border border-stone-200 dark:border-stone-700 overflow-hidden"
+          className="abyss-sheet p-4 md:p-8 overflow-hidden"
         >
           <div className="relative aspect-[1080/1350] w-full max-w-3xl mx-auto">
             <img
@@ -125,7 +123,10 @@ export default function AppleVarietiesPage() {
             />
           </div>
 
-          <div className="mt-8 pt-8 border-t border-stone-100 dark:border-stone-800 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-stone-500 dark:text-stone-400">
+          <div
+            className="mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm"
+            style={{ borderTop: '1px solid var(--line)', color: 'var(--muted)' }}
+          >
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4" />
               <span className="font-bold uppercase tracking-wider text-[10px]">
@@ -136,7 +137,7 @@ export default function AppleVarietiesPage() {
               href="https://www.reddit.com/r/coolguides/comments/g77jhx/i_made_an_infographic_explaining_how-different/?tl=pt-br"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:text-red-600 transition-colors bg-stone-50 dark:bg-stone-800 px-4 py-2 rounded-full border border-stone-200 dark:border-stone-700"
+              className="abyss-btn abyss-btn-ghost w-auto"
             >
               <span>{t('apple_guide_source_credit')}</span>
               <ExternalLink className="w-3 h-3" />
@@ -150,11 +151,9 @@ export default function AppleVarietiesPage() {
         {/* Varieties Grid */}
         <section className="space-y-8">
           <div className="flex items-center gap-4">
-            <div className="h-px flex-1 bg-stone-200 dark:bg-stone-700" />
-            <h2 className="text-2xl font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest px-4">
-              {t('apple_guide_varieties_title')}
-            </h2>
-            <div className="h-px flex-1 bg-stone-200 dark:bg-stone-700" />
+            <div className="h-px flex-1" style={{ background: 'var(--line)' }} />
+            <h2 className="abyss-kicker px-4">{t('apple_guide_varieties_title')}</h2>
+            <div className="h-px flex-1" style={{ background: 'var(--line)' }} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -165,15 +164,13 @@ export default function AppleVarietiesPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: (index % 3) * 0.1 }}
-                className="bg-white dark:bg-stone-800 p-6 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm hover:shadow-md hover:border-red-200 transition-all group"
+                className="abyss-variety p-6"
               >
                 <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-xl font-bold text-stone-800 dark:text-stone-200 group-hover:text-red-600 transition-colors">
-                    {t(`apple_variety_${id}`)}
-                  </h3>
+                  <h3 className="text-xl font-bold">{t(`apple_variety_${id}`)}</h3>
                   <span className="text-2xl">🍎</span>
                 </div>
-                <p className="text-sm text-stone-600 dark:text-stone-300 leading-relaxed">
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
                   {t(`apple_variety_${id}_desc`)}
                 </p>
               </motion.div>
@@ -186,29 +183,23 @@ export default function AppleVarietiesPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-stone-800 border-t border-stone-200 dark:border-stone-700 py-12 mt-24">
+      <footer className="abyss-footer mt-16 !pl-4">
         <div className="max-w-5xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex flex-col items-center md:items-start gap-2">
-            <div className="flex items-center gap-2 text-red-600 font-black text-xl">
+            <div className="font-bold text-xl" style={{ color: 'var(--apple)' }}>
               <span>APPLE INFINITY</span>
             </div>
-            <p className="text-sm text-stone-400 dark:text-stone-500">
+            <p className="text-sm" style={{ color: 'var(--muted)' }}>
               © 2026 Educational Resource
             </p>
           </div>
 
-          <div className="flex items-center gap-6">
-            <Link
-              href="/"
-              className="text-stone-500 dark:text-stone-400 hover:text-red-600 transition-colors font-medium"
-            >
-              Play Game
-            </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/">Play Game</Link>
             <a
               href="https://ricardo-camilo-dev-frontend-web.netlify.app/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-stone-500 dark:text-stone-400 hover:text-red-600 transition-colors font-medium"
             >
               Portfolio
             </a>
@@ -216,9 +207,8 @@ export default function AppleVarietiesPage() {
               href="https://github.com/ricardo-camilo-programador-frontend-web"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
             >
-              <Github className="w-5 h-5" />
+              <Github className="w-5 h-5" aria-hidden="true" />
               <span>GitHub</span>
             </a>
           </div>

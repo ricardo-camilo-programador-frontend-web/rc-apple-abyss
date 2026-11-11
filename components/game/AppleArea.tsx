@@ -4,6 +4,7 @@ import { Gift, Heart, Zap } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import Image from 'next/image';
 import type React from 'react';
+import { useState } from 'react';
 import type { GameEngine } from '@/lib/game/engine';
 import { APPLE_SPRITES, getAppleSpriteIndex } from '@/lib/game/sprites';
 import type { GameState } from '@/lib/game/types';
@@ -20,6 +21,12 @@ interface AppleAreaProps {
   goldBoostRemaining?: number;
 }
 
+function prefersReducedMotion() {
+  return (
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
 export default function AppleArea({
   state,
   engine,
@@ -33,172 +40,156 @@ export default function AppleArea({
 }: AppleAreaProps) {
   const hpPercent = (state.appleHP / state.maxAppleHP) * 100;
   const activeSpriteIndex = getAppleSpriteIndex(state.appleHP, state.maxAppleHP);
+  const skill = state.skills.golden_harvest;
+  const ready = skill.cooldownRemaining <= 0 && !skill.isActive;
+  const reduceMotion = prefersReducedMotion();
+  const [struck, setStruck] = useState(false);
+
+  const handleAppleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setStruck(true);
+    window.setTimeout(() => setStruck(false), 180);
+    onAppleClick(event);
+  };
+
+  const skillClass = skill.isActive
+    ? 'is-active'
+    : skill.cooldownRemaining > 0
+      ? 'is-cool'
+      : 'is-ready';
 
   return (
-    <section className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-y-auto min-h-0">
-      <div className="relative w-full max-w-lg">
-        <div className="absolute inset-0 bg-gradient-to-br from-red-100/30 via-orange-50/20 to-yellow-50/30 rounded-full blur-3xl scale-150" />
-
-        <div className="relative group cursor-pointer" onClick={onAppleClick}>
-          <div
-            className={`relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 mx-auto transition-all duration-500 ${
-              state.skills.golden_harvest.isActive ? 'scale-105' : ''
-            }`}
+    <section className="abyss-play" aria-label="Apple">
+      <div className="abyss-apple-wrap">
+        <button
+          type="button"
+          className={`abyss-apple-btn ${skill.isActive ? 'is-skill' : ''} ${struck ? 'is-struck' : ''}`}
+          onClick={handleAppleClick}
+          aria-label="Apple — click to deal damage"
+        >
+          <motion.div
+            animate={reduceMotion ? undefined : { scale: [1, 1.02, 1] }}
+            transition={
+              reduceMotion ? undefined : { duration: 2, repeat: Infinity, ease: 'easeInOut' }
+            }
+            className={`relative w-full h-full flex items-center justify-center ${isShaking ? 'shake-active' : ''}`}
           >
-            <div
-              className={`absolute inset-0 bg-gradient-to-br from-white via-stone-50 to-white rounded-full shadow-2xl transition-all duration-300 ${
-                state.skills.golden_harvest.isActive
-                  ? 'border-4 border-yellow-400 shadow-yellow-200/50'
-                  : 'border-4 border-stone-100'
-              }`}
-            />
-
-            <div className="absolute inset-4 bg-gradient-to-br from-stone-50 to-white rounded-full shadow-inner flex items-center justify-center">
-              <motion.div
-                animate={{ scale: [1, 1.02, 1] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                className={`relative w-full h-full flex items-center justify-center ${isShaking ? 'shake-active' : ''}`}
-              >
-                <div
-                  className={`apple-sprite-container absolute inset-8 transition-all duration-300 ${
-                    state.skills.golden_harvest.isActive
-                      ? 'brightness-110 saturate-150 sepia-[0.3] hue-rotate-[40deg] drop-shadow-[0_0_20px_rgba(234,179,8,0.6)]'
-                      : ''
-                  }`}
-                >
-                  {APPLE_SPRITES.map((src, index) => (
-                    <Image
-                      key={src}
-                      src={src}
-                      alt="Apple — click to deal damage"
-                      fill
-                      sizes="(min-width: 1024px) 384px, (min-width: 768px) 320px, 256px"
-                      className="apple-sprite"
-                      priority={index === 0}
-                      loading={index === 0 ? 'eager' : 'lazy'}
-                      decoding="async"
-                      style={{ opacity: index === activeSpriteIndex ? 1 : 0 }}
-                    />
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          </div>
-
-          <AnimatePresence>
-            {state.skills.golden_harvest.isActive &&
-              particleOffsets.map((offset, i) => (
-                <motion.div
-                  key={`particle-${i}`}
-                  initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
-                  animate={{
-                    opacity: [0, 1, 0],
-                    scale: [0, 1.5, 0],
-                    x: offset.x,
-                    y: offset.y,
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: offset.delay,
-                  }}
-                  className="absolute top-1/2 left-1/2 w-3 h-3 bg-yellow-400 rounded-full z-30 shadow-lg"
+            <div className="apple-sprite-container absolute inset-[12%]">
+              {APPLE_SPRITES.map((src, index) => (
+                <Image
+                  key={src}
+                  src={src}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1024px) 384px, (min-width: 768px) 320px, 256px"
+                  className="apple-sprite"
+                  priority={index === 0}
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  style={{ opacity: index === activeSpriteIndex ? 1 : 0 }}
                 />
               ))}
-          </AnimatePresence>
-        </div>
-
-        <div className="mt-8 space-y-4">
-          <div className="bg-white/80 dark:bg-stone-800/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-stone-100 dark:border-stone-700">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Heart className="w-4 h-4 text-red-500" />
-                <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-                  Apple HP
-                </span>
-              </div>
-              <span className="font-mono text-sm font-bold text-stone-700 dark:text-stone-100">
-                {Math.ceil(state.appleHP).toLocaleString()} / {state.maxAppleHP.toLocaleString()}
-              </span>
             </div>
-            <div className="h-3 bg-stone-100 dark:bg-stone-700 rounded-full overflow-hidden">
+          </motion.div>
+        </button>
+
+        <AnimatePresence>
+          {skill.isActive &&
+            !reduceMotion &&
+            particleOffsets.map((offset, i) => (
               <motion.div
-                className="h-full bg-gradient-to-r from-red-500 via-red-400 to-orange-400 rounded-full"
-                initial={false}
-                animate={{ width: `${hpPercent}%` }}
-                transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
+                key={`particle-${i}`}
+                initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                animate={{
+                  opacity: [0, 1, 0],
+                  scale: [0, 1.5, 0],
+                  x: offset.x,
+                  y: offset.y,
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: offset.delay,
+                }}
+                className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full z-30"
+                style={{ background: 'var(--gold)' }}
+                aria-hidden="true"
               />
+            ))}
+        </AnimatePresence>
+
+        <div className="abyss-meter-card">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Heart className="w-4 h-4" style={{ color: 'var(--hp)' }} aria-hidden="true" />
+              <span className="abyss-kicker">Apple HP</span>
             </div>
+            <span className="font-mono text-sm font-bold">
+              {Math.ceil(state.appleHP).toLocaleString()} / {state.maxAppleHP.toLocaleString()}
+            </span>
           </div>
-
-          <motion.button
-            onClick={onActivateSkill}
-            disabled={
-              state.skills.golden_harvest.cooldownRemaining > 0 ||
-              state.skills.golden_harvest.isActive
-            }
-            whileHover={
-              !state.skills.golden_harvest.cooldownRemaining &&
-              !state.skills.golden_harvest.isActive
-                ? { scale: 1.02 }
-                : {}
-            }
-            whileTap={
-              !state.skills.golden_harvest.cooldownRemaining &&
-              !state.skills.golden_harvest.isActive
-                ? { scale: 0.98 }
-                : {}
-            }
-            className={`w-full relative flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-bold transition-all overflow-hidden ${
-              state.skills.golden_harvest.isActive
-                ? 'bg-gradient-to-r from-yellow-400 to-amber-400 text-white shadow-lg shadow-yellow-200/50'
-                : state.skills.golden_harvest.cooldownRemaining > 0
-                  ? 'bg-stone-100 dark:bg-stone-800 text-stone-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-yellow-50 dark:from-yellow-900/40 to-amber-50 dark:to-amber-900/40 border-2 border-yellow-300 dark:border-yellow-600 text-yellow-700 dark:text-yellow-200 hover:border-yellow-400 shadow-lg shadow-yellow-100/50'
-            }`}
+          <div
+            className="abyss-meter"
+            role="meter"
+            aria-label="Apple HP"
+            aria-valuemin={0}
+            aria-valuemax={state.maxAppleHP}
+            aria-valuenow={Math.ceil(state.appleHP)}
           >
-            <Zap
-              className={`w-5 h-5 ${state.skills.golden_harvest.isActive ? 'animate-bounce' : ''}`}
+            <motion.div
+              className="abyss-meter-fill"
+              initial={false}
+              animate={{ width: `${hpPercent}%` }}
+              transition={
+                reduceMotion ? { duration: 0 } : { type: 'spring', bounce: 0, duration: 0.2 }
+              }
             />
-            <div className="flex flex-col items-start">
-              <span className="text-sm">{t('skill_golden_harvest')}</span>
-              <span className="text-[10px] opacity-70">
-                {state.skills.golden_harvest.isActive
-                  ? `${t('skill_active')}: ${Math.ceil(state.skills.golden_harvest.remainingDuration)}s`
-                  : state.skills.golden_harvest.cooldownRemaining > 0
-                    ? `${t('skill_cooldown')}: ${Math.ceil(state.skills.golden_harvest.cooldownRemaining)}s`
-                    : 'x5 Click, x2.5 Idle'}
-              </span>
-            </div>
-
-            {state.skills.golden_harvest.cooldownRemaining > 0 &&
-              !state.skills.golden_harvest.isActive && (
-                <motion.div
-                  className="absolute inset-0 bg-stone-200/50 dark:bg-stone-600/50"
-                  initial={false}
-                  animate={{
-                    height: `${(state.skills.golden_harvest.cooldownRemaining / 120) * 100}%`,
-                  }}
-                />
-              )}
-          </motion.button>
-
-          {/* Rewarded Ads Button */}
-          {onShowRewardedAds && (
-            <button
-              onClick={onShowRewardedAds}
-              className="w-full relative flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/40 dark:to-green-900/40 border-2 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:border-emerald-300 dark:hover:border-emerald-600 shadow-md shadow-emerald-100/50 transition-all"
-            >
-              <Gift className="w-4 h-4" />
-              <span className="text-sm">Free Rewards</span>
-              {goldBoostRemaining > 0 && (
-                <span className="ml-auto px-2 py-0.5 bg-emerald-200 dark:bg-emerald-800 rounded-full text-[10px] font-mono font-bold text-emerald-800 dark:text-emerald-200">
-                  2x active: {goldBoostRemaining}s
-                </span>
-              )}
-            </button>
-          )}
+          </div>
         </div>
+
+        <motion.button
+          type="button"
+          onClick={onActivateSkill}
+          disabled={!ready}
+          whileHover={ready && !reduceMotion ? { scale: 1.01 } : {}}
+          whileTap={ready && !reduceMotion ? { scale: 0.98 } : {}}
+          className={`abyss-btn abyss-skill ${skillClass}`}
+        >
+          <Zap className="w-5 h-5" aria-hidden="true" />
+          <span className="flex flex-col items-start">
+            <span className="text-sm">{t('skill_golden_harvest')}</span>
+            <span className="text-[11px] font-medium opacity-80">
+              {skill.isActive
+                ? `${t('skill_active')}: ${Math.ceil(skill.remainingDuration)}s`
+                : skill.cooldownRemaining > 0
+                  ? `${t('skill_cooldown')}: ${Math.ceil(skill.cooldownRemaining)}s`
+                  : 'x5 Click, x2.5 Idle'}
+            </span>
+          </span>
+          {skill.cooldownRemaining > 0 && !skill.isActive && (
+            <motion.div
+              className="abyss-skill-veil"
+              initial={false}
+              animate={{ height: `${(skill.cooldownRemaining / 120) * 100}%` }}
+              aria-hidden="true"
+            />
+          )}
+        </motion.button>
+
+        {onShowRewardedAds && (
+          <button
+            type="button"
+            onClick={onShowRewardedAds}
+            className="abyss-btn abyss-btn-teal mt-3"
+          >
+            <Gift className="w-4 h-4" aria-hidden="true" />
+            <span className="text-sm">Free Rewards</span>
+            {goldBoostRemaining > 0 && (
+              <span className="ml-auto font-mono text-xs font-bold">
+                2x active: {goldBoostRemaining}s
+              </span>
+            )}
+          </button>
+        )}
       </div>
     </section>
   );

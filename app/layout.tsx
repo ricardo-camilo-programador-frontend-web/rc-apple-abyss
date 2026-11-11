@@ -53,8 +53,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fafaf9' },
-    { media: '(prefers-color-scheme: dark)', color: '#1c1917' },
+    { media: '(prefers-color-scheme: light)', color: '#f4efe6' },
+    { media: '(prefers-color-scheme: dark)', color: '#0c0912' },
   ],
   width: 'device-width',
   initialScale: 1,
@@ -94,10 +94,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Analytics (GA4, optional GTM, Clarity, counter.dev) — see lib/analytics/config.ts */}
         <Analytics />
       </head>
-      <body
-        suppressHydrationWarning
-        className={`${inter.variable} bg-stone-100 dark:bg-stone-900 text-stone-900 dark:text-stone-100 font-sans`}
-      >
+      <body suppressHydrationWarning className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>
           <ToastProvider>
             <ErrorBoundary>{children}</ErrorBoundary>

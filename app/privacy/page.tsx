@@ -2,18 +2,20 @@ import Link from 'next/link';
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-stone-100 dark:bg-stone-900 p-8">
-      <div className="max-w-3xl mx-auto bg-white dark:bg-stone-800 rounded-2xl shadow-lg p-8">
-        <Link href="/" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm mb-4 inline-block">
+    <div className="abyss-page">
+      <article className="abyss-sheet">
+        <Link href="/" className="abyss-back">
           ← Back to Game
         </Link>
-        <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100 mb-6">Privacy Policy</h1>
-        
-        <div className="space-y-6 text-stone-700 dark:text-stone-300">
+        <h1 className="abyss-title">Privacy Policy</h1>
+
+        <div className="abyss-prose">
           <section>
             <h2 className="text-xl font-bold mb-2">Last Updated: June 2026</h2>
             <p className="leading-relaxed">
-              Apple of the Infinite Abyss (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our web application.
+              Apple of the Infinite Abyss (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;)
+              is committed to protecting your privacy. This Privacy Policy explains how we collect,
+              use, and safeguard your information when you use our web application.
             </p>
           </section>
 
@@ -23,19 +25,25 @@ export default function PrivacyPolicy() {
               <div>
                 <h3 className="font-semibold mb-1">Game Progress Data</h3>
                 <p className="text-sm leading-relaxed">
-                  We store your game progress locally in your browser using localStorage. This data includes gold amount, upgrades purchased, stages achieved, and other gameplay statistics. We do not transmit this data to any external servers.
+                  We store your game progress locally in your browser using localStorage. This data
+                  includes gold amount, upgrades purchased, stages achieved, and other gameplay
+                  statistics. We do not transmit this data to any external servers.
                 </p>
               </div>
               <div>
                 <h3 className="font-semibold mb-1">Analytics Data</h3>
                 <p className="text-sm leading-relaxed">
-                  We use third-party analytics services (Microsoft Clarity) to collect anonymous usage data such as page views, click patterns, and device information. This helps us improve the user experience and fix bugs.
+                  We use third-party analytics services (Microsoft Clarity) to collect anonymous
+                  usage data such as page views, click patterns, and device information. This helps
+                  us improve the user experience and fix bugs.
                 </p>
               </div>
               <div>
                 <h3 className="font-semibold mb-1">Advertising Data</h3>
                 <p className="text-sm leading-relaxed">
-                  We use Google AdSense and Adsterra to display advertisements. These services may collect information about your browsing behavior, IP address, and device type to serve relevant ads.
+                  We use Google AdSense and Adsterra to display advertisements. These services may
+                  collect information about your browsing behavior, IP address, and device type to
+                  serve relevant ads.
                 </p>
               </div>
             </div>
@@ -63,18 +71,29 @@ export default function PrivacyPolicy() {
               <li>Advertising: To serve personalized ads and measure ad performance</li>
             </ul>
             <p className="text-sm leading-relaxed mt-2">
-              You can control cookies through your browser settings. Note that disabling cookies may affect game functionality.
+              You can control cookies through your browser settings. Note that disabling cookies may
+              affect game functionality.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold mb-3">4. Third-Party Services</h2>
-            <p className="text-sm leading-relaxed mb-2">We integrate with the following third-party services:</p>
+            <p className="text-sm leading-relaxed mb-2">
+              We integrate with the following third-party services:
+            </p>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              <li><strong>Google AdSense:</strong> Displays advertisements</li>
-              <li><strong>Adsterra:</strong> Displays advertisements</li>
-              <li><strong>Microsoft Clarity:</strong> User analytics and heatmaps</li>
-              <li><strong>Counter.dev:</strong> Visitor statistics</li>
+              <li>
+                <strong>Google AdSense:</strong> Displays advertisements
+              </li>
+              <li>
+                <strong>Adsterra:</strong> Displays advertisements
+              </li>
+              <li>
+                <strong>Microsoft Clarity:</strong> User analytics and heatmaps
+              </li>
+              <li>
+                <strong>Counter.dev:</strong> Visitor statistics
+              </li>
             </ul>
             <p className="text-sm leading-relaxed mt-2">
               These services have their own privacy policies. We encourage you to review them.
@@ -84,14 +103,18 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-xl font-bold mb-3">5. Data Security</h2>
             <p className="text-sm leading-relaxed">
-              We implement appropriate security measures to protect your data. Game progress data is stored locally on your device and is not transmitted to our servers. We do not collect personal information such as names, emails, or addresses.
+              We implement appropriate security measures to protect your data. Game progress data is
+              stored locally on your device and is not transmitted to our servers. We do not collect
+              personal information such as names, emails, or addresses.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold mb-3">6. Children&rsquo;s Privacy</h2>
             <p className="text-sm leading-relaxed">
-              Our application is designed for general audiences. We do not knowingly collect personal information from children under 13. If we become aware that we have collected such information, we will take steps to delete it.
+              Our application is designed for general audiences. We do not knowingly collect
+              personal information from children under 13. If we become aware that we have collected
+              such information, we will take steps to delete it.
             </p>
           </section>
 
@@ -109,7 +132,9 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-xl font-bold mb-3">8. Changes to This Policy</h2>
             <p className="text-sm leading-relaxed">
-              We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page. Your continued use of the application after changes constitutes acceptance of the new policy.
+              We may update this Privacy Policy from time to time. We will notify you of any changes
+              by posting the new policy on this page. Your continued use of the application after
+              changes constitutes acceptance of the new policy.
             </p>
           </section>
 
@@ -118,17 +143,17 @@ export default function PrivacyPolicy() {
             <p className="text-sm leading-relaxed">
               If you have questions about this Privacy Policy, please contact us through GitHub:
             </p>
-            <a 
+            <a
               href="https://github.com/ricardo-camilo-programador-frontend-web"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm"
+              className="abyss-link"
             >
               https://github.com/ricardo-camilo-programador-frontend-web
             </a>
           </section>
         </div>
-      </div>
+      </article>
     </div>
   );
 }

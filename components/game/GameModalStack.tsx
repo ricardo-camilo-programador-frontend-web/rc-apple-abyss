@@ -38,7 +38,7 @@ function RewardedAdsModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Free Rewards">
       <div className="space-y-3">
-        <p className="text-xs text-stone-500 dark:text-stone-400 text-center pb-2">
+        <p className="text-sm text-center pb-2" style={{ color: 'var(--muted)' }}>
           Watch a short ad to claim a bonus reward. Totally optional!
         </p>
 
@@ -143,7 +143,7 @@ export default function GameModalStack({
     <>
       {/* Help modal */}
       <Modal isOpen={!!showHelp} onClose={onCloseHelp} title={showHelp?.title ?? ''}>
-        <p className="text-stone-600 dark:text-stone-300 text-sm leading-relaxed">
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
           {showHelp?.content}
         </p>
       </Modal>

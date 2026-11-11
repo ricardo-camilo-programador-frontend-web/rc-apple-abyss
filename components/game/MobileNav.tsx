@@ -21,43 +21,30 @@ export default function MobileNav({
   canClaimDailyReward,
 }: MobileNavProps) {
   return (
-    <nav className="flex-shrink-0 lg:hidden bg-white/80 backdrop-blur-sm border-t border-stone-200/50 flex justify-around p-3 z-10">
-      <button
-        onClick={onShowUpgrades}
-        className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-stone-100 transition-colors"
-      >
-        <TrendingUp className="w-5 h-5 text-stone-600" />
-        <span className="text-[10px] font-bold uppercase text-stone-500">{t('upgrades')}</span>
+    <nav className="abyss-nav" aria-label="Game sections">
+      <button type="button" onClick={onShowUpgrades} className="abyss-nav-btn">
+        <TrendingUp className="w-5 h-5" aria-hidden="true" />
+        <span>{t('upgrades')}</span>
+      </button>
+      <button type="button" onClick={onShowAscension} className="abyss-nav-btn is-magic">
+        <Sparkles className="w-5 h-5" aria-hidden="true" />
+        <span>{t('ascension')}</span>
       </button>
       <button
-        onClick={onShowAscension}
-        className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-violet-50 transition-colors"
-      >
-        <Sparkles className="w-5 h-5 text-violet-600" />
-        <span className="text-[10px] font-bold uppercase text-violet-600">{t('ascension')}</span>
-      </button>
-      <button
+        type="button"
         onClick={onShowJourney}
-        className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-colors relative ${canClaimDailyReward ? 'hover:bg-amber-50' : 'hover:bg-blue-50'}`}
+        className={`abyss-nav-btn ${canClaimDailyReward ? 'is-alert' : ''}`}
       >
-        <div className="relative">
-          <Map className={`w-5 h-5 ${canClaimDailyReward ? 'text-amber-600' : 'text-blue-600'}`} />
-          {canClaimDailyReward && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-          )}
-        </div>
-        <span
-          className={`text-[10px] font-bold uppercase ${canClaimDailyReward ? 'text-amber-600' : 'text-blue-600'}`}
-        >
-          {t('journey_short')}
+        <span className="relative">
+          <Map className="w-5 h-5" aria-hidden="true" />
+          {canClaimDailyReward && <span className="abyss-dot" aria-hidden="true" />}
         </span>
+        <span>{t('journey_short')}</span>
+        {canClaimDailyReward && <span className="sr-only">Daily reward available</span>}
       </button>
-      <button
-        onClick={onShowStats}
-        className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors"
-      >
-        <BarChart2 className="w-5 h-5 text-blue-600" />
-        <span className="text-[10px] font-bold uppercase text-blue-600">{t('stats')}</span>
+      <button type="button" onClick={onShowStats} className="abyss-nav-btn">
+        <BarChart2 className="w-5 h-5" aria-hidden="true" />
+        <span>{t('stats')}</span>
       </button>
     </nav>
   );

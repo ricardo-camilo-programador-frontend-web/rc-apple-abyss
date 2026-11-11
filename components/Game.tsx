@@ -63,17 +63,14 @@ export default function Game() {
 
   if (!orch.isMounted || !orch.state || !engine)
     return (
-      <div
-        role="status"
-        aria-live="polite"
-        className="flex items-center justify-center h-screen bg-stone-50 dark:bg-stone-900"
-      >
+      <div role="status" aria-live="polite" className="abyss-loading">
+        <span className="abyss-spinner" aria-hidden="true" />
         Loading...
       </div>
     );
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 overflow-hidden select-none">
+    <div className="abyss-shell">
       <GameHeader
         state={orch.state}
         t={orch.t}
@@ -87,7 +84,7 @@ export default function Game() {
 
       <div className="flex-1 flex flex-row overflow-hidden min-h-0">
         <AdSidebars />
-        <main className="flex-1 flex flex-col lg:flex-row relative overflow-hidden min-h-0">
+        <div className="abyss-stage">
           <UpgradeSidebar
             state={orch.state}
             engine={engine}
@@ -112,7 +109,7 @@ export default function Game() {
             t={orch.t}
             onAscend={orch.handleAscend}
           />
-        </main>
+        </div>
       </div>
 
       <MobileNav

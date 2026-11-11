@@ -164,12 +164,16 @@ export default function AdsterraAd({
 
   return (
     <div className={`adsterra-wrapper relative overflow-hidden ${className}`} ref={containerRef}>
-      <span className="absolute top-0 left-0 w-full text-center text-[10px] uppercase tracking-widest text-stone-400 opacity-50 pointer-events-none">
+      <span
+        className="absolute top-0 left-0 w-full text-center text-[10px] uppercase tracking-widest pointer-events-none"
+        style={{ color: 'var(--muted)' }}
+      >
         Advertisement
       </span>
       <div
         id={containerId}
-        className="adsterra-container flex items-center justify-center min-h-[90px] bg-stone-50 rounded-lg overflow-hidden mt-4"
+        className="adsterra-container flex items-center justify-center min-h-[90px] rounded-lg overflow-hidden mt-4"
+        style={{ background: 'var(--surface-2)' }}
         aria-hidden="true"
       >
         {!isLoaded && (

@@ -64,18 +64,22 @@ export default function AdBanner() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 24, scale: 0.95 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="fixed bottom-24 lg:bottom-4 right-4 z-50 w-[300px] max-w-[calc(100vw-2rem)] bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg overflow-hidden"
+          className="fixed bottom-24 lg:bottom-4 right-4 z-50 w-[300px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border"
+          style={{
+            background: 'var(--surface)',
+            borderColor: 'var(--line)',
+            color: 'var(--ink)',
+            boxShadow: 'var(--shadow)',
+          }}
         >
           {/* Header row: label + close */}
           <div className="flex items-center justify-between px-3 py-1">
-            <span className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-stone-500 select-none">
-              Advertisement
-            </span>
+            <span className="abyss-kicker select-none">Advertisement</span>
             <button
               type="button"
               onClick={handleDismiss}
               aria-label="Dismiss ad banner"
-              className="p-0.5 rounded text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300 transition-colors"
+              className="abyss-close"
             >
               <X size={14} />
             </button>

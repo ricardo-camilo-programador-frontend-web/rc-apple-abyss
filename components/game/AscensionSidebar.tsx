@@ -27,41 +27,35 @@ export default function AscensionSidebar({
   const pendingWorms = engine.getPendingLuckyWorms();
 
   return (
-    <aside
-      className={
-        className ??
-        'hidden lg:flex w-80 bg-white/50 dark:bg-stone-900/80 backdrop-blur-sm border-l border-stone-200/50 dark:border-stone-700/50 p-4 flex-col gap-4 overflow-y-auto'
-      }
-    >
+    <aside className={className ?? 'abyss-panel abyss-panel-right'}>
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-3">
-          {t('ascension')}
-        </h2>
-        <div className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/40 dark:to-purple-900/40 rounded-2xl p-4 border border-violet-100 dark:border-violet-700">
+        <h2 className="abyss-kicker mb-3">{t('ascension')}</h2>
+        <div className="abyss-ascend">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 bg-violet-100 dark:bg-violet-800/60 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-300" />
+            <div className="abyss-card-icon w-9 h-9">
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
             </div>
             <div>
-              <div className="font-semibold text-sm text-violet-900 dark:text-violet-100">
-                Ascension
-              </div>
-              <div className="text-[10px] text-violet-600 dark:text-violet-300">
-                Reset for permanent bonuses
-              </div>
+              <div className="font-semibold text-sm">Ascension</div>
+              <div className="text-[11px] opacity-80">Reset for permanent bonuses</div>
             </div>
           </div>
 
           <div className="mb-3">
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-violet-600 dark:text-violet-300">Progress to Stage 50</span>
-              <span className="font-mono text-violet-900 dark:text-violet-100">
-                {state.stage}/50
-              </span>
+              <span>Progress to Stage 50</span>
+              <span className="font-mono">{state.stage}/50</span>
             </div>
-            <div className="h-2 bg-violet-100 dark:bg-violet-800/60 rounded-full overflow-hidden">
+            <div
+              className="abyss-track"
+              role="meter"
+              aria-label="Progress to stage 50"
+              aria-valuemin={0}
+              aria-valuemax={50}
+              aria-valuenow={Math.min(state.stage, 50)}
+            >
               <motion.div
-                className="h-full bg-gradient-to-r from-violet-500 to-purple-500"
+                style={{ background: 'var(--magic-solid)', height: '100%' }}
                 initial={false}
                 animate={{ width: `${progress}%` }}
                 transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
@@ -70,43 +64,32 @@ export default function AscensionSidebar({
           </div>
 
           {canAscend && (
-            <div className="flex items-center gap-2 p-2 bg-violet-100/50 dark:bg-violet-800/40 rounded-lg mb-3">
-              <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-300" />
-              <span className="text-sm font-medium text-violet-900 dark:text-violet-100">
-                {pendingWorms} Lucky Worms ready!
-              </span>
+            <div className="abyss-callout flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
+              <span className="text-sm font-medium">{pendingWorms} Lucky Worms ready!</span>
             </div>
           )}
 
           <button
+            type="button"
             onClick={onAscend}
             disabled={!canAscend}
-            className={`w-full py-2.5 rounded-xl font-bold text-sm transition-all ${
-              canAscend
-                ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 active:scale-95 shadow-lg shadow-violet-200'
-                : 'bg-violet-100 dark:bg-violet-900/60 text-violet-400 dark:text-violet-300 cursor-not-allowed'
-            }`}
+            className="abyss-btn abyss-btn-magic"
           >
             {canAscend
               ? t('ascend_now') || 'Ascend Now!'
-              : (t('reach_stage') || 'Reach Stage ') + '50'}
+              : `${t('reach_stage') || 'Reach Stage '}50`}
           </button>
 
-          <div className="mt-2 text-[10px] text-violet-500 dark:text-violet-400 text-center">
-            Lucky Worms: +5% gold each
-          </div>
+          <p className="mt-2 text-[11px] text-center opacity-80">Lucky Worms: +5% gold each</p>
         </div>
       </div>
 
       <div className="flex-1">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-3">
-          {t('stats')}
-        </h2>
+        <h2 className="abyss-kicker mb-3">{t('stats')}</h2>
         <div className="space-y-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-2">
-              Economy
-            </div>
+            <div className="abyss-kicker mb-2">Economy</div>
             <div className="grid grid-cols-2 gap-2">
               <StatCard
                 icon={Coins}
@@ -119,9 +102,7 @@ export default function AscensionSidebar({
           </div>
 
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-2">
-              Combat
-            </div>
+            <div className="abyss-kicker mb-2">Combat</div>
             <div className="grid grid-cols-2 gap-2">
               <StatCard
                 icon={MousePointer2}
@@ -139,9 +120,7 @@ export default function AscensionSidebar({
           </div>
 
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-2">
-              Progression
-            </div>
+            <div className="abyss-kicker mb-2">Progression</div>
             <div className="grid grid-cols-2 gap-2">
               <StatCard
                 icon={Users}

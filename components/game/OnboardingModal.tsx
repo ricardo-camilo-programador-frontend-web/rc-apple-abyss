@@ -78,16 +78,12 @@ export default function OnboardingModal({ isOpen, engine, t, onClose }: Onboardi
     <Modal isOpen={isOpen} onClose={handleSkip} title={t('onboarding_title')}>
       <div className="space-y-4">
         {/* Step indicators */}
-        <div className="flex justify-center gap-2 mb-4">
+        <div className="abyss-steps" aria-hidden="true">
           {ONBOARDING_STEPS.map((stepDef, index) => (
             <div
               key={stepDef.titleKey}
-              className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                index === currentStep
-                  ? 'bg-amber-500 scale-125'
-                  : index < currentStep
-                    ? 'bg-amber-300'
-                    : 'bg-stone-300 dark:bg-stone-600'
+              className={`abyss-step ${
+                index === currentStep ? 'is-current' : index < currentStep ? 'is-done' : ''
               }`}
             />
           ))}
@@ -101,10 +97,8 @@ export default function OnboardingModal({ isOpen, engine, t, onClose }: Onboardi
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
         >
-          <h3 className="font-bold text-lg text-stone-900 dark:text-stone-100 mb-2">
-            {t(step.titleKey)}
-          </h3>
-          <p className="text-stone-600 dark:text-stone-300 text-sm leading-relaxed">
+          <h3 className="font-bold text-lg mb-2">{t(step.titleKey)}</h3>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
             {t(step.descriptionKey)}
           </p>
         </motion.div>
@@ -114,7 +108,7 @@ export default function OnboardingModal({ isOpen, engine, t, onClose }: Onboardi
           <button
             type="button"
             onClick={handleSkip}
-            className="text-sm text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 flex items-center gap-1"
+            className="abyss-btn abyss-btn-ghost w-auto"
             aria-label={t('onboarding_skip')}
           >
             <X className="w-4 h-4" />
@@ -123,7 +117,7 @@ export default function OnboardingModal({ isOpen, engine, t, onClose }: Onboardi
           <button
             type="button"
             onClick={handleNext}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg"
+            className="abyss-btn abyss-btn-apple w-auto"
             aria-label={
               currentStep < ONBOARDING_STEPS.length - 1
                 ? t('onboarding_next')

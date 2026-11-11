@@ -1,8 +1,8 @@
 'use client';
 
-import React, { Component, type ErrorInfo, type ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
+import { AlertTriangle, Bug, Home, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
+import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -86,73 +86,60 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-red-50 to-stone-50 dark:from-stone-900 dark:via-red-950/30 dark:to-stone-900 p-4"
+          className="min-h-screen flex items-center justify-center p-4"
+          style={{ background: 'var(--bg)', color: 'var(--ink)' }}
         >
-          <div className="max-w-md w-full bg-white dark:bg-stone-800 rounded-3xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-red-500 to-rose-500 p-6 text-center">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', delay: 0.2 }}
-                className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto"
-              >
-                <AlertTriangle className="w-10 h-10 text-white" />
-              </motion.div>
-              <h1 className="text-2xl font-bold text-white mt-4">Oops! Something went wrong</h1>
-              <p className="text-white/80 mt-2">The apple encountered an unexpected error</p>
-            </div>
+          <div className="abyss-modal max-w-md">
+            <div className="abyss-modal-body text-center space-y-4">
+              <div className="abyss-card-icon w-16 h-16 mx-auto rounded-full">
+                <AlertTriangle className="w-8 h-8" aria-hidden="true" />
+              </div>
+              <h1 className="text-2xl font-bold">Oops! Something went wrong</h1>
+              <p style={{ color: 'var(--muted)' }}>The apple encountered an unexpected error</p>
 
-            <div className="p-6 space-y-4">
               {process.env.NODE_ENV === 'development' && error && (
-                <div className="bg-stone-50 dark:bg-stone-900 dark:border-stone-700 rounded-xl p-4 border border-stone-200">
-                  <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400 mb-2">
-                    <Bug className="w-4 h-4" />
+                <div className="abyss-error text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Bug className="w-4 h-4" aria-hidden="true" />
                     <span className="text-xs font-bold uppercase">Error Details</span>
                   </div>
-                  <p className="text-sm text-red-600 dark:text-red-400 font-mono break-all">
-                    {error.message}
-                  </p>
+                  <p className="text-sm font-mono break-all">{error.message}</p>
                 </div>
               )}
 
               {errorCount >= 3 && (
-                <div className="bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-800 border border-yellow-200 rounded-xl p-4">
-                  <p className="text-sm text-yellow-800">
+                <div className="abyss-callout text-left" role="status">
+                  <p className="text-sm">
                     Multiple errors detected. Try refreshing the page or clearing your browser data.
                   </p>
                 </div>
               )}
 
               <div className="flex flex-col gap-3">
-                <motion.button
+                <button
+                  type="button"
                   onClick={this.handleReset}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-bold hover:from-red-600 hover:to-rose-600 transition-all shadow-lg"
+                  className="abyss-btn abyss-btn-apple"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-4 h-4" aria-hidden="true" />
                   Try Again
-                </motion.button>
-
-                <motion.button
+                </button>
+                <button
+                  type="button"
                   onClick={this.handleReload}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 dark:bg-stone-700 dark:hover:bg-stone-600 dark:text-stone-200 rounded-xl font-medium transition-all"
+                  className="abyss-btn abyss-btn-ghost"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-4 h-4" aria-hidden="true" />
                   Reload Page
-                </motion.button>
-
-                <motion.button
+                </button>
+                <button
+                  type="button"
                   onClick={this.handleGoHome}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 dark:bg-stone-700 dark:hover:bg-stone-600 dark:text-stone-200 rounded-xl font-medium transition-all"
+                  className="abyss-btn abyss-btn-ghost"
                 >
-                  <Home className="w-4 h-4" />
+                  <Home className="w-4 h-4" aria-hidden="true" />
                   Go to Home
-                </motion.button>
+                </button>
               </div>
             </div>
           </div>

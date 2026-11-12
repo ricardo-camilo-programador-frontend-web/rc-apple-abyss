@@ -119,6 +119,31 @@ pnpm test      # Run Vitest test suite
 pnpm type-check # TypeScript type checking
 ```
 
+## Advertising
+
+The apple varieties guide can show **one** labeled Adsterra slot at the end of the article (native banner, or a display banner). Pop-unders, social bars, smartlinks, and interstitials are not used. The game screen keeps its existing AdSense unit and does not load Adsterra.
+
+Nothing is injected unless all of these are true:
+
+- the zone key for that format is set
+- `NEXT_PUBLIC_ADSTERRA_ENABLED` is not `false` (empty means on only when a key exists)
+- the build is production
+- `window.location.hostname` is the canonical host (`https://click-on-the-malus-domestica-ide.netlify.app`, or `NEXT_PUBLIC_SITE_URL` when set)
+- the study-project modal has not turned analytics off
+
+That modal's analytics toggle also updates Google `ad_storage`. `AdsterraBanner` checks `window.rcStudyModal.isAnalyticsEnabled()` when the function exists and listens for `rc-study-modal:analytics`. A missing API does not block the ad, because the modal defaults analytics to on. The modal's ads sentence is informational; it does not change the toggle or the `rc-study-modal` localStorage key.
+
+Copy the Native Banner values from the Adsterra panel: **Websites → your site → Get Code**. `NEXT_PUBLIC_ADSTERRA_NATIVE_HOST` is the host in that script URL (for example `plXXXX.effectivegatecpm.com`). Set the variables in Netlify under **Site configuration → Environment variables**, then redeploy. `public/ads.txt` keeps the Google line. After Adsterra approves the site, paste their official ads.txt line from the panel. Do not invent a publisher id.
+
+| Variable | Role |
+| --- | --- |
+| `NEXT_PUBLIC_ADSTERRA_NATIVE_KEY` | Native Banner zone key. Empty = no ad. |
+| `NEXT_PUBLIC_ADSTERRA_NATIVE_HOST` | Script host from Get Code. Required for the native slot. |
+| `NEXT_PUBLIC_ADSTERRA_BANNER_KEY` | Optional display banner key. |
+| `NEXT_PUBLIC_ADSTERRA_BANNER_HOST` | Optional. Defaults to `www.highperformanceformat.com`. |
+| `NEXT_PUBLIC_ADSTERRA_ENABLED` | `false` forces the slot off. |
+| `NEXT_PUBLIC_SITE_URL` | Optional canonical origin. Preview deploys must not match it. |
+
 ## Journey System Architecture
 
 ### Goals (Pure Rules)

@@ -1,113 +1,223 @@
 /**
- * Adsterra Monetization Module
- * 
- * Publisher ID: 5657606
- * 
- * How to change the ID:
- * Update the NEXT_PUBLIC_ADSTERRA_PUBLISHER_ID environment variable in your .env file
- * or change the DEFAULT_PUBLISHER_ID constant below.
- * 
- * How to disable ads:
- * Set NEXT_PUBLIC_ENABLE_ADSTERRA=false in your .env file
- * or change the ENABLE_ADS constant below.
- * 
- * How to add new placements:
- * Add a new format to the AdFormat enum and handle it in the AdsterraAd component.
+ * Discreet Adsterra slots: native banner and display banner only.
+ *
+ * Zone keys and script hosts come from public env vars. Nothing renders and no
+ * script is injected when the key is missing or `NEXT_PUBLIC_ADSTERRA_ENABLED`
+ * is `false`. The kill switch defaults to on only when a key is present.
+ *
+ * Consent follows the study-project modal. That modal's analytics toggle also
+ * updates Google `ad_storage`. If `window.rcStudyModal.isAnalyticsEnabled`
+ * exists and returns false, do not load. A missing API does not block (the
+ * modal defaults analytics to on). Listen for `rc-study-modal:analytics`
+ * (`detail` is the new boolean) and unload if it becomes false.
+ *
+ * Callers must also require `NODE_ENV === 'production'` and the canonical
+ * hostname (`shouldLoadAdsterra`) so deploy previews stay clean.
  */
 
-export const DEFAULT_PUBLISHER_ID = '5657606';
-export const ENABLE_ADS = process.env.NEXT_PUBLIC_ENABLE_ADSTERRA !== 'false';
+export const DEFAULT_BANNER_HOST = 'www.highperformanceformat.com';
 
-export enum AdFormat {
-  POPUNDER = 'popunder',
-  SOCIAL_BAR = 'social_bar',
-  NATIVE_BANNER = 'native_banner',
-  DISPLAY_BANNER = 'display_banner',
-  DISPLAY_BANNER_468x60 = 'display_banner_468x60',
-  DISPLAY_BANNER_160x300 = 'display_banner_160x300',
-  SMARTLINK = 'smartlink',
-  INTERSTITIAL = 'interstitial'
+/** Fired by `public/rc-study-modal.js` when the analytics toggle changes. */
+export const ADSTERRA_CONSENT_EVENT = 'rc-study-modal:analytics';
+
+const KEY_PATTERN = /^[a-z0-9]{8,64}$/i;
+const HOST_PATTERN = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+const DESKTOP_MIN_WIDTH = 768;
+
+export type AdsterraFormat = 'native' | 'banner';
+export type AdsterraBannerVariant = 'rectangle' | 'responsive';
+
+export type AdsterraAtOptions = {
+  key: string;
+  format: 'iframe';
+  height: number;
+  width: number;
+  params: Record<string, never>;
+};
+
+export type AdsterraScript = {
+  format: AdsterraFormat;
+  key: string;
+  host: string;
+  src: string;
+  containerId: string;
+  width: number;
+  height: number;
+  atOptions?: AdsterraAtOptions;
+};
+
+export type BuildAdsterraScriptInput = {
+  format: AdsterraFormat;
+  nativeKey?: string;
+  nativeHost?: string;
+  bannerKey?: string;
+  bannerHost?: string;
+  enabledFlag?: string;
+  viewportWidth?: number;
+  bannerVariant?: AdsterraBannerVariant;
+};
+
+export type ShouldLoadAdsterraInput = {
+  script: AdsterraScript | null;
+  nodeEnv: string | undefined;
+  hostname: string;
+  canonicalHostname: string;
+  /**
+   * `null` when `rcStudyModal.isAnalyticsEnabled` is absent.
+   * `false` blocks the ad. `true` allows it.
+   */
+  analyticsEnabled: boolean | null;
+};
+
+export type RcStudyModalApi = {
+  open?: () => void;
+  isAnalyticsEnabled?: () => boolean;
+};
+
+declare global {
+  interface Window {
+    atOptions?: AdsterraAtOptions;
+    rcStudyModal?: RcStudyModalApi;
+  }
 }
 
-export const ADSTERRA_ZONE_IDS: Record<AdFormat, { zoneId: string; scriptUrl: string; containerId?: string; hpfOptions?: { key: string; format: string; height: number; width: number; params: any }; isDirectLink?: boolean }> = {
-  [AdFormat.POPUNDER]: {
-    zoneId: 'Popunder_1',
-    scriptUrl: '//pl28888622.effectivegatecpm.com/21/f5/0f/21f50f78781f624e643ea67ddad2c20e.js'
-  },
-  [AdFormat.SOCIAL_BAR]: {
-    zoneId: 'SocialBar_1',
-    scriptUrl: '//pl28896729.effectivegatecpm.com/b8/40/28/b84028a1e8cdd9aacf7f1bbf750d14ec.js'
-  },
-  [AdFormat.NATIVE_BANNER]: {
-    zoneId: 'NativeBanner_1',
-    scriptUrl: '//pl28896724.effectivegatecpm.com/bba0732b2443f2bde0056584260a85db/invoke.js',
-    containerId: 'container-bba0732b2443f2bde0056584260a85db'
-  },
-  [AdFormat.DISPLAY_BANNER_468x60]: {
-    zoneId: '468x60_1',
-    scriptUrl: '//www.highperformanceformat.com/e6f86c3f8f1bf5b544a0a68e968978ad/invoke.js',
-    hpfOptions: {
-      key: 'e6f86c3f8f1bf5b544a0a68e968978ad',
-      format: 'iframe',
-      height: 60,
-      width: 468,
-      params: {}
-    }
-  },
-  [AdFormat.DISPLAY_BANNER_160x300]: {
-    zoneId: '160x300_1',
-    scriptUrl: '//www.highperformanceformat.com/0a6274cc8a5e07d6492ff2804701356b/invoke.js',
-    hpfOptions: {
-      key: '0a6274cc8a5e07d6492ff2804701356b',
-      format: 'iframe',
-      height: 300,
-      width: 160,
-      params: {}
-    }
-  },
-  [AdFormat.SMARTLINK]: {
-    zoneId: 'Smartlink_1',
-    scriptUrl: 'https://www.effectivegatecpm.com/q9jhzr00dr?key=f1e2ae74db63e4987a929a82612cff9a',
-    isDirectLink: true
-  },
-  [AdFormat.DISPLAY_BANNER]: {
-    zoneId: 'NativeBanner_1',
-    scriptUrl: '//pl28896724.effectivegatecpm.com/bba0732b2443f2bde0056584260a85db/invoke.js'
-  },
-  [AdFormat.INTERSTITIAL]: {
-    zoneId: 'Interstitial_1',
-    scriptUrl: '//pl5657606.highrevenuegate.com/invoke.js'
-  }
-};
+function clean(value: string | undefined): string {
+  return value?.trim() ?? '';
+}
+
+function isExplicitlyDisabled(flag: string | undefined): boolean {
+  const value = clean(flag).toLowerCase();
+  return value === 'false' || value === '0' || value === 'off';
+}
+
+function validKey(value: string | undefined): string | null {
+  const key = clean(value);
+  return KEY_PATTERN.test(key) ? key : null;
+}
+
+function validHost(value: string | undefined, fallback?: string): string | null {
+  const host = clean(value) || fallback || '';
+  return HOST_PATTERN.test(host) ? host : null;
+}
+
+function bannerSize(
+  variant: AdsterraBannerVariant,
+  viewportWidth: number,
+): { width: number; height: number } {
+  if (variant === 'rectangle') return { width: 300, height: 250 };
+  if (viewportWidth >= DESKTOP_MIN_WIDTH) return { width: 728, height: 90 };
+  return { width: 320, height: 50 };
+}
 
 /**
- * Loads the Adsterra script asynchronously.
- * Ensures it only runs on the client-side and doesn't block rendering.
+ * Builds the official invoke.js URL for a native or display banner.
+ * Returns null when the slot is disabled or the key/host is unusable.
  */
-export const loadAdsterra = (zoneScript: string, containerId?: string) => {
-  if (!ENABLE_ADS || typeof window === 'undefined') return;
+export function buildAdsterraScript(input: BuildAdsterraScriptInput): AdsterraScript | null {
+  if (isExplicitlyDisabled(input.enabledFlag)) return null;
 
-  try {
-    // Check if script is already loaded to avoid duplication
-    // We hash the URL to create a unique ID
-    const scriptId = `adsterra-script-${btoa(zoneScript).replace(/[^a-zA-Z0-9]/g, '')}`;
-    if (document.getElementById(scriptId)) return;
+  const viewportWidth = input.viewportWidth ?? DESKTOP_MIN_WIDTH;
+  const variant = input.bannerVariant ?? 'responsive';
 
-    const script = document.createElement('script');
-    script.id = scriptId;
-    script.type = 'text/javascript';
-    script.async = true;
-    script.src = zoneScript;
-    
-    if (containerId) {
-      const container = document.getElementById(containerId);
-      if (container) {
-        container.appendChild(script);
-      }
-    } else {
-      document.body.appendChild(script);
-    }
-  } catch (error) {
-    console.error('Failed to load Adsterra script:', error);
+  if (input.format === 'native') {
+    const key = validKey(input.nativeKey);
+    const host = validHost(input.nativeHost);
+    if (!key || !host) return null;
+    return {
+      format: 'native',
+      key,
+      host,
+      src: `//${host}/${key}/invoke.js`,
+      containerId: `container-${key}`,
+      width: 728,
+      height: 120,
+    };
   }
-};
+
+  const key = validKey(input.bannerKey);
+  const host = validHost(input.bannerHost, DEFAULT_BANNER_HOST);
+  if (!key || !host) return null;
+  const size = bannerSize(variant, viewportWidth);
+  const atOptions: AdsterraAtOptions = {
+    key,
+    format: 'iframe',
+    height: size.height,
+    width: size.width,
+    params: {},
+  };
+  return {
+    format: 'banner',
+    key,
+    host,
+    src: `//${host}/${key}/invoke.js`,
+    containerId: `container-${key}`,
+    width: size.width,
+    height: size.height,
+    atOptions,
+  };
+}
+
+/** Production + canonical host + consent. A null script never loads. */
+export function shouldLoadAdsterra(input: ShouldLoadAdsterraInput): boolean {
+  if (!input.script) return false;
+  if (input.nodeEnv !== 'production') return false;
+  const hostname = input.hostname.trim().toLowerCase();
+  const canonical = input.canonicalHostname.trim().toLowerCase();
+  if (!hostname || hostname !== canonical) return false;
+  if (input.analyticsEnabled === false) return false;
+  return true;
+}
+
+/**
+ * Reads the study modal without throwing. `null` means the API is not there
+ * yet, which does not block the ad. A thrown read fails closed and blocks the ad.
+ */
+export function readAnalyticsConsent(modal: RcStudyModalApi | undefined): boolean | null {
+  if (typeof modal?.isAnalyticsEnabled !== 'function') return null;
+  try {
+    return modal.isAnalyticsEnabled() ? true : false;
+  } catch {
+    return false;
+  }
+}
+
+const SCRIPT_ID_PREFIX = 'adsterra-invoke-';
+
+export function adsterraScriptElementId(key: string): string {
+  return `${SCRIPT_ID_PREFIX}${key}`;
+}
+
+/**
+ * Inserts invoke.js once per key, inside the slot so removal unmounts with it.
+ * Display banners need `window.atOptions` set before the script runs.
+ * Returns null when that key's script is already in the document.
+ */
+export function mountAdsterraScript(
+  container: HTMLElement,
+  script: AdsterraScript,
+): HTMLScriptElement | null {
+  const doc = container.ownerDocument;
+  const scriptId = adsterraScriptElementId(script.key);
+  if (doc.getElementById(scriptId)) return null;
+
+  const view = doc.defaultView;
+  if (script.atOptions && view) {
+    view.atOptions = script.atOptions;
+  }
+
+  const node = doc.createElement('script');
+  node.id = scriptId;
+  node.async = true;
+  node.src = script.src;
+  container.appendChild(node);
+  return node;
+}
+
+export function removeAdsterraScript(doc: Document, key: string | undefined): void {
+  if (!key) return;
+  doc.getElementById(adsterraScriptElementId(key))?.remove();
+  const view = doc.defaultView;
+  if (view?.atOptions?.key === key) {
+    view.atOptions = undefined;
+  }
+}

@@ -40,7 +40,6 @@ export default defineConfig([
     files: [
       'app/apple-varieties/page.tsx',
       'components/AdSenseAd.tsx',
-      'components/AdsterraAd.tsx',
       'components/game/AppleArea.tsx',
       'components/game/AscensionSidebar.tsx',
       'components/game/GameFooter.tsx',
@@ -52,7 +51,6 @@ export default defineConfig([
       'components/game/StatsModal.tsx',
       'components/game/UpgradeCard.tsx',
       'components/game/UpgradeSidebar.tsx',
-      'lib/ads/adsterra.ts',
       'lib/game/engine.ts',
       'lib/game/offline.ts',
       'lib/game/skills.ts',

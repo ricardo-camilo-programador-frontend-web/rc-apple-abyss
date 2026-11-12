@@ -53,14 +53,9 @@ export default function RewardedAdButton({
 
     setIsWatching(true);
 
-    // Simulate ad viewing experience.
-    // In production, this would call Adsterra's interstitial API:
-    //   loadAdsterra(ADSTERRA_ZONE_IDS[AdFormat.INTERSTITIAL].scriptUrl);
-    //   then onAdClose callback → onReward()
-    //
-    // For now, we use a short timeout to simulate the ad watch.
-    // Goodwill policy: reward is granted even if the ad fails to load,
-    // because penalizing the user for ad network failures causes churn.
+    // Local goodwill timer. This button does not load a third-party ad.
+    // The reward is granted after a short delay so a missing ad network
+    // never blocks the player.
     const adDuration = 3000; // Simulated 3s ad (real rewarded videos are 15–30s)
 
     const timer = setTimeout(() => {

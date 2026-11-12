@@ -1,1 +1,2 @@
 google.com, pub-6735039970151788, DIRECT, f08c47fec0942fa0
+# Adsterra: after the site is approved, copy the official ads.txt line from the Adsterra panel (Websites). Do not invent a publisher id here.

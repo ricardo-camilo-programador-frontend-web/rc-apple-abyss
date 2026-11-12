@@ -6,6 +6,7 @@ import { Analytics } from '@/components/Analytics';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ToastProvider } from '@/components/Toast';
+import { SITE_ORIGIN } from '@/lib/site';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -14,7 +15,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://click-on-the-malus-domestica-ide.netlify.app'),
+  metadataBase: new URL(SITE_ORIGIN),
   title: 'Apple of the Infinite Abyss',
   description:
     'A minimalist incremental idle game where you eat apples with help of worms. Features goals, daily rewards, onboarding, and skill activation.',

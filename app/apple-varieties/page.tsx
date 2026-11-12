@@ -1,11 +1,10 @@
 'use client';
 
-import { ArrowLeft, BookOpen, ChevronLeft, ExternalLink, Github, Info } from 'lucide-react';
+import { ArrowLeft, BookOpen, ExternalLink, Github, Info } from 'lucide-react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import React, { useEffect, useState } from 'react';
-import AdsterraAd from '@/components/AdsterraAd';
-import { AdFormat } from '@/lib/ads/adsterra';
+import { useEffect, useState } from 'react';
+import AdsterraBanner from '@/components/AdsterraBanner';
 import { GameEngine } from '@/lib/game/engine';
 import type { Language } from '@/lib/game/types';
 
@@ -59,7 +58,8 @@ export default function AppleVarietiesPage() {
     return () => clearInterval(interval);
   }, [engine, language]);
 
-  const t = (key: string, params?: any) => engine.getLocalization().t(key, params);
+  const t = (key: string, params?: Record<string, string | number>) =>
+    engine.getLocalization().t(key, params);
 
   return (
     <div className="min-h-screen font-sans">
@@ -67,10 +67,6 @@ export default function AppleVarietiesPage() {
           but since it's a client component we use a simple approach or just rely on layout) */}
       <title>{`${t('apple_guide_title')} | Apple of the Infinite Abyss`}</title>
       <meta name="description" content={t('apple_guide_meta_description')} />
-
-      {/* Adsterra Global Formats */}
-      <AdsterraAd format={AdFormat.POPUNDER} />
-      <AdsterraAd format={AdFormat.SOCIAL_BAR} />
 
       {/* Header / Navigation */}
       <header className="abyss-guide-header">
@@ -101,9 +97,6 @@ export default function AppleVarietiesPage() {
             {t('apple_guide_intro')}
           </p>
         </motion.section>
-
-        {/* Top Ad */}
-        <AdsterraAd format={AdFormat.DISPLAY_BANNER} className="w-full max-w-3xl mx-auto" />
 
         {/* Infographic Section */}
         <motion.section
@@ -145,9 +138,6 @@ export default function AppleVarietiesPage() {
           </div>
         </motion.section>
 
-        {/* Middle Ad */}
-        <AdsterraAd format={AdFormat.NATIVE_BANNER} className="w-full max-w-4xl mx-auto" />
-
         {/* Varieties Grid */}
         <section className="space-y-8">
           <div className="flex items-center gap-4">
@@ -178,8 +168,10 @@ export default function AppleVarietiesPage() {
           </div>
         </section>
 
-        {/* Bottom Ad */}
-        <AdsterraAd format={AdFormat.DISPLAY_BANNER} className="w-full max-w-3xl mx-auto" />
+        <AdsterraBanner
+          format="native"
+          label={language === 'pt' ? 'Publicidade' : 'Advertisement'}
+        />
       </main>
 
       {/* Footer */}

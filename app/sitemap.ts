@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
+import { SITE_ORIGIN } from '@/lib/site';
 
-const BASE_URL = 'https://click-on-the-malus-domestica-ide.netlify.app';
+const BASE_URL = SITE_ORIGIN;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();

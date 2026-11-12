@@ -1223,6 +1223,29 @@
   text-transform: uppercase;
 }
 
+/* Discreet ad disclosure. A rule and a label, not a content card or a button. */
+.abyss-ad {
+  width: min(100%, 48rem);
+  margin-inline: auto;
+  padding-top: 2rem;
+  border-top: 1px solid var(--line);
+}
+
+.abyss-ad-label {
+  margin: 0 0 0.5rem;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.abyss-ad-frame {
+  width: 100%;
+  margin-inline: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1235,7 +1258,9 @@
 
   .abyss-spinner,
   .shake-active,
-  .abyss-apple-btn.is-struck::after {
+  .abyss-apple-btn.is-struck::after,
+  .abyss-ad,
+  .abyss-ad-frame {
     animation: none;
   }
 

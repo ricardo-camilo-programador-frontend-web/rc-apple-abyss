@@ -133,7 +133,7 @@ Nothing is injected unless all of these are true:
 
 That modal's analytics toggle also updates Google `ad_storage`. `AdsterraBanner` checks `window.rcStudyModal.isAnalyticsEnabled()` when the function exists and listens for `rc-study-modal:analytics`. A missing API does not block the ad, because the modal defaults analytics to on. The modal's ads sentence is informational; it does not change the toggle or the `rc-study-modal` localStorage key.
 
-Copy the Native Banner values from the Adsterra panel: **Websites → your site → Get Code**. `NEXT_PUBLIC_ADSTERRA_NATIVE_HOST` is the host in that script URL (for example `plXXXX.effectivegatecpm.com`). Set the variables in Netlify under **Site configuration → Environment variables**, then redeploy. `public/ads.txt` keeps the Google line. After Adsterra approves the site, paste their official ads.txt line from the panel. Do not invent a publisher id.
+Copy the Native Banner values from the Adsterra panel: **Websites → your site → Get Code**. `NEXT_PUBLIC_ADSTERRA_NATIVE_HOST` is the host in that script URL (host only, without `https://`; for example `plXXXX.effectivegatecpm.com` or `plXXXX.profitableratecpmnetwork.com`). Set the variables in Netlify under **Site configuration → Environment variables**, then redeploy. `public/ads.txt` keeps the Google line. After Adsterra approves the site, paste their official ads.txt line from the panel. Do not invent a publisher id.
 
 | Variable | Role |
 | --- | --- |

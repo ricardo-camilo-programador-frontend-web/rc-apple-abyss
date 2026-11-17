@@ -261,8 +261,8 @@ export default function SettingsModal({
                     </div>
                     <div className="text-xs" style={{ color: 'var(--muted)' }}>
                       {adsRemoved
-                        ? 'Display ads are hidden. Rewarded ads still available.'
-                        : 'Hide all display ads (banners). Rewarded ads remain optional.'}
+                        ? 'Banners and Free Rewards are hidden.'
+                        : 'Hide banners and the Free Rewards ads.'}
                     </div>
                   </div>
                   <div

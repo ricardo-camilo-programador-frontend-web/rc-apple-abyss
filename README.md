@@ -144,6 +144,18 @@ Copy the Native Banner values from the Adsterra panel: **Websites → your site 
 | `NEXT_PUBLIC_ADSTERRA_ENABLED` | `false` forces the slot off. |
 | `NEXT_PUBLIC_SITE_URL` | Optional canonical origin. Preview deploys must not match it. |
 
+### Bloco AdSense do jogo (#51)
+
+A tela do jogo tem um único bloco AdSense, `FooterAds`, no fluxo da página, acima do rodapé. Não existe mais caixa flutuante: a política do AdSense proíbe anúncio em "floating box script". O bloco é rotulado (Publicidade / Advertisement), tem tamanho fixo (728×90 a partir de 768 px, 320×50 abaixo) e só aparece depois dos 30 s de carência da sessão.
+
+O bloco só é renderizado com um id de bloco válido em `NEXT_PUBLIC_ADSENSE_FOOTER_SLOT`. É o número que o AdSense mostra em **Anúncios → Por bloco de anúncios → Bloco de display → Código** (`data-ad-slot`). Sem essa variável, ou com um texto como `horizontal-footer`, nada é renderizado. Se o AdSense marcar `data-ad-status="unfilled"`, o bloco se recolhe sem deixar espaço vazio.
+
+"Remove Ads" (Configurações) fica num estado único compartilhado (`lib/ads/ads-removed.ts`). Ligado, esconde o bloco e o Free Rewards na hora, sem recarregar.
+
+| Variável | Uso |
+| --- | --- |
+| `NEXT_PUBLIC_ADSENSE_FOOTER_SLOT` | Id numérico do bloco de display do rodapé do jogo. Vazio = sem bloco. |
+
 ## Journey System Architecture
 
 ### Goals (Pure Rules)

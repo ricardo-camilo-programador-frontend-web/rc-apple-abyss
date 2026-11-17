@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { readAdsRemoved, subscribeAdsRemoved, writeAdsRemoved } from '@/lib/ads/ads-removed';
 
 /**
  * Ad Guard Hook — controls ad visibility with industry-standard practices.
@@ -10,11 +11,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  *    This follows Mind Studios' pattern: "first steps devoid of ads, increasing
  *    retention as new users immerse smoothly without interruptions."
  * 2. Remove ads toggle: User can disable ads entirely (placeholder for future IAP).
+ *    The value lives in one shared store (`lib/ads/ads-removed.ts`), so every
+ *    component sees the change at once, and it also hides Free Rewards.
  * 3. Rewarded ad cooldown tracking: Prevents spamming rewarded ads.
  */
 
 const GRACE_PERIOD_SECONDS = 30;
-const STORAGE_KEY_REMOVED = 'apple_abyss_ads_removed';
 const STORAGE_KEY_SESSION_START = 'apple_abyss_session_start';
 
 function getSessionStart(): number {
@@ -24,11 +26,6 @@ function getSessionStart(): number {
   const now = Date.now();
   sessionStorage.setItem(STORAGE_KEY_SESSION_START, String(now));
   return now;
-}
-
-function getAdsRemoved(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem(STORAGE_KEY_REMOVED) === 'true';
 }
 
 export interface AdGuardState {
@@ -46,7 +43,8 @@ export interface AdGuardState {
 
 export function useAdGuard(): AdGuardState {
   const [sessionStart] = useState(getSessionStart);
-  const [adsRemoved, setAdsRemoved] = useState(getAdsRemoved);
+  // SSR renderiza sem "Remove Ads"; o snapshot do client vale após a hidratação.
+  const adsRemoved = useSyncExternalStore(subscribeAdsRemoved, readAdsRemoved, () => false);
   const [now, setNow] = useState(() => Date.now());
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -61,19 +59,13 @@ export function useAdGuard(): AdGuardState {
     };
   }, [sessionStart]);
 
-  // Sync adsRemoved to localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(STORAGE_KEY_REMOVED, String(adsRemoved));
-  }, [adsRemoved]);
-
   const sessionAge = (now - sessionStart) / 1000;
   const gracePeriodRemaining = Math.max(0, GRACE_PERIOD_SECONDS - sessionAge);
   const pastGracePeriod = sessionAge >= GRACE_PERIOD_SECONDS;
   const adsVisible = pastGracePeriod && !adsRemoved;
 
   const toggleAdsRemoved = useCallback(() => {
-    setAdsRemoved((prev) => !prev);
+    writeAdsRemoved(!readAdsRemoved());
   }, []);
 
   return {

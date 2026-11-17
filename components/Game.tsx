@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 // Extracted ad, modal and effects components
-import AdBanner from '@/components/game/AdBanner';
 import AdSidebars from '@/components/game/AdLayout';
 import AppleArea from '@/components/game/AppleArea';
 import AscensionSidebar from '@/components/game/AscensionSidebar';
@@ -15,6 +14,7 @@ import MobileModals from '@/components/game/MobileModals';
 import MobileNav from '@/components/game/MobileNav';
 import { NumberFormatProvider } from '@/components/game/NumberFormatProvider';
 import UpgradeSidebar from '@/components/game/UpgradeSidebar';
+import { useAdGuard } from '@/hooks/use-ad-guard';
 import { useGameKeyboard } from '@/hooks/use-game-keyboard';
 // Extracted hooks
 import { useGameLoop } from '@/hooks/use-game-loop';
@@ -27,6 +27,8 @@ export default function Game() {
   const [engine] = useState(() => new GameEngine());
   const orch = useGameOrchestration(engine);
   const rewarded = useRewardedAds(engine, orch.handleStateUpdate);
+  // Com "Remove Ads" ligado, o Free Rewards (que é anúncio) some e o modal fecha.
+  const { adsRemoved } = useAdGuard();
   const { setIsMounted, setShowOnboarding, handleStateUpdate } = orch;
 
   // Mount effect
@@ -105,7 +107,7 @@ export default function Game() {
               particleOffsets={orch.particleOffsets}
               onAppleClick={orch.handleClick}
               onActivateSkill={orch.handleActivateSkill}
-              onShowRewardedAds={() => rewarded.setShowRewardedAds(true)}
+              onShowRewardedAds={adsRemoved ? undefined : () => rewarded.setShowRewardedAds(true)}
               goldBoostRemaining={rewarded.goldBoostRemaining}
             />
             <AscensionSidebar
@@ -153,7 +155,7 @@ export default function Game() {
           onImportSave={orch.handleImportSave}
           onResetGame={orch.handleResetGame}
           onExportSave={orch.handleExportSave}
-          showRewardedAds={rewarded.showRewardedAds}
+          showRewardedAds={rewarded.showRewardedAds && !adsRemoved}
           onCloseRewardedAds={() => rewarded.setShowRewardedAds(false)}
           getCooldown={rewarded.getCooldown}
           onGoldBoost={rewarded.handleGoldBoostReward}
@@ -176,8 +178,6 @@ export default function Game() {
           onAscend={orch.handleAscend}
           onDiveAbyss={orch.handleDiveAbyss}
         />
-
-        <AdBanner />
       </div>
     </NumberFormatProvider>
   );

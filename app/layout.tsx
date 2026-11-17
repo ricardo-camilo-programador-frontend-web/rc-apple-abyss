@@ -6,6 +6,7 @@ import { Analytics } from '@/components/Analytics';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ToastProvider } from '@/components/Toast';
+import { H5_ADS_CONFIG, h5ScriptAttributes } from '@/lib/ads/h5-games';
 import { SITE_ORIGIN } from '@/lib/site';
 
 const inter = Inter({
@@ -84,13 +85,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         `,
           }}
         />
-        {/* AdSense */}
+        {/* AdSense (também carrega o Ad Placement API do H5 Games Ads; ver lib/ads/h5-games.ts) */}
         <Script
           id="adsense"
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6735039970151788"
           crossOrigin="anonymous"
           strategy="afterInteractive"
+          {...h5ScriptAttributes(H5_ADS_CONFIG)}
         />
         {/* Analytics (GA4, optional GTM, Clarity, counter.dev) — see lib/analytics/config.ts */}
         <Analytics />

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import Image from 'next/image';
 import type React from 'react';
 import { useState } from 'react';
+import { H5_ADS_CONFIG } from '@/lib/ads/h5-games';
 import type { GameEngine } from '@/lib/game/engine';
 import { percentOf } from '@/lib/game/num';
 import { APPLE_SPRITES, getAppleSpriteIndex } from '@/lib/game/sprites';
@@ -180,7 +181,7 @@ export default function AppleArea({
           )}
         </motion.button>
 
-        {onShowRewardedAds && (
+        {onShowRewardedAds && H5_ADS_CONFIG.enabled && (
           <button
             type="button"
             onClick={onShowRewardedAds}
@@ -190,7 +191,7 @@ export default function AppleArea({
             <span className="text-sm">Free Rewards</span>
             {goldBoostRemaining > 0 && (
               <span className="ml-auto font-mono text-xs font-bold">
-                2x active: {goldBoostRemaining}s
+                2x gold: {goldBoostRemaining}s
               </span>
             )}
           </button>

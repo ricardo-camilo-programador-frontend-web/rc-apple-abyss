@@ -1,91 +1,104 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ADSENSE_CLIENT, type AdSenseSize, readAdSenseStatus } from '@/lib/ads/adsense';
 
-interface AdSenseAdProps {
-  slot: string;
-  className?: string;
-  format?: 'auto' | 'fluid' | 'rectangle';
-  responsive?: boolean;
+declare global {
+  interface Window {
+    adsbygoogle?: Array<unknown>;
+  }
 }
 
-export default function AdSenseAd({ slot, className = '', format = 'auto', responsive = true }: AdSenseAdProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const isLoaded = useRef(false);
-  const [hasError, setHasError] = React.useState(false);
+interface AdSenseAdProps {
+  /** Id numérico do bloco (validado por `parseAdSenseSlot` antes de chegar aqui). */
+  slot: string;
+  /** Tamanho fixo do bloco. */
+  size: AdSenseSize;
+  className?: string;
+  /** Chamado quando o AdSense não preenche (`data-ad-status="unfilled"`) ou falha. */
+  onEmpty?: () => void;
+}
+
+/**
+ * Um bloco AdSense de tamanho fixo, no fluxo da página.
+ *
+ * Só chama `adsbygoogle.push` quando o bloco chega perto da tela. Observa
+ * `data-ad-status`: se vier `unfilled`, ou se o push falhar, o bloco some
+ * (sem texto de reserva) e avisa o pai por `onEmpty`.
+ */
+export default function AdSenseAd({ slot, size, className = '', onEmpty }: AdSenseAdProps) {
+  const insRef = useRef<HTMLModElement>(null);
+  const pushed = useRef(false);
+  const [empty, setEmpty] = useState(false);
+  const onEmptyRef = useRef(onEmpty);
 
   useEffect(() => {
-    // Only run on client and if not already loaded
-    if (typeof window === 'undefined' || isLoaded.current) return;
+    onEmptyRef.current = onEmpty;
+  }, [onEmpty]);
 
-    let retryCount = 0;
-    const loadAd = () => {
-      if (!containerRef.current) return;
+  useEffect(() => {
+    const ins = insRef.current;
+    if (!ins) return;
 
-      // Check dimensions to ensure the ad has space
-      const rect = containerRef.current.getBoundingClientRect();
-      const insElement = containerRef.current.querySelector('ins');
-      const insRect = insElement ? insElement.getBoundingClientRect() : { width: 0, height: 0 };
+    const markEmpty = () => {
+      setEmpty(true);
+      onEmptyRef.current?.();
+    };
 
-      if (rect.width === 0 || insRect.width === 0) {
-        retryCount++;
-        if (retryCount > 10) {
-          setHasError(true);
-          return;
-        }
-        setTimeout(loadAd, 500);
-        return;
+    const statusObserver = new MutationObserver(() => {
+      if (readAdSenseStatus(ins) === 'unfilled') {
+        statusObserver.disconnect();
+        markEmpty();
       }
+    });
+    statusObserver.observe(ins, { attributes: true, attributeFilter: ['data-ad-status'] });
 
+    const push = () => {
+      if (pushed.current) return;
+      pushed.current = true;
       try {
-        // @ts-ignore
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-        isLoaded.current = true;
+        window.adsbygoogle = window.adsbygoogle || [];
+        window.adsbygoogle.push({});
       } catch (err) {
         if (process.env.NODE_ENV === 'development') {
           console.error('AdSense error:', err);
         }
-        setHasError(true);
+        statusObserver.disconnect();
+        markEmpty();
       }
     };
 
-    if (containerRef.current) {
-      const observer = new IntersectionObserver(
+    let viewObserver: IntersectionObserver | undefined;
+    if (typeof window.IntersectionObserver === 'function') {
+      viewObserver = new IntersectionObserver(
         (entries) => {
-          if (entries[0].isIntersecting) {
-            if ('requestIdleCallback' in window) {
-              window.requestIdleCallback(() => loadAd());
-            } else {
-              setTimeout(loadAd, 1);
-            }
-            observer.disconnect();
-          }
+          if (!entries.some((entry) => entry.isIntersecting)) return;
+          viewObserver?.disconnect();
+          push();
         },
-        { rootMargin: '200px' }
+        { rootMargin: '200px' },
       );
-      
-      observer.observe(containerRef.current);
-      return () => observer.disconnect();
+      viewObserver.observe(ins);
+    } else {
+      push();
     }
+
+    return () => {
+      statusObserver.disconnect();
+      viewObserver?.disconnect();
+    };
   }, []);
 
-  if (hasError) {
-      return (
-        <div className={`ad-fallback min-h-[90px] ${className}`} aria-hidden="true">
-          Advertisement
-        </div>
-      );
-  }
+  if (empty) return null;
 
   return (
-    <div className={`adsense-container min-h-[90px] ${className}`} ref={containerRef}>
-      <ins 
+    <div className={`adsense-container ${className}`.trim()}>
+      <ins
+        ref={insRef}
         className="adsbygoogle"
-        style={{ display: 'block' }}
-        data-ad-client="ca-pub-6735039970151788"
+        style={{ display: 'inline-block', width: size.width, height: size.height }}
+        data-ad-client={ADSENSE_CLIENT}
         data-ad-slot={slot}
-        data-ad-format={format}
-        data-full-width-responsive={responsive ? "true" : "false"}
       />
     </div>
   );

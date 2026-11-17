@@ -1213,16 +1213,9 @@
   animation: shake 150ms ease-in-out;
 }
 
-.ad-fallback {
-  background: var(--surface-2);
-  color: var(--muted);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+/* AdSense sem preenchimento não ocupa espaço (o componente também se recolhe). */
+ins.adsbygoogle[data-ad-status='unfilled'] {
+  display: none !important;
 }
 
 /* Discreet ad disclosure. A rule and a label, not a content card or a button. */
@@ -1246,6 +1239,22 @@
 .abyss-ad-frame {
   width: 100%;
   margin-inline: auto;
+}
+
+/* Bloco do rodapé do jogo: no fluxo, nunca fixo nem flutuante. */
+.abyss-ad-footer {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 0.5rem var(--space-4);
+  text-align: center;
+}
+
+.abyss-ad-footer .abyss-ad-label {
+  margin-bottom: 0.25rem;
+}
+
+.abyss-ad-footer:has(ins.adsbygoogle[data-ad-status='unfilled']) {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

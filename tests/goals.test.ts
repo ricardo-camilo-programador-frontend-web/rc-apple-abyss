@@ -54,6 +54,7 @@ function createMockGameState(overrides: Partial<GameState> = {}): GameState {
       language: 'en',
       muted: false,
       volume: 0.5,
+      notation: 'mixed',
     },
     ...overrides,
   };

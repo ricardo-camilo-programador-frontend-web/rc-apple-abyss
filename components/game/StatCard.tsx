@@ -5,7 +5,7 @@ import type React from 'react';
 interface StatCardProps {
   icon: React.ElementType;
   label: string;
-  value: string | number;
+  value: React.ReactNode;
   color?: string;
   onClick?: () => void;
 }
@@ -37,7 +37,7 @@ export default function StatCard({
         <div className="text-[10px] font-bold uppercase tracking-wider opacity-80 truncate">
           {label}
         </div>
-        <div className="font-mono font-bold text-sm truncate">{value}</div>
+        <div className="abyss-stat-value">{value}</div>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import React from 'react';
 import type { GameEngine } from '@/lib/game/engine';
 import type { GameState } from '@/lib/game/types';
+import NumberText from './NumberText';
 import StatCard from './StatCard';
 
 interface AscensionSidebarProps {
@@ -94,7 +95,7 @@ export default function AscensionSidebar({
               <StatCard
                 icon={Coins}
                 label="Gold"
-                value={Math.floor(state.gold).toLocaleString()}
+                value={<NumberText value={state.gold} />}
                 color="yellow"
               />
               <StatCard icon={Trophy} label="Stage" value={state.stage} color="orange" />
@@ -107,13 +108,13 @@ export default function AscensionSidebar({
               <StatCard
                 icon={MousePointer2}
                 label="Click Dmg"
-                value={engine.getClickDamage().toFixed(1)}
+                value={<NumberText value={engine.getClickDamage()} decimals={1} />}
                 color="red"
               />
               <StatCard
                 icon={Sword}
                 label="Idle DPS"
-                value={engine.getTotalDPS().toFixed(1)}
+                value={<NumberText value={engine.getTotalDPS()} decimals={1} />}
                 color="blue"
               />
             </div>
@@ -125,7 +126,7 @@ export default function AscensionSidebar({
               <StatCard
                 icon={Users}
                 label="Worms"
-                value={Object.values(state.worms).reduce((a, b) => a + b, 0)}
+                value={<NumberText value={Object.values(state.worms).reduce((a, b) => a + b, 0)} />}
                 color="green"
               />
               <StatCard
@@ -137,7 +138,7 @@ export default function AscensionSidebar({
               <StatCard
                 icon={History}
                 label="Eaten"
-                value={state.totalApplesEaten.toLocaleString()}
+                value={<NumberText value={state.totalApplesEaten} />}
                 color="stone"
               />
             </div>

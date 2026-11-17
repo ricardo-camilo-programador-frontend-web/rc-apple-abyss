@@ -8,6 +8,7 @@ import type { GameEngine } from '@/lib/game/engine';
 import type { GameState } from '@/lib/game/types';
 import { WORM_CATEGORIES } from '@/lib/game/worm-catalog';
 import CollapsibleSection from './CollapsibleSection';
+import NumberText from './NumberText';
 import UpgradeCard from './UpgradeCard';
 
 interface UpgradeSidebarProps {
@@ -59,10 +60,10 @@ export default function UpgradeSidebar({
               <div className="flex items-center justify-between mt-1">
                 <span className="abyss-cost">
                   <Coins className="w-3 h-3" aria-hidden="true" />
-                  {Math.floor(engine.getClickUpgradeCost()).toLocaleString()}
+                  <NumberText value={engine.getClickUpgradeCost()} />
                 </span>
                 <span className="text-[11px]" style={{ color: 'var(--muted)' }}>
-                  Dmg: {engine.getClickDamage().toFixed(1)}
+                  Dmg: <NumberText value={engine.getClickDamage()} decimals={1} />
                 </span>
               </div>
             </div>

@@ -13,6 +13,7 @@ import {
   canClaimDailyReward,
   sanitizeDailyRewardState,
 } from './daily-reward';
+import { isNumberNotation, type NumberNotation } from './format';
 import { calculateAllGoalProgress, findNewlyCompletedGoals, getGoalDefinition } from './goals';
 import { LocalizationSystem } from './localization';
 import { OfflineProgressResult, OfflineProgressSystem } from './offline';
@@ -111,9 +112,16 @@ export class GameEngine {
       worms: { ...INITIAL_STATE.worms, ...(parsed.worms || {}) },
       skills: mergedSkills,
       statistics: { ...INITIAL_STATE.statistics, ...(parsed.statistics || {}) },
-      settings: { ...INITIAL_STATE.settings, ...(parsed.settings || {}) },
+      settings: this.mergeSettings(parsed.settings),
       journey: mergedJourney,
     };
+  }
+
+  /** Settings com notação validada: saves antigos (sem `notation`) recebem o padrão. */
+  private mergeSettings(parsed: Partial<GameState['settings']> | undefined): GameState['settings'] {
+    const merged = { ...INITIAL_STATE.settings, ...(parsed || {}) };
+    if (!isNumberNotation(merged.notation)) merged.notation = INITIAL_STATE.settings.notation;
+    return merged;
   }
 
   /**
@@ -361,6 +369,12 @@ export class GameEngine {
   public setVolume(volume: number): void {
     this.state.settings.volume = volume;
     this.audio.setVolume(volume);
+    this.debouncedSave();
+  }
+
+  public setNotation(notation: NumberNotation): void {
+    if (!isNumberNotation(notation)) return;
+    this.state.settings.notation = notation;
     this.debouncedSave();
   }
 

@@ -1,3 +1,5 @@
+import type { NumberNotation } from './format';
+
 export type Language =
   | 'en'
   | 'zh'
@@ -84,6 +86,8 @@ export interface GameState {
     language: Language;
     muted: boolean;
     volume: number;
+    /** Notação dos números grandes (padrão: mixed) */
+    notation: NumberNotation;
   };
   /** Journey state: goals, onboarding, daily reward — additive migration */
   journey?: JourneyState;

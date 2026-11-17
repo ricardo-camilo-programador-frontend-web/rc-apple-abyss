@@ -8,6 +8,8 @@ import { useState } from 'react';
 import type { GameEngine } from '@/lib/game/engine';
 import { APPLE_SPRITES, getAppleSpriteIndex } from '@/lib/game/sprites';
 import type { GameState } from '@/lib/game/types';
+import { useNumberFormat } from './NumberFormatProvider';
+import NumberText from './NumberText';
 
 interface AppleAreaProps {
   state: GameState;
@@ -43,6 +45,7 @@ export default function AppleArea({
   const skill = state.skills.golden_harvest;
   const ready = skill.cooldownRemaining <= 0 && !skill.isActive;
   const reduceMotion = prefersReducedMotion();
+  const { full } = useNumberFormat();
   const [struck, setStruck] = useState(false);
 
   const handleAppleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -123,8 +126,9 @@ export default function AppleArea({
               <Heart className="w-4 h-4" style={{ color: 'var(--hp)' }} aria-hidden="true" />
               <span className="abyss-kicker">Apple HP</span>
             </div>
-            <span className="font-mono text-sm font-bold">
-              {Math.ceil(state.appleHP).toLocaleString()} / {state.maxAppleHP.toLocaleString()}
+            <span className="abyss-hp-value">
+              <NumberText value={Math.ceil(state.appleHP)} /> /{' '}
+              <NumberText value={state.maxAppleHP} />
             </span>
           </div>
           <div
@@ -132,8 +136,9 @@ export default function AppleArea({
             role="meter"
             aria-label="Apple HP"
             aria-valuemin={0}
-            aria-valuemax={state.maxAppleHP}
-            aria-valuenow={Math.ceil(state.appleHP)}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(hpPercent)}
+            aria-valuetext={`${full(Math.ceil(state.appleHP))} / ${full(state.maxAppleHP)}`}
           >
             <motion.div
               className="abyss-meter-fill"

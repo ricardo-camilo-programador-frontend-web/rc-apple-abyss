@@ -144,7 +144,24 @@ Copy the Native Banner values from the Adsterra panel: **Websites → your site 
 | `NEXT_PUBLIC_ADSTERRA_ENABLED` | `false` forces the slot off. |
 | `NEXT_PUBLIC_SITE_URL` | Optional canonical origin. Preview deploys must not match it. |
 
-### Free Rewards com anúncio real: H5 Games Ads (#52)
+## Journey System Architecture
+
+### Goals (Pure Rules)
+Goals are defined in `lib/game/goals.ts` as pure functions — no side effects, no engine dependency. The `GOAL_DEFINITIONS` catalog lists 22 goals across 5 categories (milestone, upgrade, ascension, collection, skill). Progress is always derived from `GameState` directly, never stored as counters.
+
+### Daily Reward (Pure Rules)
+Daily reward logic in `lib/game/daily-reward.ts` is fully pure. Streak calculation, eligibility, gold amounts, and timestamp validation are all pure functions. The engine layer handles state mutation and persistence.
+
+### Big Numbers & the Abyss (#47)
+- Gold, apple HP, damage and costs are `Decimal` values from [break_infinity.js](https://github.com/Patashu/break_infinity.js), imported only through `lib/game/num.ts`. Values go up to ~1e(9e15) without turning into `Infinity`.
+- `lib/game/format.ts` formats them. The default notation is **Mixed** (K, M, B, T … Dc up to 1e36, then scientific); players can switch to Letters (aa, ab…), Scientific or Engineering in Settings, and the choice is saved.
+- Balance (`lib/game/balance.ts`): apple HP grows ×1.33 per stage up to stage 80 and ×1.1 after that; worms and click damage grow linearly with ×4 every 25 levels; costs grow ×1.15 per level.
+- **The Abyss:** once gold reaches 1.80e308 (the old `number` limit), the player can dive. A dive resets the run and the Lucky Worms, and adds one Abyss depth. Each depth doubles damage and gold forever (`×2^depth`).
+
+### Save Migration
+Saves carry a `saveVersion` (currently 4) and are upgraded by `migrateSave()` in `lib/game/save-migration.ts`: v1 (no version, `null` for overflowed values) → v2 (finite numbers) → v3 (new HP curve, same HP percentage) → v4 (`Decimal` values stored as strings, `abyssDepth`). Old saves without the `journey` field are automatically migrated. `mergeJourneyState()` in the engine provides default initial state for missing journey data. Corrupted values are sanitized gracefully.
+
+## Free Rewards com anúncio real: H5 Games Ads (#52)
 
 O Free Rewards usa o **H5 Games Ads** do Google (Ad Placement API, tipo `reward`). A Adsterra não entra aqui: os termos dela proíbem incentivo a impressões e cliques (seção 6, iv). O anúncio com recompensa é permitido no H5 Games Ads (https://developers.google.com/ad-placement/apis).
 
@@ -175,30 +192,13 @@ Sem as variáveis abaixo, o botão Free Rewards não aparece. O H5 Games Ads usa
 
 A CSP (Report-Only) recebe os hosts do Google por `lib/csp-google-ads.ts`.
 
-#### Checklist para ativar
+### Checklist para ativar
 
 - [ ] No AdSense, pedir acesso ao H5 Games Ads pelo formulário (https://support.google.com/adsense/answer/1705831). É por inscrição e a aprovação não é garantida.
 - [ ] Esperar o e-mail de aprovação do Google.
 - [ ] Testar num deploy preview com `NEXT_PUBLIC_H5_ADS_ENABLED=true`, `NEXT_PUBLIC_H5_ADS_CLIENT=ca-pub-6735039970151788` e `NEXT_PUBLIC_H5_ADS_TEST=on` (escopo Deploy Previews no Netlify).
 - [ ] Em produção (escopo Production no Netlify): `NEXT_PUBLIC_H5_ADS_ENABLED=true` e `NEXT_PUBLIC_H5_ADS_CLIENT=ca-pub-6735039970151788`, sem `NEXT_PUBLIC_H5_ADS_TEST`. Fazer novo deploy.
 - [ ] `public/ads.txt` já tem a linha `google.com, pub-6735039970151788, DIRECT, f08c47fec0942fa0`; não precisa mudar.
-
-## Journey System Architecture
-
-### Goals (Pure Rules)
-Goals are defined in `lib/game/goals.ts` as pure functions — no side effects, no engine dependency. The `GOAL_DEFINITIONS` catalog lists 22 goals across 5 categories (milestone, upgrade, ascension, collection, skill). Progress is always derived from `GameState` directly, never stored as counters.
-
-### Daily Reward (Pure Rules)
-Daily reward logic in `lib/game/daily-reward.ts` is fully pure. Streak calculation, eligibility, gold amounts, and timestamp validation are all pure functions. The engine layer handles state mutation and persistence.
-
-### Big Numbers & the Abyss (#47)
-- Gold, apple HP, damage and costs are `Decimal` values from [break_infinity.js](https://github.com/Patashu/break_infinity.js), imported only through `lib/game/num.ts`. Values go up to ~1e(9e15) without turning into `Infinity`.
-- `lib/game/format.ts` formats them. The default notation is **Mixed** (K, M, B, T … Dc up to 1e36, then scientific); players can switch to Letters (aa, ab…), Scientific or Engineering in Settings, and the choice is saved.
-- Balance (`lib/game/balance.ts`): apple HP grows ×1.33 per stage up to stage 80 and ×1.1 after that; worms and click damage grow linearly with ×4 every 25 levels; costs grow ×1.15 per level.
-- **The Abyss:** once gold reaches 1.80e308 (the old `number` limit), the player can dive. A dive resets the run and the Lucky Worms, and adds one Abyss depth. Each depth doubles damage and gold forever (`×2^depth`).
-
-### Save Migration
-Saves carry a `saveVersion` (currently 4) and are upgraded by `migrateSave()` in `lib/game/save-migration.ts`: v1 (no version, `null` for overflowed values) → v2 (finite numbers) → v3 (new HP curve, same HP percentage) → v4 (`Decimal` values stored as strings, `abyssDepth`). Old saves without the `journey` field are automatically migrated. `mergeJourneyState()` in the engine provides default initial state for missing journey data. Corrupted values are sanitized gracefully.
 
 ## Author
 

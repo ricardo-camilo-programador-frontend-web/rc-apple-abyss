@@ -60,4 +60,7 @@ paths = [
 regexes = [
   '''counter\.dev''',
   '''clarity\.ms''',
+  # Publisher id AdSense público deste site (já em app/layout.tsx e public/ads.txt).
+  # Outros ca-pub continuam sendo detectados pela regra adsense-client-id.
+  '''^ca-pub-6735039970151788$''',
 ]

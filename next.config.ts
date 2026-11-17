@@ -7,20 +7,17 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 // Report-Only: evaluates CSP without enforcing, so third-party ad/analytics
 // breakage surfaces in the console before we flip to enforcement.
-const CSP_REPORT_ONLY = withCspSources(
-  [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://www.googletagmanager.com https://www.google-analytics.com https://cdn.counter.dev https://www.clarity.ms https://*.clarity.ms https://*.effectivegatecpm.com https://*.profitableratecpmnetwork.com https://www.highperformanceformat.com",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data:",
-    "connect-src 'self' https://www.google-analytics.com https://*.googletagmanager.com https://*.clarity.ms https://pagead2.googlesyndication.com https://cdn.counter.dev https://*.counter.dev https://*.effectivegatecpm.com https://*.profitableratecpmnetwork.com https://www.highperformanceformat.com",
-    "frame-src 'self' https://googleads.g.doubleclick.net https://td.doubleclick.net https://*.googlesyndication.com https://*.effectivegatecpm.com https://*.profitableratecpmnetwork.com https://www.highperformanceformat.com",
-    "worker-src 'self' blob:",
-    'upgrade-insecure-requests',
-  ],
-  GOOGLE_ADS_CSP_SOURCES,
-).join('; ');
+const CSP_REPORT_ONLY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://www.googletagmanager.com https://www.google-analytics.com https://cdn.counter.dev https://www.clarity.ms https://*.clarity.ms https://*.effectivegatecpm.com https://*.profitableratecpmnetwork.com https://www.highperformanceformat.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://www.google-analytics.com https://*.googletagmanager.com https://*.clarity.ms https://pagead2.googlesyndication.com https://cdn.counter.dev https://*.counter.dev https://*.effectivegatecpm.com https://*.profitableratecpmnetwork.com https://www.highperformanceformat.com",
+  "frame-src 'self' https://googleads.g.doubleclick.net https://td.doubleclick.net https://*.googlesyndication.com https://*.effectivegatecpm.com https://*.profitableratecpmnetwork.com https://www.highperformanceformat.com",
+  "worker-src 'self' blob:",
+  'upgrade-insecure-requests',
+].join('; ');
 
 const nextConfig: NextConfig = {
   // A lockfile above this repo was making Next treat the home directory as the workspace root.
@@ -48,7 +45,11 @@ const nextConfig: NextConfig = {
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload',
           },
-          { key: 'Content-Security-Policy-Report-Only', value: CSP_REPORT_ONLY },
+          {
+            key: 'Content-Security-Policy-Report-Only',
+            // Hosts do Google para o H5 Games Ads entram aqui (lib/csp-google-ads.ts).
+            value: withCspSources(CSP_REPORT_ONLY.split('; '), GOOGLE_ADS_CSP_SOURCES).join('; '),
+          },
         ],
       },
     ];

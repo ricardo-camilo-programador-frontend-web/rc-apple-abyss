@@ -33,7 +33,7 @@ export default function StatCard({
       <div className="abyss-card-icon w-9 h-9">
         <Icon className="w-4 h-4" aria-hidden="true" />
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 abyss-stat-text">
         <div className="text-[10px] font-bold uppercase tracking-wider opacity-80 truncate">
           {label}
         </div>

@@ -34,7 +34,7 @@ export interface SciParts {
 }
 
 /** Qualquer coisa que o formatador aceita: number ou um objeto com mantissa/expoente (Decimal). */
-export type Formattable = number | { mantissa: number; exponent: number; sign?: number };
+export type Formattable = number | { mantissa: number; exponent: number };
 
 export function isNumberNotation(value: unknown): value is NumberNotation {
   return typeof value === 'string' && (NUMBER_NOTATIONS as ReadonlyArray<string>).includes(value);
@@ -99,7 +99,7 @@ export function toSciParts(value: Formattable): SciParts | null {
   }
   const { mantissa, exponent } = value;
   if (!Number.isFinite(mantissa) || !Number.isFinite(exponent) || mantissa === 0) return null;
-  const sign = (value.sign ?? Math.sign(mantissa)) < 0 ? -1 : 1;
+  const sign = mantissa < 0 ? -1 : 1;
   return { sign, mantissa: Math.abs(mantissa), exponent };
 }
 

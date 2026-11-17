@@ -6,7 +6,7 @@ import Image from 'next/image';
 import type React from 'react';
 import { useState } from 'react';
 import type { GameEngine } from '@/lib/game/engine';
-import { safePercent } from '@/lib/game/safe-number';
+import { percentOf } from '@/lib/game/num';
 import { APPLE_SPRITES, getAppleSpriteIndex } from '@/lib/game/sprites';
 import type { GameState } from '@/lib/game/types';
 import { useNumberFormat } from './NumberFormatProvider';
@@ -41,8 +41,8 @@ export default function AppleArea({
   onShowRewardedAds,
   goldBoostRemaining = 0,
 }: AppleAreaProps) {
-  const hpPercent = safePercent(state.appleHP, state.maxAppleHP);
-  const activeSpriteIndex = getAppleSpriteIndex(state.appleHP, state.maxAppleHP);
+  const hpPercent = percentOf(state.appleHP, state.maxAppleHP);
+  const activeSpriteIndex = getAppleSpriteIndex(hpPercent);
   const skill = state.skills.golden_harvest;
   const ready = skill.cooldownRemaining <= 0 && !skill.isActive;
   const reduceMotion = prefersReducedMotion();
@@ -128,8 +128,7 @@ export default function AppleArea({
               <span className="abyss-kicker">Apple HP</span>
             </div>
             <span className="abyss-hp-value">
-              <NumberText value={Math.ceil(state.appleHP)} /> /{' '}
-              <NumberText value={state.maxAppleHP} />
+              <NumberText value={state.appleHP.ceil()} /> / <NumberText value={state.maxAppleHP} />
             </span>
           </div>
           <div
@@ -139,7 +138,7 @@ export default function AppleArea({
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(hpPercent)}
-            aria-valuetext={`${full(Math.ceil(state.appleHP))} / ${full(state.maxAppleHP)}`}
+            aria-valuetext={`${full(state.appleHP.ceil())} / ${full(state.maxAppleHP)}`}
           >
             <motion.div
               className="abyss-meter-fill"

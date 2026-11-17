@@ -137,3 +137,15 @@ describe('isNumberNotation', () => {
     expect(isNumberNotation(undefined)).toBe(false);
   });
 });
+
+describe('Decimal (break_infinity.js)', () => {
+  it('formata valores além de 1e308 sem virar ∞', async () => {
+    const { Decimal } = await import('@/lib/game/num');
+    expect(formatNumber(new Decimal('1e400'), { locale: 'en' })).toBe('1.00e400');
+    expect(formatNumber(new Decimal('1.5e3'), { locale: 'en' })).toBe('1.50K');
+    expect(formatNumber(new Decimal(Number.MAX_VALUE), { locale: 'en' })).toBe('1.80e308');
+    expect(formatNumber(new Decimal('2.5e1000'), { notation: 'engineering', locale: 'en' })).toBe(
+      '25.00e999',
+    );
+  });
+});

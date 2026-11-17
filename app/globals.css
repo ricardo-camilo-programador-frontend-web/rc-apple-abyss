@@ -1279,11 +1279,16 @@
   white-space: nowrap;
 }
 
+.abyss-stat-text {
+  container-type: inline-size;
+}
+
 .abyss-stat-value {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  font-size: clamp(0.8125rem, 0.75rem + 0.25vw, 0.875rem);
+  /* Encolhe com a largura do card (container query) para caber "2.50e308". */
+  font-size: clamp(0.6875rem, 12.5cqi, 0.875rem);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -113,6 +113,7 @@ export default function Game() {
               engine={engine}
               t={orch.t}
               onAscend={orch.handleAscend}
+              onDiveAbyss={orch.handleDiveAbyss}
             />
           </div>
         </div>
@@ -173,6 +174,7 @@ export default function Game() {
           onBuyUpgrade={orch.handleBuyUpgrade}
           onBuyClickUpgrade={orch.handleBuyClickUpgrade}
           onAscend={orch.handleAscend}
+          onDiveAbyss={orch.handleDiveAbyss}
         />
 
         <AdBanner />

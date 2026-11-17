@@ -1,4 +1,5 @@
 import { DEFAULT_NOTATION } from './format';
+import { Decimal } from './num';
 import type {
   HelpContent,
   HelpTopicId,
@@ -54,6 +55,8 @@ export const BALANCE = {
   MILESTONE_MULTIPLIER: 4,
   /** Lucky Worms = ⌊(estágio ÷ divisor)²⌋ */
   LUCKY_WORMS_STAGE_DIVISOR: 10,
+  /** Multiplicador permanente de dano e ouro por nível de Abismo */
+  ABYSS_MULTIPLIER_PER_DEPTH: 2,
 } as const;
 
 export const LUCKY_WORMS_CONFIG: LuckyWormsConfig = {
@@ -64,7 +67,7 @@ export const LUCKY_WORMS_CONFIG: LuckyWormsConfig = {
 export const INITIAL_STATISTICS: StatisticsData = {
   totalClicks: 0,
   totalApplesEaten: 0,
-  totalGoldEarned: 0,
+  totalGoldEarned: new Decimal(0),
   highestStage: 1,
   totalAscensions: 0,
   luckyWormsCollected: 0,
@@ -98,19 +101,20 @@ export const INITIAL_JOURNEY_STATE: JourneyState = {
 };
 
 /** Versão do formato do save (v1 = até a v0.2.1, sem o campo). */
-export const CURRENT_SAVE_VERSION = 3;
+export const CURRENT_SAVE_VERSION = 4;
 
 export const INITIAL_STATE = {
   saveVersion: CURRENT_SAVE_VERSION,
-  gold: 0,
+  gold: new Decimal(0),
   stage: 1,
-  appleHP: GAME_CONFIG.INITIAL_HP,
-  maxAppleHP: GAME_CONFIG.INITIAL_HP,
+  appleHP: new Decimal(GAME_CONFIG.INITIAL_HP),
+  maxAppleHP: new Decimal(GAME_CONFIG.INITIAL_HP),
   clickDamage: GAME_CONFIG.CLICK_BASE_DAMAGE,
   clickLevel: 0,
   totalClicks: 0,
   totalApplesEaten: 0,
   luckyWorms: 0,
+  abyssDepth: 0,
   highestStage: 1,
   lastSaveTimestamp: Date.now(),
   worms: {
@@ -170,12 +174,12 @@ export const HELP_CONTENT: Record<HelpTopicId, HelpContent> = {
   ascension: {
     titleKey: 'help_ascension_title',
     descriptionKey: 'help_ascension_desc',
-    formula: 'Lucky Worms = ⌊(stage ÷ 10)²⌋',
+    formula: 'Lucky Worms = ⌊(stage ÷ 10)²⌋ · Abyss (gold ≥ 1.80e308): ×2^depth damage & gold',
   },
   click_damage: {
     titleKey: 'help_click_damage_title',
     descriptionKey: 'help_click_damage_desc',
-    formula: 'Damage = (1 + level) × 4^⌊level ÷ 25⌋ × Bonuses',
+    formula: 'Damage = (1 + level) × 4^⌊level ÷ 25⌋ × Bonuses × 2^abyss',
   },
   idle_damage: {
     titleKey: 'help_idle_damage_title',

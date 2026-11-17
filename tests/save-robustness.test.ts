@@ -82,7 +82,7 @@ global.setInterval = vi.fn(() => 1) as unknown as typeof setInterval;
 
 import { calculateMaxAppleHP } from '@/lib/game/balance';
 import { GameEngine } from '@/lib/game/engine';
-import { clampFinite, safePercent } from '@/lib/game/safe-number';
+import { ABYSS_THRESHOLD, Decimal, isFiniteDecimal, percentOf, toDecimal } from '@/lib/game/num';
 import { CURRENT_SAVE_VERSION, migrateSave } from '@/lib/game/save-migration';
 
 const SAVE_KEY = 'apple_clicker_save';
@@ -109,20 +109,34 @@ function legacySave(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('safe-number', () => {
-  it('limita Infinity ao maior number finito e NaN ao fallback', () => {
-    expect(clampFinite(Infinity)).toBe(Number.MAX_VALUE);
-    expect(clampFinite(-Infinity)).toBe(-Number.MAX_VALUE);
-    expect(clampFinite(Number.NaN, 7)).toBe(7);
-    expect(clampFinite(42)).toBe(42);
+describe('num (camada Decimal)', () => {
+  it('toDecimal aceita number, string do JSON e null de Infinity', () => {
+    expect(toDecimal(42).toNumber()).toBe(42);
+    expect(toDecimal('1e400').exponent).toBe(400);
+    expect(toDecimal(null).eq(ABYSS_THRESHOLD)).toBe(true);
+    expect(toDecimal(Infinity).eq(ABYSS_THRESHOLD)).toBe(true);
+    expect(toDecimal('Infinity').eq(ABYSS_THRESHOLD)).toBe(true);
   });
 
-  it('calcula porcentagem segura', () => {
-    expect(safePercent(50, 200)).toBe(25);
-    expect(safePercent(Number.NaN, 10)).toBe(0);
-    expect(safePercent(10, 0)).toBe(0);
-    expect(safePercent(Infinity, Infinity)).toBe(100);
-    expect(safePercent(300, 100)).toBe(100);
+  it('toDecimal usa o fallback para NaN, negativos e lixo', () => {
+    const fb = new Decimal(7);
+    expect(toDecimal(Number.NaN, fb).toNumber()).toBe(7);
+    expect(toDecimal(-5, fb).toNumber()).toBe(7);
+    expect(toDecimal('abc', fb).toNumber()).toBe(7);
+    expect(toDecimal({}, fb).toNumber()).toBe(7);
+  });
+
+  it('percentOf nunca devolve NaN', () => {
+    expect(percentOf(new Decimal(50), new Decimal(200))).toBe(25);
+    expect(percentOf(new Decimal(10), new Decimal(0))).toBe(0);
+    expect(percentOf(new Decimal('1e500'), new Decimal('2e500'))).toBe(50);
+    expect(percentOf(new Decimal(300), new Decimal(100))).toBe(100);
+  });
+
+  it('Decimal faz ida e volta pelo JSON como string', () => {
+    const json = JSON.stringify({ gold: new Decimal('1.5e400') });
+    expect(JSON.parse(json).gold).toBe('1.5e+400');
+    expect(toDecimal(JSON.parse(json).gold).eq(new Decimal('1.5e400'))).toBe(true);
   });
 });
 
@@ -130,20 +144,57 @@ describe('calculateMaxAppleHP', () => {
   it('nunca vira Infinity, nem no estágio 1742 ou além', () => {
     for (const stage of [1, 82, 373, 560, 1741, 1742, 5000, 1_000_000]) {
       const hp = calculateMaxAppleHP(stage);
-      expect(Number.isFinite(hp)).toBe(true);
-      expect(hp).toBeGreaterThan(0);
+      expect(isFiniteDecimal(hp)).toBe(true);
+      expect(hp.gt(0)).toBe(true);
     }
   });
 });
 
 describe('migrateSave', () => {
-  it('migra save antigo sem saveVersion mantendo os valores', () => {
+  it('migra save v1 (sem saveVersion) para a versão atual', () => {
     const migrated = migrateSave(legacySave());
+    expect(CURRENT_SAVE_VERSION).toBe(4);
     expect(migrated.saveVersion).toBe(CURRENT_SAVE_VERSION);
     expect(migrated.stage).toBe(373);
-    expect(migrated.gold).toBeCloseTo(4.369228365394481e64, -50);
+    expect(migrated.gold).toBeInstanceOf(Decimal);
+    expect(migrated.gold?.toNumber()).toBeCloseTo(4.369228365394481e64, -50);
+    expect(migrated.statistics?.totalGoldEarned).toBeInstanceOf(Decimal);
     expect(migrated.settings?.notation).toBe('mixed');
     expect(migrated.settings?.language).toBe('pt');
+  });
+
+  it('v1/v2 → v4: recalcula o HP pela curva nova mantendo a porcentagem', () => {
+    const migrated = migrateSave(legacySave({ saveVersion: 2 }));
+    const max = calculateMaxAppleHP(373);
+    expect(migrated.maxAppleHP?.eq(max)).toBe(true);
+    const oldRatio = 6.4766238087514286e66 / 1.6029440842264702e67;
+    expect(migrated.appleHP?.div(max).toNumber()).toBeCloseTo(oldRatio, 6);
+  });
+
+  it('v3 → v4: mantém o HP (já na curva nova) e converte para Decimal', () => {
+    const max = calculateMaxAppleHP(373).toNumber();
+    const migrated = migrateSave(legacySave({ saveVersion: 3, maxAppleHP: max, appleHP: max / 2 }));
+    expect(migrated.maxAppleHP?.toNumber()).toBe(max);
+    expect(migrated.appleHP?.toNumber()).toBe(max / 2);
+    expect(migrated.abyssDepth).toBeUndefined();
+  });
+
+  it('v4: lê os valores gravados como string acima de 1e308', () => {
+    const migrated = migrateSave(
+      legacySave({
+        saveVersion: 4,
+        stage: 8000,
+        gold: '3.2e400',
+        maxAppleHP: calculateMaxAppleHP(8000).toString(),
+        appleHP: calculateMaxAppleHP(8000).div(2).toString(),
+        abyssDepth: 2,
+        statistics: { totalGoldEarned: '1e401' },
+      }),
+    );
+    expect(migrated.gold?.exponent).toBe(400);
+    expect(migrated.maxAppleHP?.eq(calculateMaxAppleHP(8000))).toBe(true);
+    expect(migrated.abyssDepth).toBe(2);
+    expect(migrated.statistics?.totalGoldEarned.exponent).toBe(401);
   });
 
   it('recupera campos que viraram null (Infinity serializado pelo JSON)', () => {
@@ -152,23 +203,25 @@ describe('migrateSave', () => {
     );
     expect(raw.gold).toBeNull();
     const migrated = migrateSave(raw);
-    expect(migrated.gold).toBe(Number.MAX_VALUE);
-    expect(Number.isFinite(migrated.maxAppleHP)).toBe(true);
-    expect(migrated.appleHP).toBe(migrated.maxAppleHP);
+    expect(migrated.gold?.eq(ABYSS_THRESHOLD)).toBe(true);
+    expect(migrated.maxAppleHP?.eq(calculateMaxAppleHP(373))).toBe(true);
+    expect(migrated.appleHP?.eq(migrated.maxAppleHP as Decimal)).toBe(true);
   });
 
   it('descarta valores inválidos nos worms e nas estatísticas', () => {
     const migrated = migrateSave(
       legacySave({
         worms: { small_worm: -3, hungry_worm: 'x', fat_worm: 2.7 },
-        statistics: { totalGoldEarned: null, totalClicks: 5 },
+        statistics: { totalGoldEarned: 'lixo', totalClicks: 5 },
         stage: 'abc',
+        abyssDepth: -1,
       }),
     );
     expect(migrated.worms).toEqual({ small_worm: 0, hungry_worm: 0, fat_worm: 2 });
-    expect(migrated.statistics?.totalGoldEarned).toBe(Number.MAX_VALUE);
+    expect(migrated.statistics?.totalGoldEarned.toNumber()).toBe(0);
     expect(migrated.statistics?.totalClicks).toBe(5);
     expect(migrated.stage).toBe(1);
+    expect(migrated.abyssDepth).toBe(0);
   });
 
   it('ignora entradas que não são objeto', () => {
@@ -182,50 +235,106 @@ describe('GameEngine com saves grandes', () => {
     mockStorage = {};
   });
 
-  it('carrega um save antigo do localStorage e grava com saveVersion', () => {
+  it('carrega um save antigo do localStorage e grava como v4 (strings)', () => {
     mockStorage[SAVE_KEY] = JSON.stringify(legacySave());
     const engine = new GameEngine();
     expect(engine.getState().stage).toBe(373);
+    expect(engine.getState().gold).toBeInstanceOf(Decimal);
+    expect(engine.getState().abyssDepth).toBe(0);
     expect(engine.getState().settings.notation).toBe('mixed');
     engine.saveGame();
     const saved = JSON.parse(mockStorage[SAVE_KEY]);
     expect(saved.saveVersion).toBe(CURRENT_SAVE_VERSION);
+    expect(typeof saved.gold).toBe('string');
   });
 
   it('carrega um save corrompido por Infinity sem quebrar', () => {
     mockStorage[SAVE_KEY] = JSON.stringify(legacySave({ gold: null, maxAppleHP: null }));
     const engine = new GameEngine();
-    expect(Number.isFinite(engine.getState().gold)).toBe(true);
-    expect(Number.isFinite(engine.getState().maxAppleHP)).toBe(true);
+    expect(isFiniteDecimal(engine.getState().gold)).toBe(true);
+    expect(isFiniteDecimal(engine.getState().maxAppleHP)).toBe(true);
   });
 
-  it('importa saves acima de 1e100 (antigo teto do import)', async () => {
+  it('exporta e importa saves acima de 1e100 e de 1e308', async () => {
     mockStorage[SAVE_KEY] = JSON.stringify(
-      legacySave({ stage: 600, highestStage: 600, gold: 1e110, appleHP: 1e106, maxAppleHP: 1e107 }),
+      legacySave({ saveVersion: 4, stage: 600, highestStage: 600, gold: '1e450' }),
     );
     const source = new GameEngine();
     const save = await source.exportSave();
     mockStorage = {};
     const target = new GameEngine();
     expect(await target.importSave(save)).toBe(true);
-    expect(target.getState().gold).toBe(1e110);
+    expect(target.getState().gold.eq('1e450')).toBe(true);
     expect(target.getState().stage).toBe(600);
   });
 
-  it('não deixa ouro nem HP virarem Infinity ou NaN com dano gigante', () => {
+  it('dano gigante não gera Infinity nem NaN, e o save continua legível', () => {
     mockStorage[SAVE_KEY] = JSON.stringify(
       legacySave({ gold: Number.MAX_VALUE, clickLevel: 5000, stage: 1741, highestStage: 1741 }),
     );
     const engine = new GameEngine();
     for (let i = 0; i < 5; i++) engine.clickApple();
     const s = engine.getState();
-    expect(Number.isFinite(s.gold)).toBe(true);
-    expect(Number.isFinite(s.appleHP)).toBe(true);
-    expect(Number.isFinite(s.maxAppleHP)).toBe(true);
-    expect(Number.isNaN(s.appleHP)).toBe(false);
+    expect(isFiniteDecimal(s.gold)).toBe(true);
+    expect(isFiniteDecimal(s.appleHP)).toBe(true);
+    expect(isFiniteDecimal(s.maxAppleHP)).toBe(true);
     engine.saveGame();
     const saved = JSON.parse(mockStorage[SAVE_KEY]);
     expect(saved.gold).not.toBeNull();
     expect(saved.maxAppleHP).not.toBeNull();
+  });
+});
+
+describe('Abismo (1,79e308)', () => {
+  beforeEach(() => {
+    mockStorage = {};
+  });
+
+  it('não deixa mergulhar abaixo de 1,79e308', () => {
+    const engine = new GameEngine();
+    engine.getState().gold = new Decimal('1e308');
+    expect(engine.canDiveAbyss()).toBe(false);
+    expect(engine.diveAbyss()).toBe(false);
+    expect(engine.getState().abyssDepth).toBe(0);
+  });
+
+  it('mergulho: profundidade +1, ×2 permanente, zera corrida e Lucky Worms', () => {
+    const engine = new GameEngine();
+    const s = engine.getState();
+    s.gold = new Decimal(Number.MAX_VALUE);
+    s.stage = 7300;
+    s.highestStage = 7300;
+    s.clickLevel = 900;
+    s.luckyWorms = 5000;
+    s.worms.small_worm = 50;
+    const baseMultiplier = engine.getGoldMultiplier();
+
+    expect(engine.canDiveAbyss()).toBe(true);
+    expect(engine.diveAbyss()).toBe(true);
+
+    const after = engine.getState();
+    expect(after.abyssDepth).toBe(1);
+    expect(engine.getAbyssMultiplier().toNumber()).toBe(2);
+    expect(after.gold.toNumber()).toBe(0);
+    expect(after.stage).toBe(1);
+    expect(after.clickLevel).toBe(0);
+    expect(after.luckyWorms).toBe(0);
+    expect(after.worms.small_worm).toBe(0);
+    expect(after.highestStage).toBe(7300);
+    // Sem Lucky Worms, o multiplicador de ouro é só o do Abismo.
+    expect(engine.getGoldMultiplier().toNumber()).toBe(2);
+    expect(baseMultiplier.gt(2)).toBe(true);
+    // Dano do clique base (1) dobra.
+    expect(engine.getClickDamage().toNumber()).toBe(2);
+  });
+
+  it('a profundidade fica no save', () => {
+    const engine = new GameEngine();
+    engine.getState().gold = new Decimal('1e309');
+    engine.diveAbyss();
+    const saved = JSON.parse(mockStorage[SAVE_KEY]);
+    expect(saved.abyssDepth).toBe(1);
+    const reloaded = new GameEngine();
+    expect(reloaded.getState().abyssDepth).toBe(1);
   });
 });

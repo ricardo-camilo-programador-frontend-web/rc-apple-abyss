@@ -6,15 +6,17 @@ import {
   getGoalCurrentValue,
   getGoalDefinition,
 } from '@/lib/game/goals';
+import { Decimal } from '@/lib/game/num';
 import type { GameState } from '@/lib/game/types';
 
 function createMockGameState(overrides: Partial<GameState> = {}): GameState {
   return {
-    saveVersion: 2,
-    gold: 0,
+    saveVersion: 4,
+    abyssDepth: 0,
+    gold: new Decimal(0),
     stage: 1,
-    appleHP: 50,
-    maxAppleHP: 50,
+    appleHP: new Decimal(50),
+    maxAppleHP: new Decimal(50),
     clickDamage: 1,
     clickLevel: 0,
     totalClicks: 0,
@@ -45,7 +47,7 @@ function createMockGameState(overrides: Partial<GameState> = {}): GameState {
     statistics: {
       totalClicks: 0,
       totalApplesEaten: 0,
-      totalGoldEarned: 0,
+      totalGoldEarned: new Decimal(0),
       highestStage: 1,
       totalAscensions: 0,
       luckyWormsCollected: 0,

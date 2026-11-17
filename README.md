@@ -152,8 +152,14 @@ Goals are defined in `lib/game/goals.ts` as pure functions — no side effects, 
 ### Daily Reward (Pure Rules)
 Daily reward logic in `lib/game/daily-reward.ts` is fully pure. Streak calculation, eligibility, gold amounts, and timestamp validation are all pure functions. The engine layer handles state mutation and persistence.
 
+### Big Numbers & the Abyss (#47)
+- Gold, apple HP, damage and costs are `Decimal` values from [break_infinity.js](https://github.com/Patashu/break_infinity.js), imported only through `lib/game/num.ts`. Values go up to ~1e(9e15) without turning into `Infinity`.
+- `lib/game/format.ts` formats them. The default notation is **Mixed** (K, M, B, T … Dc up to 1e36, then scientific); players can switch to Letters (aa, ab…), Scientific or Engineering in Settings, and the choice is saved.
+- Balance (`lib/game/balance.ts`): apple HP grows ×1.33 per stage up to stage 80 and ×1.1 after that; worms and click damage grow linearly with ×4 every 25 levels; costs grow ×1.15 per level.
+- **The Abyss:** once gold reaches 1.80e308 (the old `number` limit), the player can dive. A dive resets the run and the Lucky Worms, and adds one Abyss depth. Each depth doubles damage and gold forever (`×2^depth`).
+
 ### Save Migration
-Old saves without the `journey` field are automatically migrated. `mergeJourneyState()` in the engine provides default initial state for missing journey data. Corrupted values are sanitized gracefully.
+Saves carry a `saveVersion` (currently 4) and are upgraded by `migrateSave()` in `lib/game/save-migration.ts`: v1 (no version, `null` for overflowed values) → v2 (finite numbers) → v3 (new HP curve, same HP percentage) → v4 (`Decimal` values stored as strings, `abyssDepth`). Old saves without the `journey` field are automatically migrated. `mergeJourneyState()` in the engine provides default initial state for missing journey data. Corrupted values are sanitized gracefully.
 
 ## Author
 

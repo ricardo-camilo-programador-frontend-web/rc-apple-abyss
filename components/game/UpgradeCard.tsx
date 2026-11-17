@@ -4,6 +4,7 @@ import { Bug, Coins } from 'lucide-react';
 import { motion } from 'motion/react';
 import React from 'react';
 import type { WORM_UPGRADES } from '@/lib/game/constants';
+import type { Decimal } from '@/lib/game/num';
 import { WORM_ICONS } from '@/lib/game/worm-catalog';
 import { useNumberFormat } from './NumberFormatProvider';
 import NumberText from './NumberText';
@@ -11,10 +12,10 @@ import NumberText from './NumberText';
 interface UpgradeCardProps {
   upgrade: (typeof WORM_UPGRADES)[number];
   count: number;
-  cost: number;
+  cost: Decimal;
   canAfford: boolean;
-  currentDPS: number;
-  nextDPS: number;
+  currentDPS: Decimal;
+  nextDPS: Decimal;
   onBuy: () => void;
   t: (key: string, params?: any) => string;
 }

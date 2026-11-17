@@ -43,9 +43,9 @@ export default function UpgradeSidebar({
         <motion.button
           type="button"
           onClick={onBuyClickUpgrade}
-          disabled={state.gold < engine.getClickUpgradeCost()}
-          whileHover={state.gold >= engine.getClickUpgradeCost() ? { scale: 1.01, y: -2 } : {}}
-          whileTap={state.gold >= engine.getClickUpgradeCost() ? { scale: 0.98 } : {}}
+          disabled={state.gold.lt(engine.getClickUpgradeCost())}
+          whileHover={state.gold.gte(engine.getClickUpgradeCost()) ? { scale: 1.01, y: -2 } : {}}
+          whileTap={state.gold.gte(engine.getClickUpgradeCost()) ? { scale: 0.98 } : {}}
           className="abyss-card is-gold"
         >
           <div className="flex items-center gap-3">
@@ -83,7 +83,7 @@ export default function UpgradeSidebar({
           {category.upgrades.map((upgrade) => {
             if (!upgrade) return null;
             const cost = engine.getUpgradeCost(upgrade.id);
-            const canAfford = state.gold >= cost;
+            const canAfford = state.gold.gte(cost);
             const count = state.worms[upgrade.id] || 0;
             const currentDPS = engine.getWormDPS(upgrade.id);
             const nextDPS = engine.getWormDPS(upgrade.id, count + 1);

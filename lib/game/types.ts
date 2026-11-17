@@ -1,4 +1,5 @@
 import type { NumberNotation } from './format';
+import type { Decimal } from './num';
 
 export type Language =
   | 'en'
@@ -44,7 +45,7 @@ export interface LuckyWormsConfig {
 export interface StatisticsData {
   totalClicks: number;
   totalApplesEaten: number;
-  totalGoldEarned: number;
+  totalGoldEarned: Decimal;
   highestStage: number;
   totalAscensions: number;
   luckyWormsCollected: number;
@@ -68,18 +69,20 @@ export type HelpTopicId =
 export interface GameState {
   /** Versão do formato do save; saves sem o campo são v1. */
   saveVersion: number;
-  gold: number;
+  gold: Decimal;
   stage: number;
-  appleHP: number;
-  maxAppleHP: number;
+  appleHP: Decimal;
+  maxAppleHP: Decimal;
   clickDamage: number;
   clickLevel: number;
   totalClicks: number;
   totalApplesEaten: number;
   luckyWorms: number;
+  /** Mergulhos no Abismo (prestígio de 1,79e308): ×2 de dano e ouro por nível */
+  abyssDepth: number;
   highestStage: number;
   lastSaveTimestamp: number;
-  lastOfflineResult?: { apples: number; gold: number };
+  lastOfflineResult?: { apples: number; gold: Decimal };
   worms: Record<string, number>;
   skills: Record<string, SkillState>;
   statistics: StatisticsData;

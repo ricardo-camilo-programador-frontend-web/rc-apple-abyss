@@ -1,5 +1,6 @@
 import { AudioSystem } from './audio';
 import {
+  abyssMultiplier,
   calculateClickDamageBase,
   calculateClickUpgradeCost,
   calculateMaxAppleHP,
@@ -23,8 +24,8 @@ import {
 import { isNumberNotation, type NumberNotation } from './format';
 import { calculateAllGoalProgress, findNewlyCompletedGoals, getGoalDefinition } from './goals';
 import { LocalizationSystem } from './localization';
+import { ABYSS_THRESHOLD, Decimal, type DecimalSource, isFiniteDecimal, ZERO } from './num';
 import { OfflineProgressResult, OfflineProgressSystem } from './offline';
-import { clampFinite } from './safe-number';
 import { migrateSave } from './save-migration';
 import { SkillSystem } from './skills';
 import {
@@ -214,8 +215,8 @@ export class GameEngine {
     this.skills.update(deltaTime);
 
     const dps = this.getTotalDPS();
-    if (dps > 0) {
-      this.applyDamage(dps * deltaTime, false);
+    if (dps.gt(0) && deltaTime > 0) {
+      this.applyDamage(dps.mul(deltaTime), false);
     }
   }
 
@@ -231,30 +232,30 @@ export class GameEngine {
    * Apply damage to the apple. Handles multi-kill (overflow damage)
    * to prevent gold loss at high DPS relative to apple HP.
    */
-  private applyDamage(damage: number, _isClick: boolean): void {
-    let remainingDamage = clampFinite(damage, 0);
+  private applyDamage(damage: DecimalSource, _isClick: boolean): void {
+    let remainingDamage = new Decimal(damage);
+    if (!isFiniteDecimal(remainingDamage) || remainingDamage.lte(0)) return;
+    const goldMultiplier = this.getGoldMultiplier();
     // Teto de maçãs por chamada: evita laço longo quando o dano é muito maior que o HP.
     let kills = 0;
 
-    while (remainingDamage > 0 && kills < MAX_KILLS_PER_HIT) {
-      // Guard against zero/negative HP edge cases (floating-point, save corruption)
-      if (this.state.appleHP <= 0) {
+    while (remainingDamage.gt(0) && kills < MAX_KILLS_PER_HIT) {
+      // Guard against zero/negative HP edge cases (save corruption)
+      if (this.state.appleHP.lte(0)) {
         this.advanceStage();
         this.state.appleHP = this.state.maxAppleHP;
         continue;
       }
 
-      if (this.state.appleHP > remainingDamage) {
-        const goldGained = remainingDamage * this.getGoldMultiplier();
-        this.state.appleHP -= remainingDamage;
-        this.addGold(goldGained);
-        remainingDamage = 0;
+      if (this.state.appleHP.gt(remainingDamage)) {
+        this.state.appleHP = this.state.appleHP.sub(remainingDamage);
+        this.addGold(remainingDamage.mul(goldMultiplier));
+        remainingDamage = ZERO;
       } else {
         // Apple is destroyed — use exactly the damage needed
         const damageToKill = this.state.appleHP;
-        const goldGained = damageToKill * this.getGoldMultiplier();
-        this.addGold(goldGained);
-        remainingDamage -= damageToKill;
+        this.addGold(damageToKill.mul(goldMultiplier));
+        remainingDamage = remainingDamage.sub(damageToKill);
         kills++;
 
         this.audio.playBreak();
@@ -266,14 +267,12 @@ export class GameEngine {
     }
   }
 
-  /** Soma ouro sem deixar o total ou a estatística virarem Infinity/NaN. */
-  private addGold(amount: number): void {
-    const safe = clampFinite(amount, 0);
-    this.state.gold = clampFinite(this.state.gold + safe, this.state.gold);
-    this.state.statistics.totalGoldEarned = clampFinite(
-      this.state.statistics.totalGoldEarned + safe,
-      this.state.statistics.totalGoldEarned,
-    );
+  /** Soma ouro ao saldo e à estatística; ignora valores inválidos. */
+  public addGold(amount: DecimalSource): void {
+    const value = new Decimal(amount);
+    if (!isFiniteDecimal(value) || value.lte(0)) return;
+    this.state.gold = this.state.gold.add(value);
+    this.state.statistics.totalGoldEarned = this.state.statistics.totalGoldEarned.add(value);
   }
 
   private advanceStage(): void {
@@ -285,57 +284,64 @@ export class GameEngine {
     this.state.maxAppleHP = calculateMaxAppleHP(this.state.stage);
   }
 
-  public getClickDamage(): number {
+  public getClickDamage(): Decimal {
     const baseDamage = calculateClickDamageBase(this.state.clickLevel);
     const luckyWormBonus = 1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm;
     const skillMultiplier = this.skills.getGoldMultiplierClick();
-    return clampFinite(baseDamage * luckyWormBonus * skillMultiplier);
+    return baseDamage.mul(luckyWormBonus * skillMultiplier).mul(this.getAbyssMultiplier());
   }
 
-  public getWormDPS(id: string, count: number = this.state.worms[id] || 0): number {
+  public getWormDPS(id: string, count: number = this.state.worms[id] || 0): Decimal {
     const upgrade = WORM_UPGRADES.find((u) => u.id === id);
-    if (!upgrade) return 0;
+    if (!upgrade) return new Decimal(0);
     return calculateWormDPS(upgrade, count);
   }
 
-  public getTotalDPS(): number {
-    let totalDPS = 0;
+  public getTotalDPS(): Decimal {
+    let totalDPS = new Decimal(0);
     for (const upgrade of WORM_UPGRADES) {
-      totalDPS += this.getWormDPS(upgrade.id);
+      totalDPS = totalDPS.add(this.getWormDPS(upgrade.id));
     }
     const luckyWormBonus = 1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm;
     const skillMultiplier = this.skills.getGoldMultiplierIdle();
-    return clampFinite(totalDPS * luckyWormBonus * skillMultiplier);
+    return totalDPS.mul(luckyWormBonus * skillMultiplier).mul(this.getAbyssMultiplier());
   }
 
-  public getGoldMultiplier(): number {
-    return 1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.goldBonusPerWorm;
+  public getGoldMultiplier(): Decimal {
+    return this.getAbyssMultiplier().mul(
+      1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.goldBonusPerWorm,
+    );
   }
 
-  public getUpgradeCost(upgradeId: string): number {
+  /** ×2 de dano e ouro por nível de Abismo. */
+  public getAbyssMultiplier(): Decimal {
+    return abyssMultiplier(this.state.abyssDepth);
+  }
+
+  public getUpgradeCost(upgradeId: string): Decimal {
     const upgrade = WORM_UPGRADES.find((u) => u.id === upgradeId);
-    if (!upgrade) return 0;
+    if (!upgrade) return new Decimal(0);
     return calculateWormCost(upgrade, this.state.worms[upgradeId] || 0);
   }
 
   public buyUpgrade(upgradeId: string): void {
     const cost = this.getUpgradeCost(upgradeId);
-    if (this.state.gold >= cost) {
-      this.state.gold -= cost;
+    if (this.state.gold.gte(cost)) {
+      this.state.gold = this.state.gold.sub(cost);
       this.state.worms[upgradeId] = (this.state.worms[upgradeId] || 0) + 1;
       this.audio.playUpgrade();
       this.saveGame();
     }
   }
 
-  public getClickUpgradeCost(): number {
+  public getClickUpgradeCost(): Decimal {
     return calculateClickUpgradeCost(this.state.clickLevel);
   }
 
   public buyClickUpgrade(): boolean {
     const cost = this.getClickUpgradeCost();
-    if (this.state.gold >= cost) {
-      this.state.gold -= cost;
+    if (this.state.gold.gte(cost)) {
+      this.state.gold = this.state.gold.sub(cost);
       this.state.clickLevel++;
       this.audio.playUpgrade();
       this.saveGame();
@@ -360,15 +366,38 @@ export class GameEngine {
     this.state.statistics.luckyWormsCollected = this.state.luckyWorms;
     this.state.statistics.totalAscensions++;
 
-    this.state.gold = 0;
-    this.state.stage = 1;
-    this.state.appleHP = GAME_CONFIG.INITIAL_HP;
-    this.state.maxAppleHP = GAME_CONFIG.INITIAL_HP;
-    this.state.clickLevel = 0;
-    this.state.worms = { ...INITIAL_STATE.worms };
-
+    this.resetRun();
     this.audio.playAscension();
     this.saveGame();
+  }
+
+  /** Zera a corrida: ouro, estágio, HP, clique e worms. */
+  private resetRun(): void {
+    this.state.gold = new Decimal(0);
+    this.state.stage = 1;
+    this.state.appleHP = new Decimal(GAME_CONFIG.INITIAL_HP);
+    this.state.maxAppleHP = new Decimal(GAME_CONFIG.INITIAL_HP);
+    this.state.clickLevel = 0;
+    this.state.worms = { ...INITIAL_STATE.worms };
+  }
+
+  /**
+   * O Abismo: quando o ouro passa de 1,79e308 (o antigo Infinity do `number`),
+   * o jogador pode mergulhar. O mergulho zera a corrida e os Lucky Worms e
+   * dá ×2 permanente de dano e ouro por nível de Abismo.
+   */
+  public canDiveAbyss(): boolean {
+    return this.state.gold.gte(ABYSS_THRESHOLD);
+  }
+
+  public diveAbyss(): boolean {
+    if (!this.canDiveAbyss()) return false;
+    this.state.abyssDepth += 1;
+    this.state.luckyWorms = 0;
+    this.resetRun();
+    this.audio.playAscension();
+    this.saveGame();
+    return true;
   }
 
   public setMuted(muted: boolean): void {
@@ -475,15 +504,17 @@ export class GameEngine {
 
     const d = data as Record<string, unknown>;
 
-    // Sem teto artificial: o limite é o maior number finito (o save já passou por migrateSave).
-    const MAX = Number.MAX_VALUE;
-    if (!isFiniteNum(d['gold'], 0, MAX)) return false;
+    // Sem teto: ouro e HP são Decimal (o save já passou por migrateSave).
+    const isDecimal = (v: unknown, min: number): boolean =>
+      v instanceof Decimal && isFiniteDecimal(v) && v.gte(min);
+    if (!isDecimal(d['gold'], 0)) return false;
     if (!isFiniteNum(d['stage'], 1, 1000000)) return false;
     if (!isFiniteNum(d['totalClicks'], 0, Infinity)) return false;
-    if (!isFiniteNum(d['appleHP'], 0, MAX)) return false;
-    if (!isFiniteNum(d['maxAppleHP'], 1, MAX)) return false;
+    if (!isDecimal(d['appleHP'], 0)) return false;
+    if (!isDecimal(d['maxAppleHP'], 1)) return false;
     if (!isFiniteNum(d['clickLevel'], 0, 1000000)) return false;
     if (!isFiniteNum(d['luckyWorms'], 0, 1e15)) return false;
+    if (!isFiniteNum(d['abyssDepth'] ?? 0, 0, 1e6)) return false;
     if (!isFiniteNum(d['highestStage'], 1, 1000000)) return false;
 
     return true;
@@ -513,8 +544,7 @@ export class GameEngine {
 
       // Grant reward deterministically
       if (goal.rewardType === 'gold') {
-        this.state.gold += goal.rewardAmount;
-        this.state.statistics.totalGoldEarned += goal.rewardAmount;
+        this.addGold(goal.rewardAmount);
       } else if (goal.rewardType === 'luckyWorms') {
         this.state.luckyWorms += goal.rewardAmount;
         this.state.statistics.luckyWormsCollected = this.state.luckyWorms;
@@ -572,8 +602,7 @@ export class GameEngine {
     const claimResult = calculateClaimResult(journeyState.dailyReward);
     const goldReward = calculateDailyGoldReward(claimResult.streakDay, this.state.stage);
 
-    this.state.gold += goldReward;
-    this.state.statistics.totalGoldEarned += goldReward;
+    this.addGold(goldReward);
     journeyState.dailyReward = claimResult.newState;
 
     this.debouncedSave();

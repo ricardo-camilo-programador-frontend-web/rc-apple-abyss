@@ -3,13 +3,14 @@
 import { useCallback, useRef, useState } from 'react';
 import { analytics } from '@/lib/analytics';
 import type { GameEngine } from '@/lib/game/engine';
+import type { Decimal } from '@/lib/game/num';
 
 interface UseGameOrchestrationReturn {
   state: ReturnType<GameEngine['getState']>;
   isMounted: boolean;
   isShaking: boolean;
   canClaimDailyReward: boolean;
-  clickEffects: ReadonlyArray<{ id: number; x: number; y: number; value: number }>;
+  clickEffects: ReadonlyArray<{ id: number; x: number; y: number; value: Decimal }>;
   particleOffsets: ReadonlyArray<{ x: number; y: number; delay: number }>;
   // Modal visibility
   showSettings: boolean;
@@ -39,6 +40,7 @@ interface UseGameOrchestrationReturn {
   handleBuyUpgrade: (id: string) => void;
   handleBuyClickUpgrade: () => void;
   handleAscend: () => void;
+  handleDiveAbyss: () => void;
   handleActivateSkill: () => void;
   handleExportSave: () => void;
   handleImportSave: (saveString: string) => Promise<boolean>;
@@ -60,7 +62,7 @@ export function useGameOrchestration(engine: GameEngine): UseGameOrchestrationRe
   const [showHelp, setShowHelp] = useState<{ title: string; content: string } | null>(null);
   const [offlineResult, setOfflineResult] = useState<{ apples: number; gold: number } | null>(null);
   const [clickEffects, setClickEffects] = useState<
-    Array<{ id: number; x: number; y: number; value: number }>
+    Array<{ id: number; x: number; y: number; value: Decimal }>
   >([]);
   const [isShaking, setIsShaking] = useState(false);
   const [canClaimDailyReward, setCanClaimDailyReward] = useState(false);
@@ -94,7 +96,7 @@ export function useGameOrchestration(engine: GameEngine): UseGameOrchestrationRe
         id: clickIdCounter.current++,
         x: e.clientX,
         y: e.clientY,
-        value: Math.floor(damage),
+        value: damage.floor(),
       };
       setClickEffects((prev) => [...prev, newEffect]);
       setTimeout(() => {
@@ -128,6 +130,16 @@ export function useGameOrchestration(engine: GameEngine): UseGameOrchestrationRe
       analytics.ascension(currentState.luckyWorms, currentState.highestStage);
     }
   }, [engine, t]);
+
+  const handleDiveAbyss = useCallback(() => {
+    if (
+      confirm(
+        'Dive into the Abyss? Your run and Lucky Worms reset, but damage and gold are doubled forever.',
+      )
+    ) {
+      engine.diveAbyss();
+    }
+  }, [engine]);
 
   const handleActivateSkill = useCallback(() => {
     engine.activateSkill('golden_harvest');
@@ -198,6 +210,7 @@ export function useGameOrchestration(engine: GameEngine): UseGameOrchestrationRe
     handleBuyUpgrade,
     handleBuyClickUpgrade,
     handleAscend,
+    handleDiveAbyss,
     handleActivateSkill,
     handleExportSave,
     handleImportSave,

@@ -21,6 +21,7 @@ interface MobileModalsProps {
   onBuyUpgrade: (id: string) => void;
   onBuyClickUpgrade: () => void;
   onAscend: () => void;
+  onDiveAbyss: () => void;
 }
 
 export default function MobileModals({
@@ -36,6 +37,7 @@ export default function MobileModals({
   onBuyUpgrade,
   onBuyClickUpgrade,
   onAscend,
+  onDiveAbyss,
 }: MobileModalsProps) {
   return (
     <>
@@ -58,6 +60,7 @@ export default function MobileModals({
           engine={engine}
           t={t}
           onAscend={onAscend}
+          onDiveAbyss={onDiveAbyss}
           className="flex flex-col gap-4"
         />
       </Modal>

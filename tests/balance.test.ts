@@ -1,13 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import {
-  calculateClickDamageBase,
-  calculateClickUpgradeCost,
-  calculateMaxAppleHP,
+  abyssMultiplier,
   calculatePendingLuckyWorms,
-  calculateWormCost,
-  calculateWormDPS,
-  milestoneMultiplier,
+  calculateClickUpgradeCost as clickCostD,
+  calculateClickDamageBase as clickDamageD,
+  calculateMaxAppleHP as maxHPD,
+  milestoneMultiplier as milestoneD,
+  calculateWormCost as wormCostD,
+  calculateWormDPS as wormDPSD,
 } from '@/lib/game/balance';
+import type { WormUpgrade } from '@/lib/game/types';
+
+// As fórmulas devolvem Decimal; nesta faixa (< 1e308) comparar como number basta.
+const calculateMaxAppleHP = (stage: number) => maxHPD(stage).toNumber();
+const calculateWormDPS = (u: WormUpgrade, n: number) => wormDPSD(u, n).toNumber();
+const calculateWormCost = (u: WormUpgrade, n: number) => wormCostD(u, n).toNumber();
+const calculateClickDamageBase = (level: number) => clickDamageD(level).toNumber();
+const calculateClickUpgradeCost = (level: number) => clickCostD(level).toNumber();
+const milestoneMultiplier = (n: number) => milestoneD(n).toNumber();
+
 import { BALANCE, GAME_CONFIG, WORM_UPGRADES } from '@/lib/game/constants';
 
 describe('curva de HP em dois trechos', () => {
@@ -20,7 +31,8 @@ describe('curva de HP em dois trechos', () => {
   it('cresce HP_GROWTH_LATE por estágio depois da transição', () => {
     const at80 = 50 * 1.33 ** 79;
     expect(calculateMaxAppleHP(81)).toBe(Math.floor(at80 * 1.1));
-    expect(calculateMaxAppleHP(373)).toBe(Math.floor(at80 * 1.1 ** 293));
+    // Em ~1e23 o pow de Decimal e o ** de number diferem em 1 ulp.
+    expect(calculateMaxAppleHP(373) / (at80 * 1.1 ** 293)).toBeCloseTo(1, 12);
   });
 
   it('é monotônica e muito menor que a curva antiga no estágio 373', () => {
@@ -158,5 +170,20 @@ describe('simulação de progresso (jogador ativo, 5 cliques/s, compra gulosa)',
     expect(BALANCE.HP_LATE_STAGE).toBe(80);
     expect(BALANCE.MILESTONE_EVERY).toBe(25);
     expect(BALANCE.MILESTONE_MULTIPLIER).toBe(4);
+  });
+});
+
+describe('Decimal além de 1e308', () => {
+  it('HP passa de Number.MAX_VALUE sem virar Infinity', () => {
+    const hp = maxHPD(8000);
+    expect(hp.exponent).toBeGreaterThan(308);
+    expect(Number.isFinite(hp.mantissa)).toBe(true);
+    expect(hp.gt(maxHPD(7999))).toBe(true);
+  });
+
+  it('multiplicador do Abismo dobra por profundidade', () => {
+    expect(abyssMultiplier(0).toNumber()).toBe(1);
+    expect(abyssMultiplier(1).toNumber()).toBe(2);
+    expect(abyssMultiplier(10).toNumber()).toBe(1024);
   });
 });

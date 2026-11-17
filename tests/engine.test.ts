@@ -1,11 +1,13 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock localStorage — always returns null to force fresh state
 let mockStorage: Record<string, string> = {};
 
 Object.defineProperty(globalThis, 'window', {
   value: {
-    matchMedia: vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }),
+    matchMedia: vi
+      .fn()
+      .mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   },
@@ -15,9 +17,15 @@ Object.defineProperty(globalThis, 'window', {
 Object.defineProperty(globalThis, 'localStorage', {
   get: () => ({
     getItem: (key: string) => mockStorage[key] ?? null,
-    setItem: (key: string, value: string) => { mockStorage[key] = value; },
-    removeItem: (key: string) => { delete mockStorage[key]; },
-    clear: () => { mockStorage = {}; },
+    setItem: (key: string, value: string) => {
+      mockStorage[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete mockStorage[key];
+    },
+    clear: () => {
+      mockStorage = {};
+    },
   }),
   configurable: true,
 });
@@ -61,7 +69,7 @@ Object.defineProperty(globalThis, 'TextEncoder', {
     encode(str: string): Uint8Array {
       const arr = new Uint8Array(str.length);
       for (let i = 0; i < str.length; i++) {
-        arr[i] = str.charCodeAt(i) & 0xFF;
+        arr[i] = str.charCodeAt(i) & 0xff;
       }
       return arr;
     }
@@ -73,8 +81,9 @@ Object.defineProperty(globalThis, 'TextEncoder', {
 global.setInterval = vi.fn(() => 1 as any) as any;
 global.clearInterval = vi.fn() as any;
 
-import { GameEngine } from '@/lib/game/engine';
 import { GAME_CONFIG } from '@/lib/game/constants';
+import { GameEngine } from '@/lib/game/engine';
+import { Decimal } from '@/lib/game/num';
 
 describe('GameEngine', () => {
   let engine: GameEngine;
@@ -86,7 +95,7 @@ describe('GameEngine', () => {
 
   describe('Initial State', () => {
     it('should start with 0 gold', () => {
-      expect(engine.getState().gold).toBe(0);
+      expect(engine.getState().gold.toNumber()).toBe(0);
     });
 
     it('should start at stage 1', () => {
@@ -94,8 +103,8 @@ describe('GameEngine', () => {
     });
 
     it('should have initial apple HP from GAME_CONFIG', () => {
-      expect(engine.getState().appleHP).toBe(GAME_CONFIG.INITIAL_HP);
-      expect(engine.getState().maxAppleHP).toBe(GAME_CONFIG.INITIAL_HP);
+      expect(engine.getState().appleHP.toNumber()).toBe(GAME_CONFIG.INITIAL_HP);
+      expect(engine.getState().maxAppleHP.toNumber()).toBe(GAME_CONFIG.INITIAL_HP);
     });
 
     it('should start with 0 lucky worms', () => {
@@ -121,26 +130,26 @@ describe('GameEngine', () => {
     });
 
     it('should deal damage to apple on click', () => {
-      const initialHP = engine.getState().appleHP;
+      const initialHP = engine.getState().appleHP.toNumber();
       engine.clickApple();
-      expect(engine.getState().appleHP).toBeLessThan(initialHP);
+      expect(engine.getState().appleHP.toNumber()).toBeLessThan(initialHP);
     });
 
     it('should earn gold on click', () => {
       engine.clickApple();
-      expect(engine.getState().gold).toBeGreaterThan(0);
+      expect(engine.getState().gold.toNumber()).toBeGreaterThan(0);
     });
 
     it('should increase click damage after buying upgrade', () => {
-      const baseDamage = engine.getClickDamage();
-      engine.getState().gold = 1000;
+      const baseDamage = engine.getClickDamage().toNumber();
+      engine.getState().gold = new Decimal(1000);
       engine.buyClickUpgrade();
-      expect(engine.getClickDamage()).toBeGreaterThan(baseDamage);
+      expect(engine.getClickDamage().toNumber()).toBeGreaterThan(baseDamage);
     });
 
     it('should not buy click upgrade without enough gold', () => {
       // Ensure fresh state with 0 gold
-      expect(engine.getState().gold).toBe(0);
+      expect(engine.getState().gold.toNumber()).toBe(0);
       const result = engine.buyClickUpgrade();
       expect(result).toBe(false);
       expect(engine.getState().clickLevel).toBe(0);
@@ -149,21 +158,21 @@ describe('GameEngine', () => {
 
   describe('Upgrade System', () => {
     it('should buy upgrade when enough gold', () => {
-      engine.getState().gold = 100;
+      engine.getState().gold = new Decimal(100);
       engine.buyUpgrade('small_worm');
       expect(engine.getState().worms.small_worm).toBe(1);
     });
 
     it('should deduct gold on purchase', () => {
-      engine.getState().gold = 100;
-      const cost = engine.getUpgradeCost('small_worm');
+      engine.getState().gold = new Decimal(100);
+      const cost = engine.getUpgradeCost('small_worm').toNumber();
       engine.buyUpgrade('small_worm');
-      expect(engine.getState().gold).toBe(100 - cost);
+      expect(engine.getState().gold.toNumber()).toBe(100 - cost);
     });
 
     it('should not buy upgrade without enough gold', () => {
       // Verify fresh state
-      expect(engine.getState().gold).toBe(0);
+      expect(engine.getState().gold.toNumber()).toBe(0);
       expect(engine.getState().worms.small_worm).toBe(0);
       engine.buyUpgrade('small_worm');
       expect(engine.getState().worms.small_worm).toBe(0);
@@ -171,48 +180,48 @@ describe('GameEngine', () => {
 
     it('should increase cost after each purchase', () => {
       // Get cost at count=0
-      const cost0 = engine.getUpgradeCost('small_worm');
+      const cost0 = engine.getUpgradeCost('small_worm').toNumber();
       // Manually set count and get cost at count=1
       engine.getState().worms.small_worm = 1;
-      const cost1 = engine.getUpgradeCost('small_worm');
+      const cost1 = engine.getUpgradeCost('small_worm').toNumber();
       expect(cost1).toBeGreaterThan(cost0);
     });
 
     it('should calculate worm DPS correctly', () => {
       engine.getState().worms.small_worm = 1;
-      const dps = engine.getWormDPS('small_worm');
+      const dps = engine.getWormDPS('small_worm').toNumber();
       expect(dps).toBeGreaterThan(0);
     });
 
     it('should return 0 DPS for unpurchased worms', () => {
-      expect(engine.getWormDPS('small_worm')).toBe(0);
+      expect(engine.getWormDPS('small_worm').toNumber()).toBe(0);
     });
   });
 
   describe('Stage Progression', () => {
     it('should advance stage when apple HP reaches 0', () => {
-      engine.getState().appleHP = 1;
+      engine.getState().appleHP = new Decimal(1);
       engine.clickApple();
       expect(engine.getState().stage).toBe(2);
     });
 
     it('should increase max HP on stage advance', () => {
-      const initialMaxHP = engine.getState().maxAppleHP;
-      engine.getState().appleHP = 1;
+      const initialMaxHP = engine.getState().maxAppleHP.toNumber();
+      engine.getState().appleHP = new Decimal(1);
       engine.clickApple();
-      expect(engine.getState().maxAppleHP).toBeGreaterThan(initialMaxHP);
+      expect(engine.getState().maxAppleHP.toNumber()).toBeGreaterThan(initialMaxHP);
     });
 
     it('should track highest stage', () => {
-      engine.getState().appleHP = 1;
+      engine.getState().appleHP = new Decimal(1);
       engine.clickApple();
       expect(engine.getState().highestStage).toBe(2);
     });
 
     it('should reset apple HP to new max on advance', () => {
-      engine.getState().appleHP = 1;
+      engine.getState().appleHP = new Decimal(1);
       engine.clickApple();
-      expect(engine.getState().appleHP).toBe(engine.getState().maxAppleHP);
+      expect(engine.getState().appleHP.toNumber()).toBe(engine.getState().maxAppleHP.toNumber());
     });
   });
 
@@ -236,9 +245,9 @@ describe('GameEngine', () => {
 
     it('should reset progress on ascension', () => {
       engine.getState().stage = GAME_CONFIG.ASCENSION_STAGE;
-      engine.getState().gold = 99999;
+      engine.getState().gold = new Decimal(99999);
       engine.ascend();
-      expect(engine.getState().gold).toBe(0);
+      expect(engine.getState().gold.toNumber()).toBe(0);
       expect(engine.getState().stage).toBe(1);
       expect(engine.getState().clickLevel).toBe(0);
     });
@@ -260,20 +269,20 @@ describe('GameEngine', () => {
     it('should have base multiplier of 1 with 0 lucky worms', () => {
       // Ensure no lucky worms
       engine.getState().luckyWorms = 0;
-      expect(engine.getGoldMultiplier()).toBe(1);
+      expect(engine.getGoldMultiplier().toNumber()).toBe(1);
     });
 
     it('should increase gold multiplier with lucky worms', () => {
       engine.getState().luckyWorms = 0;
-      const baseMultiplier = engine.getGoldMultiplier();
+      const baseMultiplier = engine.getGoldMultiplier().toNumber();
       engine.getState().luckyWorms = 10;
-      expect(engine.getGoldMultiplier()).toBeGreaterThan(baseMultiplier);
+      expect(engine.getGoldMultiplier().toNumber()).toBeGreaterThan(baseMultiplier);
     });
 
     it('should give 5% bonus per lucky worm', () => {
       engine.getState().luckyWorms = 10;
       // 1 + (10 * 0.05) = 1.5
-      expect(engine.getGoldMultiplier()).toBeCloseTo(1.5, 5);
+      expect(engine.getGoldMultiplier().toNumber()).toBeCloseTo(1.5, 5);
     });
   });
 
@@ -285,7 +294,7 @@ describe('GameEngine', () => {
     });
 
     it('should import a valid save', async () => {
-      engine.getState().gold = 5000;
+      engine.getState().gold = new Decimal(5000);
       engine.getState().stage = 10;
       const save = await engine.exportSave();
 
@@ -295,7 +304,7 @@ describe('GameEngine', () => {
       const result = await engine2.importSave(save);
 
       expect(result).toBe(true);
-      expect(engine2.getState().gold).toBe(5000);
+      expect(engine2.getState().gold.toNumber()).toBe(5000);
       expect(engine2.getState().stage).toBe(10);
     });
 
@@ -314,20 +323,20 @@ describe('GameEngine', () => {
 
   describe('GAME_CONFIG Integration', () => {
     it('should use GAME_CONFIG.INITIAL_HP for starting HP', () => {
-      expect(engine.getState().appleHP).toBe(GAME_CONFIG.INITIAL_HP);
+      expect(engine.getState().appleHP.toNumber()).toBe(GAME_CONFIG.INITIAL_HP);
     });
 
     it('should use GAME_CONFIG.HP_GROWTH for stage scaling', () => {
       // Calculate expected HP at stage 2
       const expectedHP = Math.floor(GAME_CONFIG.INITIAL_HP * Math.pow(GAME_CONFIG.HP_GROWTH, 1));
       // Force stage advance
-      engine.getState().appleHP = 1;
+      engine.getState().appleHP = new Decimal(1);
       engine.clickApple();
-      expect(engine.getState().maxAppleHP).toBe(expectedHP);
+      expect(engine.getState().maxAppleHP.toNumber()).toBe(expectedHP);
     });
 
     it('should use GAME_CONFIG.CLICK_UPGRADE_BASE_COST for first upgrade', () => {
-      const cost = engine.getClickUpgradeCost();
+      const cost = engine.getClickUpgradeCost().toNumber();
       expect(cost).toBe(GAME_CONFIG.CLICK_UPGRADE_BASE_COST);
     });
 
@@ -341,9 +350,9 @@ describe('GameEngine', () => {
 
   describe('resetGame', () => {
     it('should reset gold to 0', () => {
-      engine.getState().gold = 5000;
+      engine.getState().gold = new Decimal(5000);
       engine.resetGame();
-      expect(engine.getState().gold).toBe(0);
+      expect(engine.getState().gold.toNumber()).toBe(0);
     });
 
     it('should reset stage to 1', () => {
@@ -360,13 +369,13 @@ describe('GameEngine', () => {
 
     it('should NOT mutate INITIAL_STATE (shared reference bug regression)', () => {
       engine.getState().worms.small_worm = 99;
-      engine.getState().gold = 9999;
+      engine.getState().gold = new Decimal(9999);
       engine.resetGame();
       // Create a second engine — it should NOT have the mutated values
       mockStorage = {};
       const engine2 = new GameEngine();
       expect(engine2.getState().worms.small_worm).toBe(0);
-      expect(engine2.getState().gold).toBe(0);
+      expect(engine2.getState().gold.toNumber()).toBe(0);
     });
   });
 
@@ -393,9 +402,9 @@ describe('GameEngine', () => {
 
     it('should grant gold reward for first_apple goal', () => {
       engine.getState().totalApplesEaten = 1;
-      const goldBefore = engine.getState().gold;
+      const goldBefore = engine.getState().gold.toNumber();
       engine.checkAndAwardGoals();
-      const goldAfter = engine.getState().gold;
+      const goldAfter = engine.getState().gold.toNumber();
       expect(goldAfter).toBeGreaterThan(goldBefore);
     });
 
@@ -424,7 +433,7 @@ describe('GameEngine', () => {
       engine.getState().totalApplesEaten = 5;
       const progress = engine.getAllGoalProgress();
       expect(progress.length).toBeGreaterThan(0);
-      const firstApple = progress.find(p => p.goalId === 'first_apple');
+      const firstApple = progress.find((p) => p.goalId === 'first_apple');
       expect(firstApple).toBeDefined();
       expect(firstApple!.currentValue).toBe(5);
     });
@@ -455,9 +464,9 @@ describe('GameEngine', () => {
     });
 
     it('should add gold on claim', () => {
-      const goldBefore = engine.getState().gold;
+      const goldBefore = engine.getState().gold.toNumber();
       engine.claimDailyReward();
-      const goldAfter = engine.getState().gold;
+      const goldAfter = engine.getState().gold.toNumber();
       expect(goldAfter).toBeGreaterThan(goldBefore);
     });
 
@@ -534,7 +543,7 @@ describe('GameEngine', () => {
 
     it('should migrate old save without journey field', async () => {
       // Create engine, set some state, export
-      engine.getState().gold = 500;
+      engine.getState().gold = new Decimal(500);
       engine.getState().stage = 5;
       const save = await engine.exportSave();
 
@@ -544,7 +553,7 @@ describe('GameEngine', () => {
       const result = await engine2.importSave(save);
 
       expect(result).toBe(true);
-      expect(engine2.getState().gold).toBe(500);
+      expect(engine2.getState().gold.toNumber()).toBe(500);
       expect(engine2.getState().journey).toBeDefined();
       expect(engine2.getState().journey!.completedGoals).toEqual([]);
       expect(engine2.getState().journey!.onboarding.hasSeenOnboarding).toBe(false);

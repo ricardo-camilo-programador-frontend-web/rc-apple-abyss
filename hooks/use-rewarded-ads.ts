@@ -29,17 +29,16 @@ export function useRewardedAds(engine: GameEngine, onStateUpdate: () => void) {
   const handleGoldBoostReward = useCallback(() => {
     setGoldBoostRemaining(30);
     startCooldown('gold_boost', 120);
-    const currentGold = engine.getState().gold;
-    const bonusGold = Math.floor(currentGold * 0.1);
-    engine.getState().gold += bonusGold;
+    const bonusGold = engine.getState().gold.mul(0.1).floor();
+    engine.addGold(bonusGold);
     onStateUpdate();
   }, [engine, startCooldown, onStateUpdate]);
 
   const handleInstantHarvestReward = useCallback(() => {
     const dps = engine.getTotalDPS();
     const goldMul = engine.getGoldMultiplier();
-    const instantGold = Math.floor(dps * 300 * goldMul);
-    engine.getState().gold += instantGold;
+    const instantGold = dps.mul(300).mul(goldMul).floor();
+    engine.addGold(instantGold);
     onStateUpdate();
     startCooldown('instant_harvest', 300);
     setShowRewardedAds(false);

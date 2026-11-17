@@ -1,5 +1,5 @@
 /**
- * Fórmulas de balanceamento (#47, fase 3).
+ * Fórmulas de balanceamento (#47, fases 3 e 4).
  *
  * Antes: dano do clique 1,35^nível e DPS dos worms dpsGrowth^(n−1) cresciam mais
  * rápido que os custos (1,15^n…1,6^n), então a economia disparava e o HP
@@ -8,53 +8,57 @@
  * Agora, no modelo do Clicker Heroes e do artigo de Pecorella: custo
  * exponencial (inalterado), produção linear por unidade com ×4 a cada 25
  * níveis, HP em dois trechos e prestígio quadrático no estágio da corrida.
+ * Tudo em Decimal (break_infinity.js), então nada estoura em 1,79e308.
  */
 import { BALANCE, CLICK_UPGRADE, GAME_CONFIG } from './constants';
-import { clampFinite } from './safe-number';
+import { Decimal } from './num';
 import type { WormUpgrade } from './types';
 
 /** ×MILESTONE_MULTIPLIER a cada MILESTONE_EVERY níveis. */
-export function milestoneMultiplier(level: number): number {
-  return BALANCE.MILESTONE_MULTIPLIER ** Math.floor(Math.max(0, level) / BALANCE.MILESTONE_EVERY);
+export function milestoneMultiplier(level: number): Decimal {
+  return Decimal.pow(
+    BALANCE.MILESTONE_MULTIPLIER,
+    Math.floor(Math.max(0, level) / BALANCE.MILESTONE_EVERY),
+  );
 }
 
 /**
  * HP máximo da maçã: INITIAL_HP × HP_GROWTH^(estágio−1) até HP_LATE_STAGE e,
- * depois, × HP_GROWTH_LATE por estágio. Limitado ao maior number finito.
+ * depois, × HP_GROWTH_LATE por estágio.
  */
-export function calculateMaxAppleHP(stage: number): number {
+export function calculateMaxAppleHP(stage: number): Decimal {
   const s = Math.max(1, Math.floor(stage));
   const early = Math.min(s, BALANCE.HP_LATE_STAGE) - 1;
   const late = Math.max(0, s - BALANCE.HP_LATE_STAGE);
-  const raw =
-    GAME_CONFIG.INITIAL_HP * GAME_CONFIG.HP_GROWTH ** early * BALANCE.HP_GROWTH_LATE ** late;
-  return Math.max(1, Math.floor(clampFinite(raw, GAME_CONFIG.INITIAL_HP)));
+  return Decimal.pow(GAME_CONFIG.HP_GROWTH, early)
+    .mul(Decimal.pow(BALANCE.HP_GROWTH_LATE, late))
+    .mul(GAME_CONFIG.INITIAL_HP)
+    .floor()
+    .max(1);
 }
 
 /** DPS de `count` unidades de um worm: base × quantidade × marco. */
-export function calculateWormDPS(upgrade: WormUpgrade, count: number): number {
-  if (count <= 0) return 0;
-  return clampFinite(upgrade.baseDPS * count * milestoneMultiplier(count));
+export function calculateWormDPS(upgrade: WormUpgrade, count: number): Decimal {
+  if (count <= 0) return new Decimal(0);
+  return milestoneMultiplier(count).mul(upgrade.baseDPS).mul(count);
 }
 
 /** Dano base do clique: (1 + nível) × marco, antes de bônus. */
-export function calculateClickDamageBase(level: number): number {
+export function calculateClickDamageBase(level: number): Decimal {
   const l = Math.max(0, level);
-  return clampFinite(CLICK_UPGRADE.baseDamage * (1 + l) * milestoneMultiplier(l));
+  return milestoneMultiplier(l).mul(CLICK_UPGRADE.baseDamage * (1 + l));
 }
 
 /** Custo do próximo worm: base × costGrowth^quantidade (igual à v0.2.1). */
-export function calculateWormCost(upgrade: WormUpgrade, count: number): number {
-  return Math.floor(clampFinite(upgrade.baseCost * upgrade.costGrowth ** count));
+export function calculateWormCost(upgrade: WormUpgrade, count: number): Decimal {
+  return Decimal.pow(upgrade.costGrowth, count).mul(upgrade.baseCost).floor();
 }
 
 /** Custo do próximo nível de clique: 20 × 1,15^nível (igual à v0.2.1). */
-export function calculateClickUpgradeCost(level: number): number {
-  return Math.floor(
-    clampFinite(
-      GAME_CONFIG.CLICK_UPGRADE_BASE_COST * GAME_CONFIG.CLICK_UPGRADE_COST_GROWTH ** level,
-    ),
-  );
+export function calculateClickUpgradeCost(level: number): Decimal {
+  return Decimal.pow(GAME_CONFIG.CLICK_UPGRADE_COST_GROWTH, level)
+    .mul(GAME_CONFIG.CLICK_UPGRADE_BASE_COST)
+    .floor();
 }
 
 /**
@@ -65,4 +69,9 @@ export function calculateClickUpgradeCost(level: number): number {
 export function calculatePendingLuckyWorms(stage: number): number {
   if (stage < GAME_CONFIG.ASCENSION_STAGE) return 0;
   return Math.floor((stage / BALANCE.LUCKY_WORMS_STAGE_DIVISOR) ** 2);
+}
+
+/** Multiplicador permanente do Abismo: ×2 por mergulho. */
+export function abyssMultiplier(depth: number): Decimal {
+  return Decimal.pow(BALANCE.ABYSS_MULTIPLIER_PER_DEPTH, Math.max(0, Math.floor(depth)));
 }

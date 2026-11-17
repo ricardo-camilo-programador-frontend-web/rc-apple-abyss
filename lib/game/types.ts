@@ -28,7 +28,6 @@ export interface WormUpgrade {
   baseCost: number;
   baseDPS: number;
   costGrowth: number;
-  dpsGrowth: number;
 }
 
 export interface SkillState {

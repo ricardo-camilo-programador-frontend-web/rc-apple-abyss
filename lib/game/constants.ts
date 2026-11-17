@@ -17,8 +17,8 @@ import type {
 export const GAME_CONFIG = {
   /** Initial apple HP at stage 1 */
   INITIAL_HP: 50,
-  /** HP growth factor per stage: HP = INITIAL_HP * HP_GROWTH^(stage-1) */
-  HP_GROWTH: 1.5,
+  /** HP growth factor per stage up to BALANCE.HP_LATE_STAGE (was 1.5 until v0.2.1) */
+  HP_GROWTH: 1.33,
   /** Stage required to unlock ascension */
   ASCENSION_STAGE: 50,
   /** Auto-save interval in milliseconds */
@@ -37,6 +37,23 @@ export const GAME_CONFIG = {
   SKILL_CLICK_GOLD_MULTIPLIER: 5,
   /** Golden Harvest idle gold multiplier */
   SKILL_IDLE_GOLD_MULTIPLIER: 2.5,
+} as const;
+
+/**
+ * Balanceamento (#47, fase 3). Produção linear com marcos e HP em dois trechos.
+ * Fórmulas em lib/game/balance.ts.
+ */
+export const BALANCE = {
+  /** Estágio a partir do qual o HP passa a crescer HP_GROWTH_LATE por estágio */
+  HP_LATE_STAGE: 80,
+  /** Crescimento do HP por estágio depois de HP_LATE_STAGE */
+  HP_GROWTH_LATE: 1.1,
+  /** A cada quantos níveis o worm ou o clique ganha o multiplicador de marco */
+  MILESTONE_EVERY: 25,
+  /** Multiplicador de marco (Clicker Heroes usa ×4 a cada 25 níveis) */
+  MILESTONE_MULTIPLIER: 4,
+  /** Lucky Worms = ⌊(estágio ÷ divisor)²⌋ */
+  LUCKY_WORMS_STAGE_DIVISOR: 10,
 } as const;
 
 export const LUCKY_WORMS_CONFIG: LuckyWormsConfig = {
@@ -81,7 +98,7 @@ export const INITIAL_JOURNEY_STATE: JourneyState = {
 };
 
 /** Versão do formato do save (v1 = até a v0.2.1, sem o campo). */
-export const CURRENT_SAVE_VERSION = 2;
+export const CURRENT_SAVE_VERSION = 3;
 
 export const INITIAL_STATE = {
   saveVersion: CURRENT_SAVE_VERSION,
@@ -153,17 +170,17 @@ export const HELP_CONTENT: Record<HelpTopicId, HelpContent> = {
   ascension: {
     titleKey: 'help_ascension_title',
     descriptionKey: 'help_ascension_desc',
-    formula: 'Lucky Worms = √-highestStage',
+    formula: 'Lucky Worms = ⌊(stage ÷ 10)²⌋',
   },
   click_damage: {
     titleKey: 'help_click_damage_title',
     descriptionKey: 'help_click_damage_desc',
-    formula: 'Damage = 1 × 1.35^level × Bonuses',
+    formula: 'Damage = (1 + level) × 4^⌊level ÷ 25⌋ × Bonuses',
   },
   idle_damage: {
     titleKey: 'help_idle_damage_title',
     descriptionKey: 'help_idle_damage_desc',
-    formula: 'DPS = Σ (wormDPS × Bonuses)',
+    formula: 'DPS = Σ (baseDPS × count × 4^⌊count ÷ 25⌋) × Bonuses',
   },
   worm_upgrades: {
     titleKey: 'help_worm_upgrades_title',
@@ -179,7 +196,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 15,
     baseDPS: 1,
     costGrowth: 1.15,
-    dpsGrowth: 1.18,
   },
   {
     id: 'hungry_worm',
@@ -187,7 +203,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 100,
     baseDPS: 5,
     costGrowth: 1.18,
-    dpsGrowth: 1.22,
   },
   {
     id: 'fat_worm',
@@ -195,7 +210,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 1100,
     baseDPS: 20,
     costGrowth: 1.22,
-    dpsGrowth: 1.26,
   },
   {
     id: 'queen_worm',
@@ -203,7 +217,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 12000,
     baseDPS: 100,
     costGrowth: 1.25,
-    dpsGrowth: 1.3,
   },
   {
     id: 'acid_worm',
@@ -211,7 +224,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 130000,
     baseDPS: 500,
     costGrowth: 1.3,
-    dpsGrowth: 1.35,
   },
   {
     id: 'mutant_worm',
@@ -219,7 +231,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 1500000,
     baseDPS: 3000,
     costGrowth: 1.35,
-    dpsGrowth: 1.4,
   },
   {
     id: 'mecha_worm',
@@ -227,7 +238,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 20000000,
     baseDPS: 20000,
     costGrowth: 1.4,
-    dpsGrowth: 1.45,
   },
   {
     id: 'galactic_worm',
@@ -235,7 +245,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 300000000,
     baseDPS: 150000,
     costGrowth: 1.45,
-    dpsGrowth: 1.5,
   },
   {
     id: 'quantum_worm',
@@ -243,7 +252,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 5000000000,
     baseDPS: 2000000,
     costGrowth: 1.5,
-    dpsGrowth: 1.55,
   },
   {
     id: 'dimensional_worm',
@@ -251,7 +259,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 100000000000,
     baseDPS: 30000000,
     costGrowth: 1.55,
-    dpsGrowth: 1.6,
   },
   {
     id: 'infinite_worm',
@@ -259,7 +266,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 5000000000000,
     baseDPS: 500000000,
     costGrowth: 1.6,
-    dpsGrowth: 1.65,
   },
 ];
 
@@ -269,7 +275,6 @@ export const CLICK_UPGRADE = {
   baseCost: 20,
   baseDamage: 1,
   costGrowth: 1.15,
-  damageGrowth: 1.35,
 };
 
 export const LOCALIZATION: LocalizationData = {

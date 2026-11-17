@@ -1,7 +1,13 @@
 import { AudioSystem } from './audio';
-import { calculateMaxAppleHP } from './balance';
 import {
-  CLICK_UPGRADE,
+  calculateClickDamageBase,
+  calculateClickUpgradeCost,
+  calculateMaxAppleHP,
+  calculatePendingLuckyWorms,
+  calculateWormCost,
+  calculateWormDPS,
+} from './balance';
+import {
   GAME_CONFIG,
   INITIAL_JOURNEY_STATE,
   INITIAL_STATE,
@@ -280,19 +286,16 @@ export class GameEngine {
   }
 
   public getClickDamage(): number {
-    const baseDamage =
-      GAME_CONFIG.CLICK_BASE_DAMAGE * Math.pow(CLICK_UPGRADE.damageGrowth, this.state.clickLevel);
+    const baseDamage = calculateClickDamageBase(this.state.clickLevel);
     const luckyWormBonus = 1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm;
     const skillMultiplier = this.skills.getGoldMultiplierClick();
     return clampFinite(baseDamage * luckyWormBonus * skillMultiplier);
   }
 
-  public getWormDPS(id: string): number {
+  public getWormDPS(id: string, count: number = this.state.worms[id] || 0): number {
     const upgrade = WORM_UPGRADES.find((u) => u.id === id);
     if (!upgrade) return 0;
-    const count = this.state.worms[id] || 0;
-    if (count === 0) return 0;
-    return clampFinite(upgrade.baseDPS * Math.pow(upgrade.dpsGrowth, count - 1));
+    return calculateWormDPS(upgrade, count);
   }
 
   public getTotalDPS(): number {
@@ -312,8 +315,7 @@ export class GameEngine {
   public getUpgradeCost(upgradeId: string): number {
     const upgrade = WORM_UPGRADES.find((u) => u.id === upgradeId);
     if (!upgrade) return 0;
-    const count = this.state.worms[upgradeId] || 0;
-    return Math.floor(clampFinite(upgrade.baseCost * Math.pow(upgrade.costGrowth, count)));
+    return calculateWormCost(upgrade, this.state.worms[upgradeId] || 0);
   }
 
   public buyUpgrade(upgradeId: string): void {
@@ -327,12 +329,7 @@ export class GameEngine {
   }
 
   public getClickUpgradeCost(): number {
-    return Math.floor(
-      clampFinite(
-        GAME_CONFIG.CLICK_UPGRADE_BASE_COST *
-          Math.pow(GAME_CONFIG.CLICK_UPGRADE_COST_GROWTH, this.state.clickLevel),
-      ),
-    );
+    return calculateClickUpgradeCost(this.state.clickLevel);
   }
 
   public buyClickUpgrade(): boolean {
@@ -352,8 +349,7 @@ export class GameEngine {
   }
 
   public getPendingLuckyWorms(): number {
-    if (this.state.stage < GAME_CONFIG.ASCENSION_STAGE) return 0;
-    return Math.floor(Math.sqrt(this.state.highestStage));
+    return calculatePendingLuckyWorms(this.state.stage);
   }
 
   public ascend(): void {

@@ -86,7 +86,7 @@ export default function UpgradeSidebar({
             const canAfford = state.gold >= cost;
             const count = state.worms[upgrade.id] || 0;
             const currentDPS = engine.getWormDPS(upgrade.id);
-            const nextDPS = count === 0 ? upgrade.baseDPS : currentDPS * upgrade.dpsGrowth;
+            const nextDPS = engine.getWormDPS(upgrade.id, count + 1);
 
             return (
               <UpgradeCard

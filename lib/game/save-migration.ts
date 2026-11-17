@@ -63,6 +63,7 @@ function sanitizeRecord(
  * - v1 (até a v0.2.1): sem `saveVersion` nem `settings.notation`; campos que
  *   estouraram para Infinity foram gravados como `null`.
  * - v2: igual à v1, com `saveVersion` e números sempre finitos.
+ * - v3: HP pela curva nova de dois trechos (fase 3 do #47).
  *
  * A limpeza roda em todo load, não só na migração, para que um save editado à
  * mão nunca injete NaN ou Infinity no estado.
@@ -110,6 +111,18 @@ export function migrateSave(raw: unknown): MigratedSave {
     save.settings = settings;
   } else {
     delete save.settings;
+  }
+
+  // v1/v2 → v3: o HP foi calculado com a curva antiga (1,5^estágio). Recalcula o
+  // máximo pela curva nova e mantém a mesma porcentagem de vida da maçã.
+  const version = typeof raw.saveVersion === 'number' ? raw.saveVersion : 1;
+  if (version < 3 && 'maxAppleHP' in save) {
+    const oldMax = save.maxAppleHP as number;
+    const oldHP = typeof save.appleHP === 'number' ? save.appleHP : oldMax;
+    const ratio = oldMax > 0 ? Math.min(1, Math.max(0, oldHP / oldMax)) : 1;
+    const newMax = calculateMaxAppleHP(stage);
+    save.maxAppleHP = newMax;
+    save.appleHP = Math.max(1, Math.ceil(newMax * ratio));
   }
 
   save.saveVersion = CURRENT_SAVE_VERSION;

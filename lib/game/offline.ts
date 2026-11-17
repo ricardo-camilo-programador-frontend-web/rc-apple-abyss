@@ -1,3 +1,4 @@
+import { calculateMaxAppleHP } from './balance';
 import { GAME_CONFIG } from './constants';
 import { clampFinite } from './safe-number';
 import type { GameState } from './types';
@@ -218,6 +219,10 @@ export class OfflineProgressSystem {
 
   private calculateMaxAppleHP(stage: number): number {
     const { baseHP, growthFactor } = this.config.appleHP;
+    // A curva padrão é a do jogo (dois trechos); uma config de teste pode trocá-la.
+    if (baseHP === GAME_CONFIG.INITIAL_HP && growthFactor === GAME_CONFIG.HP_GROWTH) {
+      return calculateMaxAppleHP(stage);
+    }
     return Math.max(1, Math.floor(clampFinite(baseHP * Math.pow(growthFactor, stage - 1), baseHP)));
   }
   private getAntiCheatFlags(

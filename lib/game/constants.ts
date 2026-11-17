@@ -86,6 +86,26 @@ export const DAILY_REWARD_CONFIG = {
 
 /* ─── Journey Initial State ─── */
 
+/**
+ * Free Rewards (anúncio com recompensa do H5 Games Ads).
+ * - 2x Gold Boost: ×2 em todo gold ganho por dano (clique e idle) durante
+ *   GOLD_BOOST_DURATION_S. Não vale para progresso offline nem para o
+ *   Instant Harvest.
+ * - Cooldowns contam a partir da recompensa entregue e sobrevivem ao reload.
+ */
+export const REWARDED_CONFIG = {
+  goldBoostMultiplier: 2,
+  goldBoostDurationSeconds: 60,
+  instantHarvestSeconds: 300,
+  cooldownSeconds: {
+    gold_boost: 300,
+    instant_harvest: 300,
+    reset_cooldown: 180,
+  },
+  /** Espera antes de pedir outro anúncio quando não houve anúncio disponível. */
+  unavailableRetrySeconds: 30,
+} as const;
+
 export const INITIAL_JOURNEY_STATE: JourneyState = {
   completedGoals: [],
   onboarding: {

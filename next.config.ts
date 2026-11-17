@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
+import { GOOGLE_ADS_CSP_SOURCES, withCspSources } from './lib/csp-google-ads';
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
@@ -68,7 +69,11 @@ const nextConfig: NextConfig = {
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload',
           },
-          { key: 'Content-Security-Policy-Report-Only', value: CSP_REPORT_ONLY },
+          {
+            key: 'Content-Security-Policy-Report-Only',
+            // Hosts do Google para o H5 Games Ads entram aqui (lib/csp-google-ads.ts).
+            value: withCspSources(CSP_REPORT_ONLY.split('; '), GOOGLE_ADS_CSP_SOURCES).join('; '),
+          },
         ],
       },
     ];

@@ -13,6 +13,7 @@ import {
   INITIAL_JOURNEY_STATE,
   INITIAL_STATE,
   LUCKY_WORMS_CONFIG,
+  REWARDED_CONFIG,
   WORM_UPGRADES,
 } from './constants';
 import {
@@ -56,6 +57,8 @@ export class GameEngine {
   private saveInterval: ReturnType<typeof setInterval> | null = null;
   private beforeUnloadHandler: (() => void) | null = null;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Fim do 2x Gold Boost (ms desde a época). Fora do save; persistido em `lib/ads/rewarded-persistence.ts`. */
+  private goldBoostUntil = 0;
 
   private readonly SAVE_KEY = 'apple_clicker_save';
 
@@ -235,7 +238,7 @@ export class GameEngine {
   private applyDamage(damage: DecimalSource, _isClick: boolean): void {
     let remainingDamage = new Decimal(damage);
     if (!isFiniteDecimal(remainingDamage) || remainingDamage.lte(0)) return;
-    const goldMultiplier = this.getGoldMultiplier();
+    const goldMultiplier = this.getGoldMultiplier().mul(this.getGoldBoostMultiplier());
     // Teto de maçãs por chamada: evita laço longo quando o dano é muito maior que o HP.
     let kills = 0;
 
@@ -311,6 +314,32 @@ export class GameEngine {
     return this.getAbyssMultiplier().mul(
       1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.goldBonusPerWorm,
     );
+  }
+
+  /**
+   * Liga o 2x Gold Boost do Free Rewards por `REWARDED_CONFIG.goldBoostDurationSeconds`.
+   * Só deve ser chamado depois de `adViewed`. Devolve o instante em que acaba.
+   */
+  public activateGoldBoost(now: number = Date.now()): number {
+    this.goldBoostUntil = now + REWARDED_CONFIG.goldBoostDurationSeconds * 1000;
+    return this.goldBoostUntil;
+  }
+
+  /** Restaura o fim do boost salvo (reload). Valores inválidos desligam o boost. */
+  public setGoldBoostUntil(until: number): void {
+    this.goldBoostUntil = Number.isFinite(until) && until > 0 ? until : 0;
+  }
+
+  public getGoldBoostRemainingSeconds(now: number = Date.now()): number {
+    return this.goldBoostUntil > now ? Math.ceil((this.goldBoostUntil - now) / 1000) : 0;
+  }
+
+  /**
+   * Multiplicador temporário de gold por dano (clique e idle). Fica fora de
+   * `getGoldMultiplier()` para não valer no progresso offline nem no Instant Harvest.
+   */
+  public getGoldBoostMultiplier(now: number = Date.now()): number {
+    return now < this.goldBoostUntil ? REWARDED_CONFIG.goldBoostMultiplier : 1;
   }
 
   /** ×2 de dano e ouro por nível de Abismo. */

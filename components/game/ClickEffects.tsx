@@ -2,9 +2,11 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import React from 'react';
+import type { Decimal } from '@/lib/game/num';
+import NumberText from './NumberText';
 
 interface ClickEffectsProps {
-  effects: ReadonlyArray<{ id: number; x: number; y: number; value: number }>;
+  effects: ReadonlyArray<{ id: number; x: number; y: number; value: Decimal }>;
 }
 
 export default function ClickEffects({ effects }: ClickEffectsProps) {
@@ -23,7 +25,7 @@ export default function ClickEffects({ effects }: ClickEffectsProps) {
           className="click-pop"
           aria-hidden="true"
         >
-          +{effect.value}
+          +<NumberText value={effect.value} />
         </motion.div>
       ))}
     </AnimatePresence>

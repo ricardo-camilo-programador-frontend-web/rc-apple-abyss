@@ -1,3 +1,5 @@
+import { DEFAULT_NOTATION } from './format';
+import { Decimal } from './num';
 import type {
   HelpContent,
   HelpTopicId,
@@ -16,8 +18,8 @@ import type {
 export const GAME_CONFIG = {
   /** Initial apple HP at stage 1 */
   INITIAL_HP: 50,
-  /** HP growth factor per stage: HP = INITIAL_HP * HP_GROWTH^(stage-1) */
-  HP_GROWTH: 1.5,
+  /** HP growth factor per stage up to BALANCE.HP_LATE_STAGE (was 1.5 until v0.2.1) */
+  HP_GROWTH: 1.33,
   /** Stage required to unlock ascension */
   ASCENSION_STAGE: 50,
   /** Auto-save interval in milliseconds */
@@ -38,6 +40,25 @@ export const GAME_CONFIG = {
   SKILL_IDLE_GOLD_MULTIPLIER: 2.5,
 } as const;
 
+/**
+ * Balanceamento (#47, fase 3). Produção linear com marcos e HP em dois trechos.
+ * Fórmulas em lib/game/balance.ts.
+ */
+export const BALANCE = {
+  /** Estágio a partir do qual o HP passa a crescer HP_GROWTH_LATE por estágio */
+  HP_LATE_STAGE: 80,
+  /** Crescimento do HP por estágio depois de HP_LATE_STAGE */
+  HP_GROWTH_LATE: 1.1,
+  /** A cada quantos níveis o worm ou o clique ganha o multiplicador de marco */
+  MILESTONE_EVERY: 25,
+  /** Multiplicador de marco (Clicker Heroes usa ×4 a cada 25 níveis) */
+  MILESTONE_MULTIPLIER: 4,
+  /** Lucky Worms = ⌊(estágio ÷ divisor)²⌋ */
+  LUCKY_WORMS_STAGE_DIVISOR: 10,
+  /** Multiplicador permanente de dano e ouro por nível de Abismo */
+  ABYSS_MULTIPLIER_PER_DEPTH: 2,
+} as const;
+
 export const LUCKY_WORMS_CONFIG: LuckyWormsConfig = {
   goldBonusPerWorm: 0.05,
   damageBonusPerWorm: 0.1,
@@ -46,7 +67,7 @@ export const LUCKY_WORMS_CONFIG: LuckyWormsConfig = {
 export const INITIAL_STATISTICS: StatisticsData = {
   totalClicks: 0,
   totalApplesEaten: 0,
-  totalGoldEarned: 0,
+  totalGoldEarned: new Decimal(0),
   highestStage: 1,
   totalAscensions: 0,
   luckyWormsCollected: 0,
@@ -79,16 +100,21 @@ export const INITIAL_JOURNEY_STATE: JourneyState = {
   },
 };
 
+/** Versão do formato do save (v1 = até a v0.2.1, sem o campo). */
+export const CURRENT_SAVE_VERSION = 4;
+
 export const INITIAL_STATE = {
-  gold: 0,
+  saveVersion: CURRENT_SAVE_VERSION,
+  gold: new Decimal(0),
   stage: 1,
-  appleHP: GAME_CONFIG.INITIAL_HP,
-  maxAppleHP: GAME_CONFIG.INITIAL_HP,
+  appleHP: new Decimal(GAME_CONFIG.INITIAL_HP),
+  maxAppleHP: new Decimal(GAME_CONFIG.INITIAL_HP),
   clickDamage: GAME_CONFIG.CLICK_BASE_DAMAGE,
   clickLevel: 0,
   totalClicks: 0,
   totalApplesEaten: 0,
   luckyWorms: 0,
+  abyssDepth: 0,
   highestStage: 1,
   lastSaveTimestamp: Date.now(),
   worms: {
@@ -117,6 +143,7 @@ export const INITIAL_STATE = {
     language: 'en' as Language,
     muted: false,
     volume: 0.5,
+    notation: DEFAULT_NOTATION,
   },
 };
 
@@ -147,17 +174,17 @@ export const HELP_CONTENT: Record<HelpTopicId, HelpContent> = {
   ascension: {
     titleKey: 'help_ascension_title',
     descriptionKey: 'help_ascension_desc',
-    formula: 'Lucky Worms = √-highestStage',
+    formula: 'Lucky Worms = ⌊(stage ÷ 10)²⌋ · Abyss (gold ≥ 1.80e308): ×2^depth damage & gold',
   },
   click_damage: {
     titleKey: 'help_click_damage_title',
     descriptionKey: 'help_click_damage_desc',
-    formula: 'Damage = 1 × 1.35^level × Bonuses',
+    formula: 'Damage = (1 + level) × 4^⌊level ÷ 25⌋ × Bonuses × 2^abyss',
   },
   idle_damage: {
     titleKey: 'help_idle_damage_title',
     descriptionKey: 'help_idle_damage_desc',
-    formula: 'DPS = Σ (wormDPS × Bonuses)',
+    formula: 'DPS = Σ (baseDPS × count × 4^⌊count ÷ 25⌋) × Bonuses',
   },
   worm_upgrades: {
     titleKey: 'help_worm_upgrades_title',
@@ -173,7 +200,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 15,
     baseDPS: 1,
     costGrowth: 1.15,
-    dpsGrowth: 1.18,
   },
   {
     id: 'hungry_worm',
@@ -181,7 +207,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 100,
     baseDPS: 5,
     costGrowth: 1.18,
-    dpsGrowth: 1.22,
   },
   {
     id: 'fat_worm',
@@ -189,7 +214,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 1100,
     baseDPS: 20,
     costGrowth: 1.22,
-    dpsGrowth: 1.26,
   },
   {
     id: 'queen_worm',
@@ -197,7 +221,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 12000,
     baseDPS: 100,
     costGrowth: 1.25,
-    dpsGrowth: 1.3,
   },
   {
     id: 'acid_worm',
@@ -205,7 +228,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 130000,
     baseDPS: 500,
     costGrowth: 1.3,
-    dpsGrowth: 1.35,
   },
   {
     id: 'mutant_worm',
@@ -213,7 +235,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 1500000,
     baseDPS: 3000,
     costGrowth: 1.35,
-    dpsGrowth: 1.4,
   },
   {
     id: 'mecha_worm',
@@ -221,7 +242,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 20000000,
     baseDPS: 20000,
     costGrowth: 1.4,
-    dpsGrowth: 1.45,
   },
   {
     id: 'galactic_worm',
@@ -229,7 +249,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 300000000,
     baseDPS: 150000,
     costGrowth: 1.45,
-    dpsGrowth: 1.5,
   },
   {
     id: 'quantum_worm',
@@ -237,7 +256,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 5000000000,
     baseDPS: 2000000,
     costGrowth: 1.5,
-    dpsGrowth: 1.55,
   },
   {
     id: 'dimensional_worm',
@@ -245,7 +263,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 100000000000,
     baseDPS: 30000000,
     costGrowth: 1.55,
-    dpsGrowth: 1.6,
   },
   {
     id: 'infinite_worm',
@@ -253,7 +270,6 @@ export const WORM_UPGRADES: Array<WormUpgrade> = [
     baseCost: 5000000000000,
     baseDPS: 500000000,
     costGrowth: 1.6,
-    dpsGrowth: 1.65,
   },
 ];
 
@@ -263,7 +279,6 @@ export const CLICK_UPGRADE = {
   baseCost: 20,
   baseDamage: 1,
   costGrowth: 1.15,
-  damageGrowth: 1.35,
 };
 
 export const LOCALIZATION: LocalizationData = {
@@ -992,6 +1007,116 @@ export const LOCALIZATION: LocalizationData = {
     ta: 'மொழி',
     vi: 'Ngôn ngữ',
     ko: '언어',
+  },
+  settings_notation: {
+    en: 'Number format',
+    zh: '数字格式',
+    hi: 'संख्या प्रारूप',
+    es: 'Formato de números',
+    fr: 'Format des nombres',
+    ar: 'تنسيق الأرقام',
+    bn: 'সংখ্যার ফরম্যাট',
+    pt: 'Formato dos números',
+    ru: 'Формат чисел',
+    ur: 'نمبر فارمیٹ',
+    id: 'Format angka',
+    de: 'Zahlenformat',
+    ja: '数値の表示形式',
+    sw: 'Muundo wa namba',
+    mr: 'संख्या स्वरूप',
+    te: 'సంఖ్యా ఫార్మాట్',
+    tr: 'Sayı biçimi',
+    ta: 'எண் வடிவம்',
+    vi: 'Định dạng số',
+    ko: '숫자 형식',
+  },
+  notation_mixed: {
+    en: 'Mixed',
+    zh: '混合',
+    hi: 'मिश्रित',
+    es: 'Mixto',
+    fr: 'Mixte',
+    ar: 'مختلط',
+    bn: 'মিশ্র',
+    pt: 'Misto',
+    ru: 'Смешанный',
+    ur: 'مخلوط',
+    id: 'Campuran',
+    de: 'Gemischt',
+    ja: '混合',
+    sw: 'Mchanganyiko',
+    mr: 'मिश्र',
+    te: 'మిశ్రమ',
+    tr: 'Karma',
+    ta: 'கலப்பு',
+    vi: 'Hỗn hợp',
+    ko: '혼합',
+  },
+  notation_letters: {
+    en: 'Letters (aa, ab)',
+    zh: '字母 (aa, ab)',
+    hi: 'अक्षर (aa, ab)',
+    es: 'Letras (aa, ab)',
+    fr: 'Lettres (aa, ab)',
+    ar: 'حروف (aa, ab)',
+    bn: 'অক্ষর (aa, ab)',
+    pt: 'Letras (aa, ab)',
+    ru: 'Буквы (aa, ab)',
+    ur: 'حروف (aa, ab)',
+    id: 'Huruf (aa, ab)',
+    de: 'Buchstaben (aa, ab)',
+    ja: '文字 (aa, ab)',
+    sw: 'Herufi (aa, ab)',
+    mr: 'अक्षरे (aa, ab)',
+    te: 'అక్షరాలు (aa, ab)',
+    tr: 'Harfler (aa, ab)',
+    ta: 'எழுத்துகள் (aa, ab)',
+    vi: 'Chữ cái (aa, ab)',
+    ko: '문자 (aa, ab)',
+  },
+  notation_scientific: {
+    en: 'Scientific',
+    zh: '科学计数法',
+    hi: 'वैज्ञानिक',
+    es: 'Científica',
+    fr: 'Scientifique',
+    ar: 'علمي',
+    bn: 'বৈজ্ঞানিক',
+    pt: 'Científica',
+    ru: 'Научная',
+    ur: 'سائنسی',
+    id: 'Ilmiah',
+    de: 'Wissenschaftlich',
+    ja: '科学表記',
+    sw: 'Kisayansi',
+    mr: 'वैज्ञानिक',
+    te: 'శాస్త్రీయ',
+    tr: 'Bilimsel',
+    ta: 'அறிவியல்',
+    vi: 'Khoa học',
+    ko: '과학적 표기',
+  },
+  notation_engineering: {
+    en: 'Engineering',
+    zh: '工程计数法',
+    hi: 'इंजीनियरिंग',
+    es: 'Ingeniería',
+    fr: 'Ingénieur',
+    ar: 'هندسي',
+    bn: 'ইঞ্জিনিয়ারিং',
+    pt: 'Engenharia',
+    ru: 'Инженерная',
+    ur: 'انجینئرنگ',
+    id: 'Teknik',
+    de: 'Technisch',
+    ja: '工学表記',
+    sw: 'Kihandisi',
+    mr: 'अभियांत्रिकी',
+    te: 'ఇంజనీరింగ్',
+    tr: 'Mühendislik',
+    ta: 'பொறியியல்',
+    vi: 'Kỹ thuật',
+    ko: '공학적 표기',
   },
   settings_sound: {
     en: 'Sound',

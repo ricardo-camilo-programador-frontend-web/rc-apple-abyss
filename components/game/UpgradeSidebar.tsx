@@ -8,6 +8,7 @@ import type { GameEngine } from '@/lib/game/engine';
 import type { GameState } from '@/lib/game/types';
 import { WORM_CATEGORIES } from '@/lib/game/worm-catalog';
 import CollapsibleSection from './CollapsibleSection';
+import NumberText from './NumberText';
 import UpgradeCard from './UpgradeCard';
 
 interface UpgradeSidebarProps {
@@ -42,9 +43,9 @@ export default function UpgradeSidebar({
         <motion.button
           type="button"
           onClick={onBuyClickUpgrade}
-          disabled={state.gold < engine.getClickUpgradeCost()}
-          whileHover={state.gold >= engine.getClickUpgradeCost() ? { scale: 1.01, y: -2 } : {}}
-          whileTap={state.gold >= engine.getClickUpgradeCost() ? { scale: 0.98 } : {}}
+          disabled={state.gold.lt(engine.getClickUpgradeCost())}
+          whileHover={state.gold.gte(engine.getClickUpgradeCost()) ? { scale: 1.01, y: -2 } : {}}
+          whileTap={state.gold.gte(engine.getClickUpgradeCost()) ? { scale: 0.98 } : {}}
           className="abyss-card is-gold"
         >
           <div className="flex items-center gap-3">
@@ -59,10 +60,10 @@ export default function UpgradeSidebar({
               <div className="flex items-center justify-between mt-1">
                 <span className="abyss-cost">
                   <Coins className="w-3 h-3" aria-hidden="true" />
-                  {Math.floor(engine.getClickUpgradeCost()).toLocaleString()}
+                  <NumberText value={engine.getClickUpgradeCost()} />
                 </span>
                 <span className="text-[11px]" style={{ color: 'var(--muted)' }}>
-                  Dmg: {engine.getClickDamage().toFixed(1)}
+                  Dmg: <NumberText value={engine.getClickDamage()} decimals={1} />
                 </span>
               </div>
             </div>
@@ -82,10 +83,10 @@ export default function UpgradeSidebar({
           {category.upgrades.map((upgrade) => {
             if (!upgrade) return null;
             const cost = engine.getUpgradeCost(upgrade.id);
-            const canAfford = state.gold >= cost;
+            const canAfford = state.gold.gte(cost);
             const count = state.worms[upgrade.id] || 0;
             const currentDPS = engine.getWormDPS(upgrade.id);
-            const nextDPS = count === 0 ? upgrade.baseDPS : currentDPS * upgrade.dpsGrowth;
+            const nextDPS = engine.getWormDPS(upgrade.id, count + 1);
 
             return (
               <UpgradeCard

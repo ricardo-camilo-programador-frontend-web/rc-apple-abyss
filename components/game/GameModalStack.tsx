@@ -12,6 +12,7 @@ import StatsModal from '@/components/game/StatsModal';
 import Modal from '@/components/Modal';
 import RewardedAdButton from '@/components/RewardedAdButton';
 import type { GameEngine } from '@/lib/game/engine';
+import type { Decimal } from '@/lib/game/num';
 import type { GameState } from '@/lib/game/types';
 
 interface RewardedAdsModalProps {
@@ -56,7 +57,7 @@ function RewardedAdsModal({
           icon={TrendingUp}
           cooldownRemaining={getCooldown('instant_harvest')}
           onReward={onInstantHarvest}
-          disabled={engine.getTotalDPS() === 0}
+          disabled={engine.getTotalDPS().lte(0)}
           disabledReason="Buy worms first to generate idle income"
         />
 
@@ -88,7 +89,7 @@ interface GameModalStackProps {
   showOnboarding: boolean;
   showHelp: { title: string; content: string } | null;
   offlineResult: { apples: number; gold: number } | null;
-  clickEffects: ReadonlyArray<{ id: number; x: number; y: number; value: number }>;
+  clickEffects: ReadonlyArray<{ id: number; x: number; y: number; value: Decimal }>;
   onCloseSettings: () => void;
   onCloseSkills: () => void;
   onCloseStats: () => void;

@@ -4,15 +4,18 @@ import { Bug, Coins } from 'lucide-react';
 import { motion } from 'motion/react';
 import React from 'react';
 import type { WORM_UPGRADES } from '@/lib/game/constants';
+import type { Decimal } from '@/lib/game/num';
 import { WORM_ICONS } from '@/lib/game/worm-catalog';
+import { useNumberFormat } from './NumberFormatProvider';
+import NumberText from './NumberText';
 
 interface UpgradeCardProps {
   upgrade: (typeof WORM_UPGRADES)[number];
   count: number;
-  cost: number;
+  cost: Decimal;
   canAfford: boolean;
-  currentDPS: number;
-  nextDPS: number;
+  currentDPS: Decimal;
+  nextDPS: Decimal;
   onBuy: () => void;
   t: (key: string, params?: any) => string;
 }
@@ -29,6 +32,7 @@ export default function UpgradeCard({
 }: UpgradeCardProps) {
   const Icon = WORM_ICONS[upgrade.id] || Bug;
   const name = t(upgrade.nameKey);
+  const { full } = useNumberFormat();
 
   return (
     <motion.button
@@ -37,8 +41,8 @@ export default function UpgradeCard({
       disabled={!canAfford}
       aria-label={
         canAfford
-          ? `Buy ${name} for ${Math.floor(cost)} gold`
-          : `${name} locked, costs ${Math.floor(cost)} gold`
+          ? `Buy ${name} for ${full(cost)} gold`
+          : `${name} locked, costs ${full(cost)} gold`
       }
       className="abyss-card"
     >
@@ -54,10 +58,11 @@ export default function UpgradeCard({
           <div className="flex items-center justify-between mt-1">
             <span className="abyss-cost">
               <Coins className="w-3 h-3" aria-hidden="true" />
-              {Math.floor(cost).toLocaleString()}
+              <NumberText value={cost} />
             </span>
-            <span className="text-[11px] text-[var(--muted)]">
-              DPS {currentDPS.toFixed(1)} → {nextDPS.toFixed(1)}
+            <span className="abyss-dps text-[11px] text-[var(--muted)]">
+              DPS <NumberText value={currentDPS} decimals={1} /> →{' '}
+              <NumberText value={nextDPS} decimals={1} />
             </span>
           </div>
         </div>

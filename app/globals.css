@@ -229,7 +229,9 @@
 
 .abyss-chip-gold strong {
   font-family: var(--font-mono);
-  font-size: 1.25rem;
+  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);
+  min-width: 7ch;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
 }
@@ -1269,3 +1271,38 @@
   }
 }
 
+
+/* ─── Números grandes (#47) ─── */
+.abyss-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.abyss-stat-text {
+  container-type: inline-size;
+}
+
+.abyss-stat-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  /* Encolhe com a largura do card (container query) para caber "2.50e308". */
+  font-size: clamp(0.6875rem, 12.5cqi, 0.875rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.abyss-hp-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.abyss-dps {
+  white-space: nowrap;
+}

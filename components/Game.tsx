@@ -13,6 +13,7 @@ import GameHeader from '@/components/game/GameHeader';
 import GameModalStack from '@/components/game/GameModalStack';
 import MobileModals from '@/components/game/MobileModals';
 import MobileNav from '@/components/game/MobileNav';
+import { NumberFormatProvider } from '@/components/game/NumberFormatProvider';
 import UpgradeSidebar from '@/components/game/UpgradeSidebar';
 import { useGameKeyboard } from '@/hooks/use-game-keyboard';
 // Extracted hooks
@@ -70,107 +71,114 @@ export default function Game() {
     );
 
   return (
-    <div className="abyss-shell">
-      <GameHeader
-        state={orch.state}
-        t={orch.t}
-        onShowStats={() => orch.setShowStats(true)}
-        onShowSkills={() => orch.setShowSkills(true)}
-        onShowSettings={() => orch.setShowSettings(true)}
-        onShowHelp={(help) => orch.setShowHelp(help)}
-        onShowJourney={() => orch.setShowJourney(true)}
-        canClaimDailyReward={orch.canClaimDailyReward}
-      />
+    <NumberFormatProvider
+      notation={orch.state.settings.notation}
+      locale={orch.state.settings.language}
+    >
+      <div className="abyss-shell">
+        <GameHeader
+          state={orch.state}
+          t={orch.t}
+          onShowStats={() => orch.setShowStats(true)}
+          onShowSkills={() => orch.setShowSkills(true)}
+          onShowSettings={() => orch.setShowSettings(true)}
+          onShowHelp={(help) => orch.setShowHelp(help)}
+          onShowJourney={() => orch.setShowJourney(true)}
+          canClaimDailyReward={orch.canClaimDailyReward}
+        />
 
-      <div className="flex-1 flex flex-row overflow-hidden min-h-0">
-        <AdSidebars />
-        <div className="abyss-stage">
-          <UpgradeSidebar
-            state={orch.state}
-            engine={engine}
-            t={orch.t}
-            onBuyUpgrade={orch.handleBuyUpgrade}
-            onBuyClickUpgrade={orch.handleBuyClickUpgrade}
-          />
-          <AppleArea
-            state={orch.state}
-            engine={engine}
-            t={orch.t}
-            isShaking={orch.isShaking}
-            particleOffsets={orch.particleOffsets}
-            onAppleClick={orch.handleClick}
-            onActivateSkill={orch.handleActivateSkill}
-            onShowRewardedAds={() => rewarded.setShowRewardedAds(true)}
-            goldBoostRemaining={rewarded.goldBoostRemaining}
-          />
-          <AscensionSidebar
-            state={orch.state}
-            engine={engine}
-            t={orch.t}
-            onAscend={orch.handleAscend}
-          />
+        <div className="flex-1 flex flex-row overflow-hidden min-h-0">
+          <AdSidebars />
+          <div className="abyss-stage">
+            <UpgradeSidebar
+              state={orch.state}
+              engine={engine}
+              t={orch.t}
+              onBuyUpgrade={orch.handleBuyUpgrade}
+              onBuyClickUpgrade={orch.handleBuyClickUpgrade}
+            />
+            <AppleArea
+              state={orch.state}
+              engine={engine}
+              t={orch.t}
+              isShaking={orch.isShaking}
+              particleOffsets={orch.particleOffsets}
+              onAppleClick={orch.handleClick}
+              onActivateSkill={orch.handleActivateSkill}
+              onShowRewardedAds={() => rewarded.setShowRewardedAds(true)}
+              goldBoostRemaining={rewarded.goldBoostRemaining}
+            />
+            <AscensionSidebar
+              state={orch.state}
+              engine={engine}
+              t={orch.t}
+              onAscend={orch.handleAscend}
+              onDiveAbyss={orch.handleDiveAbyss}
+            />
+          </div>
         </div>
+
+        <MobileNav
+          t={orch.t}
+          onShowUpgrades={() => orch.setShowUpgradesModal(true)}
+          onShowAscension={() => orch.setShowAscensionModal(true)}
+          onShowStats={() => orch.setShowStatsPanelModal(true)}
+          onShowJourney={() => orch.setShowJourney(true)}
+          canClaimDailyReward={orch.canClaimDailyReward}
+        />
+
+        <GameFooter t={orch.t} />
+        <FooterAds />
+
+        <GameModalStack
+          state={orch.state}
+          engine={engine}
+          t={orch.t}
+          showSettings={orch.showSettings}
+          showSkills={orch.showSkills}
+          showStats={orch.showStats}
+          showJourney={orch.showJourney}
+          showOnboarding={orch.showOnboarding}
+          showHelp={orch.showHelp}
+          offlineResult={orch.offlineResult}
+          clickEffects={orch.clickEffects}
+          onCloseSettings={() => orch.setShowSettings(false)}
+          onCloseSkills={() => orch.setShowSkills(false)}
+          onCloseStats={() => orch.setShowStats(false)}
+          onCloseJourney={() => orch.setShowJourney(false)}
+          onCloseOnboarding={() => orch.setShowOnboarding(false)}
+          onCloseHelp={() => orch.setShowHelp(null)}
+          onDismissOffline={() => orch.setOfflineResult(null)}
+          onStateUpdate={orch.handleStateUpdate}
+          onImportSave={orch.handleImportSave}
+          onResetGame={orch.handleResetGame}
+          onExportSave={orch.handleExportSave}
+          showRewardedAds={rewarded.showRewardedAds}
+          onCloseRewardedAds={() => rewarded.setShowRewardedAds(false)}
+          getCooldown={rewarded.getCooldown}
+          onGoldBoost={rewarded.handleGoldBoostReward}
+          onInstantHarvest={rewarded.handleInstantHarvestReward}
+          onResetCooldown={rewarded.handleResetCooldownReward}
+        />
+
+        <MobileModals
+          state={orch.state}
+          engine={engine}
+          t={orch.t}
+          showUpgradesModal={orch.showUpgradesModal}
+          showAscensionModal={orch.showAscensionModal}
+          showStatsPanelModal={orch.showStatsPanelModal}
+          onCloseUpgrades={() => orch.setShowUpgradesModal(false)}
+          onCloseAscension={() => orch.setShowAscensionModal(false)}
+          onCloseStatsPanel={() => orch.setShowStatsPanelModal(false)}
+          onBuyUpgrade={orch.handleBuyUpgrade}
+          onBuyClickUpgrade={orch.handleBuyClickUpgrade}
+          onAscend={orch.handleAscend}
+          onDiveAbyss={orch.handleDiveAbyss}
+        />
+
+        <AdBanner />
       </div>
-
-      <MobileNav
-        t={orch.t}
-        onShowUpgrades={() => orch.setShowUpgradesModal(true)}
-        onShowAscension={() => orch.setShowAscensionModal(true)}
-        onShowStats={() => orch.setShowStatsPanelModal(true)}
-        onShowJourney={() => orch.setShowJourney(true)}
-        canClaimDailyReward={orch.canClaimDailyReward}
-      />
-
-      <GameFooter t={orch.t} />
-      <FooterAds />
-
-      <GameModalStack
-        state={orch.state}
-        engine={engine}
-        t={orch.t}
-        showSettings={orch.showSettings}
-        showSkills={orch.showSkills}
-        showStats={orch.showStats}
-        showJourney={orch.showJourney}
-        showOnboarding={orch.showOnboarding}
-        showHelp={orch.showHelp}
-        offlineResult={orch.offlineResult}
-        clickEffects={orch.clickEffects}
-        onCloseSettings={() => orch.setShowSettings(false)}
-        onCloseSkills={() => orch.setShowSkills(false)}
-        onCloseStats={() => orch.setShowStats(false)}
-        onCloseJourney={() => orch.setShowJourney(false)}
-        onCloseOnboarding={() => orch.setShowOnboarding(false)}
-        onCloseHelp={() => orch.setShowHelp(null)}
-        onDismissOffline={() => orch.setOfflineResult(null)}
-        onStateUpdate={orch.handleStateUpdate}
-        onImportSave={orch.handleImportSave}
-        onResetGame={orch.handleResetGame}
-        onExportSave={orch.handleExportSave}
-        showRewardedAds={rewarded.showRewardedAds}
-        onCloseRewardedAds={() => rewarded.setShowRewardedAds(false)}
-        getCooldown={rewarded.getCooldown}
-        onGoldBoost={rewarded.handleGoldBoostReward}
-        onInstantHarvest={rewarded.handleInstantHarvestReward}
-        onResetCooldown={rewarded.handleResetCooldownReward}
-      />
-
-      <MobileModals
-        state={orch.state}
-        engine={engine}
-        t={orch.t}
-        showUpgradesModal={orch.showUpgradesModal}
-        showAscensionModal={orch.showAscensionModal}
-        showStatsPanelModal={orch.showStatsPanelModal}
-        onCloseUpgrades={() => orch.setShowUpgradesModal(false)}
-        onCloseAscension={() => orch.setShowAscensionModal(false)}
-        onCloseStatsPanel={() => orch.setShowStatsPanelModal(false)}
-        onBuyUpgrade={orch.handleBuyUpgrade}
-        onBuyClickUpgrade={orch.handleBuyClickUpgrade}
-        onAscend={orch.handleAscend}
-      />
-
-      <AdBanner />
-    </div>
+    </NumberFormatProvider>
   );
 }

@@ -4,6 +4,7 @@ import { Coins, History, Map, Moon, Settings, Sparkles, Sun, Trophy, Zap } from 
 import React from 'react';
 import { useTheme } from '@/components/ThemeProvider';
 import type { GameState } from '@/lib/game/types';
+import NumberText from './NumberText';
 
 interface GameHeaderProps {
   state: GameState;
@@ -45,7 +46,9 @@ export default function GameHeader({
       <div className="abyss-header-stats">
         <div className="abyss-chip abyss-chip-gold">
           <Coins className="w-5 h-5" aria-hidden="true" />
-          <strong>{Math.floor(state.gold).toLocaleString()}</strong>
+          <strong>
+            <NumberText value={state.gold} />
+          </strong>
           <span className="sr-only">gold</span>
         </div>
         <div className="abyss-chip abyss-chip-stage">

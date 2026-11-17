@@ -1,10 +1,11 @@
 'use client';
 
-import { Coins, History, MousePointer2, Sparkles, Sword, Trophy, Users } from 'lucide-react';
+import { Coins, History, MousePointer2, Sparkles, Sword, Trophy, Users, Waves } from 'lucide-react';
 import { motion } from 'motion/react';
 import React from 'react';
 import type { GameEngine } from '@/lib/game/engine';
 import type { GameState } from '@/lib/game/types';
+import NumberText from './NumberText';
 import StatCard from './StatCard';
 
 interface AscensionSidebarProps {
@@ -12,6 +13,7 @@ interface AscensionSidebarProps {
   engine: GameEngine;
   t: (key: string, params?: any) => string;
   onAscend: () => void;
+  onDiveAbyss: () => void;
   className?: string;
 }
 
@@ -20,11 +22,14 @@ export default function AscensionSidebar({
   engine,
   t,
   onAscend,
+  onDiveAbyss,
   className,
 }: AscensionSidebarProps) {
   const progress = Math.min((state.stage / 50) * 100, 100);
   const canAscend = engine.canAscend();
   const pendingWorms = engine.getPendingLuckyWorms();
+  const canDive = engine.canDiveAbyss();
+  const showAbyss = canDive || state.abyssDepth > 0;
 
   return (
     <aside className={className ?? 'abyss-panel abyss-panel-right'}>
@@ -83,6 +88,33 @@ export default function AscensionSidebar({
 
           <p className="mt-2 text-[11px] text-center opacity-80">Lucky Worms: +5% gold each</p>
         </div>
+
+        {showAbyss && (
+          <div className="abyss-ascend mt-3" data-testid="abyss-dive">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="abyss-card-icon w-9 h-9">
+                <Waves className="w-4 h-4" aria-hidden="true" />
+              </div>
+              <div>
+                <div className="font-semibold text-sm">The Abyss · Depth {state.abyssDepth}</div>
+                <div className="text-[11px] opacity-80">
+                  Damage &amp; gold ×<NumberText value={engine.getAbyssMultiplier()} />
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onDiveAbyss}
+              disabled={!canDive}
+              className="abyss-btn abyss-btn-magic"
+            >
+              {canDive ? 'Dive into the Abyss' : 'Reach 1.80e308 gold'}
+            </button>
+            <p className="mt-2 text-[11px] text-center opacity-80">
+              Resets run and Lucky Worms · ×2 forever per depth
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="flex-1">
@@ -94,7 +126,7 @@ export default function AscensionSidebar({
               <StatCard
                 icon={Coins}
                 label="Gold"
-                value={Math.floor(state.gold).toLocaleString()}
+                value={<NumberText value={state.gold} />}
                 color="yellow"
               />
               <StatCard icon={Trophy} label="Stage" value={state.stage} color="orange" />
@@ -107,13 +139,13 @@ export default function AscensionSidebar({
               <StatCard
                 icon={MousePointer2}
                 label="Click Dmg"
-                value={engine.getClickDamage().toFixed(1)}
+                value={<NumberText value={engine.getClickDamage()} decimals={1} />}
                 color="red"
               />
               <StatCard
                 icon={Sword}
                 label="Idle DPS"
-                value={engine.getTotalDPS().toFixed(1)}
+                value={<NumberText value={engine.getTotalDPS()} decimals={1} />}
                 color="blue"
               />
             </div>
@@ -125,7 +157,7 @@ export default function AscensionSidebar({
               <StatCard
                 icon={Users}
                 label="Worms"
-                value={Object.values(state.worms).reduce((a, b) => a + b, 0)}
+                value={<NumberText value={Object.values(state.worms).reduce((a, b) => a + b, 0)} />}
                 color="green"
               />
               <StatCard
@@ -137,7 +169,7 @@ export default function AscensionSidebar({
               <StatCard
                 icon={History}
                 label="Eaten"
-                value={state.totalApplesEaten.toLocaleString()}
+                value={<NumberText value={state.totalApplesEaten} />}
                 color="stone"
               />
             </div>

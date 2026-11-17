@@ -5,8 +5,8 @@ export const APPLE_SPRITES = [
   '/assets/apples/red-delicious-apple-4.webp',
 ] as const;
 
-export const getAppleSpriteIndex = (currentHp: number, maxHp: number): number => {
-  const percent = (currentHp / maxHp) * 100;
+/** Sprite da maçã pela porcentagem de vida (0–100). */
+export const getAppleSpriteIndex = (percent: number): number => {
   if (percent > 75) return 0;
   if (percent > 50) return 1;
   if (percent > 25) return 2;

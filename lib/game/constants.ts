@@ -80,7 +80,11 @@ export const INITIAL_JOURNEY_STATE: JourneyState = {
   },
 };
 
+/** Versão do formato do save (v1 = até a v0.2.1, sem o campo). */
+export const CURRENT_SAVE_VERSION = 2;
+
 export const INITIAL_STATE = {
+  saveVersion: CURRENT_SAVE_VERSION,
   gold: 0,
   stage: 1,
   appleHP: GAME_CONFIG.INITIAL_HP,

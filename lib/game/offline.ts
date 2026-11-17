@@ -1,4 +1,5 @@
 import { GAME_CONFIG } from './constants';
+import { clampFinite } from './safe-number';
 import type { GameState } from './types';
 
 export interface OfflineProgressResult {
@@ -84,7 +85,7 @@ export class OfflineProgressSystem {
     const goldMultiplier = this.deps.getGoldMultiplier();
 
     const clampedSeconds = this.clampOfflineTime(offlineSeconds);
-    const totalDamage = totalDPS * clampedSeconds;
+    const totalDamage = clampFinite(totalDPS * clampedSeconds);
 
     const result = this.simulateAppleDestruction({
       startStage: currentState.stage,
@@ -105,7 +106,7 @@ export class OfflineProgressSystem {
   applyToState(result: OfflineProgressResult): void {
     const state = this.deps.getCurrentState();
 
-    state.gold += result.goldGained;
+    state.gold = clampFinite(state.gold + clampFinite(result.goldGained, 0), state.gold);
     state.totalApplesEaten += result.applesEaten;
     state.stage = result.finalStage;
     state.appleHP = Math.max(1, result.finalAppleHP);
@@ -193,7 +194,7 @@ export class OfflineProgressSystem {
       finalStage: currentStage,
       finalAppleHP: Math.max(1, currentAppleHP),
       finalMaxAppleHP: currentMaxAppleHP,
-      antiCheatFlags: this.getAntiCheatFlags(applesEaten, goldGained, totalDamage),
+      antiCheatFlags: this.getAntiCheatFlags(applesEaten, goldGained, totalDamage, goldMultiplier),
     };
   }
 
@@ -217,16 +218,23 @@ export class OfflineProgressSystem {
 
   private calculateMaxAppleHP(stage: number): number {
     const { baseHP, growthFactor } = this.config.appleHP;
-    return Math.floor(baseHP * Math.pow(growthFactor, stage - 1));
+    return Math.max(1, Math.floor(clampFinite(baseHP * Math.pow(growthFactor, stage - 1), baseHP)));
   }
   private getAntiCheatFlags(
     applesEaten: number,
     goldGained: number,
     totalDamage: number,
+    goldMultiplier: number,
   ): Array<AntiCheatFlag> {
     const flags: Array<AntiCheatFlag> = [];
 
-    if (goldGained > this.config.maxReasonableGoldAmount) {
+    // O ouro nunca pode passar do dano total × multiplicador. O teto fixo antigo
+    // (1e15) disparava em toda sessão de fim de jogo; agora ele é relativo.
+    const goldCeiling = Math.max(
+      this.config.maxReasonableGoldAmount,
+      totalDamage * Math.min(goldMultiplier, this.config.maxReasonableGoldMultiplier) * 1.0001,
+    );
+    if (goldGained > goldCeiling) {
       flags.push('UNREALISTIC_GOLD_AMOUNT');
     }
 

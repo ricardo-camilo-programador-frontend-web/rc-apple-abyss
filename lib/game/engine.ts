@@ -1,4 +1,5 @@
 import { AudioSystem } from './audio';
+import { calculateMaxAppleHP } from './balance';
 import {
   CLICK_UPGRADE,
   GAME_CONFIG,
@@ -17,6 +18,8 @@ import { isNumberNotation, type NumberNotation } from './format';
 import { calculateAllGoalProgress, findNewlyCompletedGoals, getGoalDefinition } from './goals';
 import { LocalizationSystem } from './localization';
 import { OfflineProgressResult, OfflineProgressSystem } from './offline';
+import { clampFinite } from './safe-number';
+import { migrateSave } from './save-migration';
 import { SkillSystem } from './skills';
 import {
   DailyRewardState,
@@ -32,6 +35,9 @@ const ONBOARDING_TOTAL_STEPS = 3;
 
 /** Max deltaTime in seconds — prevents massive damage spikes when tab returns from background */
 const MAX_DELTA_TIME_S = 5;
+
+/** Máximo de maçãs destruídas por um único golpe ou tick. */
+const MAX_KILLS_PER_HIT = 10_000;
 
 export class GameEngine {
   private state: GameState;
@@ -71,7 +77,7 @@ export class GameEngine {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return this.mergeWithInitialState(parsed);
+        return this.mergeWithInitialState(migrateSave(parsed));
       } catch (e) {
         console.error('Failed to parse save', e);
       }
@@ -220,9 +226,11 @@ export class GameEngine {
    * to prevent gold loss at high DPS relative to apple HP.
    */
   private applyDamage(damage: number, _isClick: boolean): void {
-    let remainingDamage = damage;
+    let remainingDamage = clampFinite(damage, 0);
+    // Teto de maçãs por chamada: evita laço longo quando o dano é muito maior que o HP.
+    let kills = 0;
 
-    while (remainingDamage > 0) {
+    while (remainingDamage > 0 && kills < MAX_KILLS_PER_HIT) {
       // Guard against zero/negative HP edge cases (floating-point, save corruption)
       if (this.state.appleHP <= 0) {
         this.advanceStage();
@@ -233,16 +241,15 @@ export class GameEngine {
       if (this.state.appleHP > remainingDamage) {
         const goldGained = remainingDamage * this.getGoldMultiplier();
         this.state.appleHP -= remainingDamage;
-        this.state.gold += goldGained;
-        this.state.statistics.totalGoldEarned += goldGained;
+        this.addGold(goldGained);
         remainingDamage = 0;
       } else {
         // Apple is destroyed — use exactly the damage needed
         const damageToKill = this.state.appleHP;
         const goldGained = damageToKill * this.getGoldMultiplier();
-        this.state.gold += goldGained;
-        this.state.statistics.totalGoldEarned += goldGained;
+        this.addGold(goldGained);
         remainingDamage -= damageToKill;
+        kills++;
 
         this.audio.playBreak();
         this.state.totalApplesEaten++;
@@ -253,17 +260,23 @@ export class GameEngine {
     }
   }
 
+  /** Soma ouro sem deixar o total ou a estatística virarem Infinity/NaN. */
+  private addGold(amount: number): void {
+    const safe = clampFinite(amount, 0);
+    this.state.gold = clampFinite(this.state.gold + safe, this.state.gold);
+    this.state.statistics.totalGoldEarned = clampFinite(
+      this.state.statistics.totalGoldEarned + safe,
+      this.state.statistics.totalGoldEarned,
+    );
+  }
+
   private advanceStage(): void {
     this.state.stage++;
     if (this.state.stage > this.state.highestStage) {
       this.state.highestStage = this.state.stage;
       this.state.statistics.highestStage = this.state.highestStage;
     }
-    this.state.maxAppleHP = this.calculateMaxAppleHP(this.state.stage);
-  }
-
-  private calculateMaxAppleHP(stage: number): number {
-    return Math.floor(GAME_CONFIG.INITIAL_HP * Math.pow(GAME_CONFIG.HP_GROWTH, stage - 1));
+    this.state.maxAppleHP = calculateMaxAppleHP(this.state.stage);
   }
 
   public getClickDamage(): number {
@@ -271,7 +284,7 @@ export class GameEngine {
       GAME_CONFIG.CLICK_BASE_DAMAGE * Math.pow(CLICK_UPGRADE.damageGrowth, this.state.clickLevel);
     const luckyWormBonus = 1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm;
     const skillMultiplier = this.skills.getGoldMultiplierClick();
-    return baseDamage * luckyWormBonus * skillMultiplier;
+    return clampFinite(baseDamage * luckyWormBonus * skillMultiplier);
   }
 
   public getWormDPS(id: string): number {
@@ -279,7 +292,7 @@ export class GameEngine {
     if (!upgrade) return 0;
     const count = this.state.worms[id] || 0;
     if (count === 0) return 0;
-    return upgrade.baseDPS * Math.pow(upgrade.dpsGrowth, count - 1);
+    return clampFinite(upgrade.baseDPS * Math.pow(upgrade.dpsGrowth, count - 1));
   }
 
   public getTotalDPS(): number {
@@ -289,7 +302,7 @@ export class GameEngine {
     }
     const luckyWormBonus = 1 + this.state.luckyWorms * LUCKY_WORMS_CONFIG.damageBonusPerWorm;
     const skillMultiplier = this.skills.getGoldMultiplierIdle();
-    return totalDPS * luckyWormBonus * skillMultiplier;
+    return clampFinite(totalDPS * luckyWormBonus * skillMultiplier);
   }
 
   public getGoldMultiplier(): number {
@@ -300,7 +313,7 @@ export class GameEngine {
     const upgrade = WORM_UPGRADES.find((u) => u.id === upgradeId);
     if (!upgrade) return 0;
     const count = this.state.worms[upgradeId] || 0;
-    return Math.floor(upgrade.baseCost * Math.pow(upgrade.costGrowth, count));
+    return Math.floor(clampFinite(upgrade.baseCost * Math.pow(upgrade.costGrowth, count)));
   }
 
   public buyUpgrade(upgradeId: string): void {
@@ -315,8 +328,10 @@ export class GameEngine {
 
   public getClickUpgradeCost(): number {
     return Math.floor(
-      GAME_CONFIG.CLICK_UPGRADE_BASE_COST *
-        Math.pow(GAME_CONFIG.CLICK_UPGRADE_COST_GROWTH, this.state.clickLevel),
+      clampFinite(
+        GAME_CONFIG.CLICK_UPGRADE_BASE_COST *
+          Math.pow(GAME_CONFIG.CLICK_UPGRADE_COST_GROWTH, this.state.clickLevel),
+      ),
     );
   }
 
@@ -439,9 +454,10 @@ export class GameEngine {
 
       if (expectedHash !== saveObj.hash) return false;
 
-      if (!this.validateSaveData(saveObj.data)) return false;
+      const migrated = migrateSave(saveObj.data);
+      if (!this.validateSaveData(migrated)) return false;
 
-      this.state = this.mergeWithInitialState(saveObj.data);
+      this.state = this.mergeWithInitialState(migrated);
       this.saveGame();
       return true;
     } catch {
@@ -463,11 +479,13 @@ export class GameEngine {
 
     const d = data as Record<string, unknown>;
 
-    if (!isFiniteNum(d['gold'], 0, 1e100)) return false;
+    // Sem teto artificial: o limite é o maior number finito (o save já passou por migrateSave).
+    const MAX = Number.MAX_VALUE;
+    if (!isFiniteNum(d['gold'], 0, MAX)) return false;
     if (!isFiniteNum(d['stage'], 1, 1000000)) return false;
     if (!isFiniteNum(d['totalClicks'], 0, Infinity)) return false;
-    if (!isFiniteNum(d['appleHP'], 0, 1e100)) return false;
-    if (!isFiniteNum(d['maxAppleHP'], 1, 1e100)) return false;
+    if (!isFiniteNum(d['appleHP'], 0, MAX)) return false;
+    if (!isFiniteNum(d['maxAppleHP'], 1, MAX)) return false;
     if (!isFiniteNum(d['clickLevel'], 0, 1000000)) return false;
     if (!isFiniteNum(d['luckyWorms'], 0, 1e15)) return false;
     if (!isFiniteNum(d['highestStage'], 1, 1000000)) return false;

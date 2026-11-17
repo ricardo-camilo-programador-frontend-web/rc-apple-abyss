@@ -6,6 +6,7 @@ import Image from 'next/image';
 import type React from 'react';
 import { useState } from 'react';
 import type { GameEngine } from '@/lib/game/engine';
+import { safePercent } from '@/lib/game/safe-number';
 import { APPLE_SPRITES, getAppleSpriteIndex } from '@/lib/game/sprites';
 import type { GameState } from '@/lib/game/types';
 import { useNumberFormat } from './NumberFormatProvider';
@@ -40,7 +41,7 @@ export default function AppleArea({
   onShowRewardedAds,
   goldBoostRemaining = 0,
 }: AppleAreaProps) {
-  const hpPercent = (state.appleHP / state.maxAppleHP) * 100;
+  const hpPercent = safePercent(state.appleHP, state.maxAppleHP);
   const activeSpriteIndex = getAppleSpriteIndex(state.appleHP, state.maxAppleHP);
   const skill = state.skills.golden_harvest;
   const ready = skill.cooldownRemaining <= 0 && !skill.isActive;

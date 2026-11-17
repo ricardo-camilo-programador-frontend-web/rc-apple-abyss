@@ -67,6 +67,8 @@ export type HelpTopicId =
   | 'worm_upgrades';
 
 export interface GameState {
+  /** Versão do formato do save; saves sem o campo são v1. */
+  saveVersion: number;
   gold: number;
   stage: number;
   appleHP: number;

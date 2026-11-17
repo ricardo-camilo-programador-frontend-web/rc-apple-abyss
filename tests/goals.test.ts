@@ -10,6 +10,7 @@ import type { GameState } from '@/lib/game/types';
 
 function createMockGameState(overrides: Partial<GameState> = {}): GameState {
   return {
+    saveVersion: 2,
     gold: 0,
     stage: 1,
     appleHP: 50,

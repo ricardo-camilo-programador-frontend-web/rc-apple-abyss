@@ -3,6 +3,7 @@
 import { Coins } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import React from 'react';
+import { useNumberFormat } from './NumberFormatProvider';
 
 interface OfflineModalProps {
   result: { apples: number; gold: number } | null;
@@ -11,6 +12,7 @@ interface OfflineModalProps {
 }
 
 export default function OfflineModal({ result, t, onDismiss }: OfflineModalProps) {
+  const { format } = useNumberFormat();
   const reduceMotion =
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -41,8 +43,8 @@ export default function OfflineModal({ result, t, onDismiss }: OfflineModalProps
               </h2>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
                 {t('offline_earnings', {
-                  n: result.apples,
-                  g: Math.floor(result.gold).toLocaleString(),
+                  n: format(result.apples),
+                  g: format(result.gold),
                 })}
               </p>
               <button type="button" onClick={onDismiss} className="abyss-btn abyss-btn-apple">

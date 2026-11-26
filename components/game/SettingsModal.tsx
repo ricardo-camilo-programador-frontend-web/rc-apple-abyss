@@ -2,6 +2,7 @@
 
 import {
   Download,
+  Hash,
   Languages,
   RefreshCw,
   Settings,
@@ -16,7 +17,11 @@ import ThemeToggle from '@/components/game/ThemeToggle';
 import { useAdGuard } from '@/hooks/use-ad-guard';
 import { analytics } from '@/lib/analytics';
 import type { GameEngine } from '@/lib/game/engine';
+import { formatNumber, NUMBER_NOTATIONS, type NumberNotation } from '@/lib/game/format';
 import type { GameState, Language } from '@/lib/game/types';
+
+/** Exemplo exibido em cada opção de notação (HP do estágio 373). */
+const NOTATION_SAMPLE = 1.6029440842264702e67;
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -77,6 +82,11 @@ export default function SettingsModal({
   const changeLanguage = (lang: Language) => {
     engine.setLanguage(lang);
     analytics.languageChanged(lang);
+    onStateUpdate();
+  };
+
+  const changeNotation = (notation: NumberNotation) => {
+    engine.setNotation(notation);
     onStateUpdate();
   };
 
@@ -202,6 +212,37 @@ export default function SettingsModal({
                 </div>
               </div>
 
+              {/* Number format section */}
+              <div className="space-y-3">
+                <span id="notation-label" className="abyss-kicker flex items-center gap-2">
+                  <Hash className="w-3 h-3" aria-hidden="true" />
+                  {t('settings_notation')}
+                </span>
+                <div
+                  className="grid grid-cols-2 gap-2 p-1"
+                  role="group"
+                  aria-labelledby="notation-label"
+                >
+                  {NUMBER_NOTATIONS.map((notation) => (
+                    <button
+                      key={notation}
+                      type="button"
+                      onClick={() => changeNotation(notation)}
+                      aria-pressed={state.settings.notation === notation}
+                      className="abyss-lang"
+                    >
+                      <span className="block">{t(`notation_${notation}`)}</span>
+                      <span className="abyss-num block text-[11px] opacity-80">
+                        {formatNumber(NOTATION_SAMPLE, {
+                          notation,
+                          locale: state.settings.language,
+                        })}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Ad Preferences section */}
               <div className="space-y-3 pt-4" style={{ borderTop: '1px solid var(--line)' }}>
                 <span className="abyss-kicker flex items-center gap-2">
@@ -220,8 +261,8 @@ export default function SettingsModal({
                     </div>
                     <div className="text-xs" style={{ color: 'var(--muted)' }}>
                       {adsRemoved
-                        ? 'Display ads are hidden. Rewarded ads still available.'
-                        : 'Hide all display ads (banners). Rewarded ads remain optional.'}
+                        ? 'Banners and Free Rewards are hidden.'
+                        : 'Hide banners and the Free Rewards ads.'}
                     </div>
                   </div>
                   <div

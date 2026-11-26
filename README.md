@@ -144,6 +144,18 @@ Copy the Native Banner values from the Adsterra panel: **Websites → your site 
 | `NEXT_PUBLIC_ADSTERRA_ENABLED` | `false` forces the slot off. |
 | `NEXT_PUBLIC_SITE_URL` | Optional canonical origin. Preview deploys must not match it. |
 
+### Bloco AdSense do jogo (#51)
+
+A tela do jogo tem um único bloco AdSense, `FooterAds`, no fluxo da página, acima do rodapé. Não existe mais caixa flutuante: a política do AdSense proíbe anúncio em "floating box script". O bloco é rotulado (Publicidade / Advertisement), tem tamanho fixo (728×90 a partir de 768 px, 320×50 abaixo) e só aparece depois dos 30 s de carência da sessão.
+
+O bloco só é renderizado com um id de bloco válido em `NEXT_PUBLIC_ADSENSE_FOOTER_SLOT`. É o número que o AdSense mostra em **Anúncios → Por bloco de anúncios → Bloco de display → Código** (`data-ad-slot`). Sem essa variável, ou com um texto como `horizontal-footer`, nada é renderizado. Se o AdSense marcar `data-ad-status="unfilled"`, o bloco se recolhe sem deixar espaço vazio.
+
+"Remove Ads" (Configurações) fica num estado único compartilhado (`lib/ads/ads-removed.ts`). Ligado, esconde o bloco e o Free Rewards na hora, sem recarregar.
+
+| Variável | Uso |
+| --- | --- |
+| `NEXT_PUBLIC_ADSENSE_FOOTER_SLOT` | Id numérico do bloco de display do rodapé do jogo. Vazio = sem bloco. |
+
 ## Journey System Architecture
 
 ### Goals (Pure Rules)
@@ -152,8 +164,53 @@ Goals are defined in `lib/game/goals.ts` as pure functions — no side effects, 
 ### Daily Reward (Pure Rules)
 Daily reward logic in `lib/game/daily-reward.ts` is fully pure. Streak calculation, eligibility, gold amounts, and timestamp validation are all pure functions. The engine layer handles state mutation and persistence.
 
+### Big Numbers & the Abyss (#47)
+- Gold, apple HP, damage and costs are `Decimal` values from [break_infinity.js](https://github.com/Patashu/break_infinity.js), imported only through `lib/game/num.ts`. Values go up to ~1e(9e15) without turning into `Infinity`.
+- `lib/game/format.ts` formats them. The default notation is **Mixed** (K, M, B, T … Dc up to 1e36, then scientific); players can switch to Letters (aa, ab…), Scientific or Engineering in Settings, and the choice is saved.
+- Balance (`lib/game/balance.ts`): apple HP grows ×1.33 per stage up to stage 80 and ×1.1 after that; worms and click damage grow linearly with ×4 every 25 levels; costs grow ×1.15 per level.
+- **The Abyss:** once gold reaches 1.80e308 (the old `number` limit), the player can dive. A dive resets the run and the Lucky Worms, and adds one Abyss depth. Each depth doubles damage and gold forever (`×2^depth`).
+
 ### Save Migration
-Old saves without the `journey` field are automatically migrated. `mergeJourneyState()` in the engine provides default initial state for missing journey data. Corrupted values are sanitized gracefully.
+Saves carry a `saveVersion` (currently 4) and are upgraded by `migrateSave()` in `lib/game/save-migration.ts`: v1 (no version, `null` for overflowed values) → v2 (finite numbers) → v3 (new HP curve, same HP percentage) → v4 (`Decimal` values stored as strings, `abyssDepth`). Old saves without the `journey` field are automatically migrated. `mergeJourneyState()` in the engine provides default initial state for missing journey data. Corrupted values are sanitized gracefully.
+
+## Free Rewards com anúncio real: H5 Games Ads (#52)
+
+O Free Rewards usa o **H5 Games Ads** do Google (Ad Placement API, tipo `reward`). A Adsterra não entra aqui: os termos dela proíbem incentivo a impressões e cliques (seção 6, iv). O anúncio com recompensa é permitido no H5 Games Ads (https://developers.google.com/ad-placement/apis).
+
+Como funciona (`lib/ads/h5-games.ts`, `lib/ads/rewarded-store.ts`):
+
+1. O jogador toca numa recompensa e o jogo chama `adBreak({ type: 'reward', ... })`.
+2. Se o Google tiver anúncio, chama `beforeReward(showAdFn)` e aparece o botão **Watch ad**. O clique chama `showAdFn()`.
+3. O bônus só sai em `adViewed()`. `adDismissed()` não dá nada. Sem `beforeReward` (`adBreakDone` com `breakStatus` como `notReady` ou `frequencyCapped`, ou 8 s sem resposta), a tela mostra "No ad available right now" e libera nova tentativa em 30 s.
+4. Em produção não existe caminho que entregue bônus sem anúncio.
+
+Recompensas (`REWARDED_CONFIG` em `lib/game/constants.ts`):
+
+| Recompensa | Efeito | Cooldown |
+| --- | --- | --- |
+| 2x Gold Boost | ×2 no gold de cliques e idle por 60 s (não vale para offline nem Instant Harvest) | 5 min |
+| Instant Harvest | 5 min de DPS convertidos em gold | 5 min |
+| Reset Skill Cooldown | Zera o cooldown do Golden Harvest | 3 min |
+
+Os cooldowns e o fim do 2x ficam no localStorage (`apple_abyss_rewarded_v1`), fora do save do jogo: sobrevivem ao reload e não mexem no `CURRENT_SAVE_VERSION`.
+
+Sem as variáveis abaixo, o botão Free Rewards não aparece. O H5 Games Ads usa o mesmo `adsbygoogle.js` do AdSense já carregado em `app/layout.tsx`; por isso `NEXT_PUBLIC_H5_ADS_CLIENT` precisa ser o mesmo publisher do script.
+
+| Variável | Valor | Uso |
+| --- | --- | --- |
+| `NEXT_PUBLIC_H5_ADS_ENABLED` | `true` | Liga o Free Rewards com H5 Games Ads. Vazio ou `false` = escondido. |
+| `NEXT_PUBLIC_H5_ADS_CLIENT` | `ca-pub-6735039970151788` | Publisher AdSense. Outro valor desliga (precisa bater com o script). |
+| `NEXT_PUBLIC_H5_ADS_TEST` | `on` só em teste | Põe `data-adbreak-test="on"` no script (anúncios de teste do Google). Nunca em produção. |
+
+A CSP (Report-Only) recebe os hosts do Google por `lib/csp-google-ads.ts`.
+
+### Checklist para ativar
+
+- [ ] No AdSense, pedir acesso ao H5 Games Ads pelo formulário (https://support.google.com/adsense/answer/1705831). É por inscrição e a aprovação não é garantida.
+- [ ] Esperar o e-mail de aprovação do Google.
+- [ ] Testar num deploy preview com `NEXT_PUBLIC_H5_ADS_ENABLED=true`, `NEXT_PUBLIC_H5_ADS_CLIENT=ca-pub-6735039970151788` e `NEXT_PUBLIC_H5_ADS_TEST=on` (escopo Deploy Previews no Netlify).
+- [ ] Em produção (escopo Production no Netlify): `NEXT_PUBLIC_H5_ADS_ENABLED=true` e `NEXT_PUBLIC_H5_ADS_CLIENT=ca-pub-6735039970151788`, sem `NEXT_PUBLIC_H5_ADS_TEST`. Fazer novo deploy.
+- [ ] `public/ads.txt` já tem a linha `google.com, pub-6735039970151788, DIRECT, f08c47fec0942fa0`; não precisa mudar.
 
 ## Author
 

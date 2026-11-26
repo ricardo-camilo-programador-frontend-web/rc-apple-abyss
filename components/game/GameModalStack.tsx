@@ -11,7 +11,10 @@ import SkillsModal from '@/components/game/SkillsModal';
 import StatsModal from '@/components/game/StatsModal';
 import Modal from '@/components/Modal';
 import RewardedAdButton from '@/components/RewardedAdButton';
+import { useRewardedAdStatus } from '@/hooks/use-rewarded-ads';
+import { REWARDED_CONFIG } from '@/lib/game/constants';
 import type { GameEngine } from '@/lib/game/engine';
+import type { Decimal } from '@/lib/game/num';
 import type { GameState } from '@/lib/game/types';
 
 interface RewardedAdsModalProps {
@@ -35,19 +38,28 @@ function RewardedAdsModal({
   onInstantHarvest,
   onResetCooldown,
 }: RewardedAdsModalProps) {
+  const ads = useRewardedAdStatus();
+  const goldBoost = ads.get('gold_boost');
+  const harvest = ads.get('instant_harvest');
+  const resetSkill = ads.get('reset_cooldown');
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Free Rewards">
       <div className="space-y-3">
         <p className="text-sm text-center pb-2" style={{ color: 'var(--muted)' }}>
-          Watch a short ad to claim a bonus reward. Totally optional!
+          Watch a short ad to claim a bonus. The reward is given only after the ad ends. Totally
+          optional!
         </p>
 
         <RewardedAdButton
           label="2x Gold Boost"
-          description="Instant 10% gold bonus + 30s boost indicator"
+          description={`Double gold from clicks and idle for ${REWARDED_CONFIG.goldBoostDurationSeconds}s`}
           icon={Coins}
           cooldownRemaining={getCooldown('gold_boost')}
-          onReward={onGoldBoost}
+          status={goldBoost.status}
+          retryIn={goldBoost.retryIn}
+          onRequest={onGoldBoost}
+          onWatch={() => ads.watch('gold_boost')}
         />
 
         <RewardedAdButton
@@ -55,8 +67,11 @@ function RewardedAdsModal({
           description="Collect 5 minutes of idle production instantly"
           icon={TrendingUp}
           cooldownRemaining={getCooldown('instant_harvest')}
-          onReward={onInstantHarvest}
-          disabled={engine.getTotalDPS() === 0}
+          status={harvest.status}
+          retryIn={harvest.retryIn}
+          onRequest={onInstantHarvest}
+          onWatch={() => ads.watch('instant_harvest')}
+          disabled={engine.getTotalDPS().lte(0)}
           disabledReason="Buy worms first to generate idle income"
         />
 
@@ -65,7 +80,10 @@ function RewardedAdsModal({
           description="Instantly reset Golden Harvest cooldown"
           icon={Zap}
           cooldownRemaining={getCooldown('reset_cooldown')}
-          onReward={onResetCooldown}
+          status={resetSkill.status}
+          retryIn={resetSkill.retryIn}
+          onRequest={onResetCooldown}
+          onWatch={() => ads.watch('reset_cooldown')}
           disabled={
             state.skills.golden_harvest.cooldownRemaining === 0 &&
             !state.skills.golden_harvest.isActive
@@ -88,7 +106,7 @@ interface GameModalStackProps {
   showOnboarding: boolean;
   showHelp: { title: string; content: string } | null;
   offlineResult: { apples: number; gold: number } | null;
-  clickEffects: ReadonlyArray<{ id: number; x: number; y: number; value: number }>;
+  clickEffects: ReadonlyArray<{ id: number; x: number; y: number; value: Decimal }>;
   onCloseSettings: () => void;
   onCloseSkills: () => void;
   onCloseStats: () => void;

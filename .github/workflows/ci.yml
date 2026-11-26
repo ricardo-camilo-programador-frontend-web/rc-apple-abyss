@@ -110,7 +110,8 @@ jobs:
         run: |
           # Check each non-merge commit in the PR for gitmoji format
           COMMITS=$(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].oid')
-          PATTERN='^(:[a-z_]+:[[:space:]])?[a-z]+([a-z-]*)?\([a-zA-Z0-9/_. ,-]+\): .+'
+          # Escopo opcional (Conventional Commits) — aceita "chore: bump version" de release sem escopo
+          PATTERN='^(:[a-z_]+:[[:space:]])?[a-z]+([a-z-]*)?(\([a-zA-Z0-9/_. ,-]+\))?: .+'
           FAILED=0
           for SHA in $COMMITS; do
             MSG=$(git log --format='%s' -1 "$SHA")
